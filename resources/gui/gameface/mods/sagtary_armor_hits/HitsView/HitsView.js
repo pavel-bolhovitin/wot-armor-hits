@@ -24,12 +24,18 @@ if (engine.whenReady) {
 }
 
 // Mouse over the 3D scene, like the client's SceneWrapper: a drag with the left button turns the camera by the
-// mouse deltas in pixels, the wheel zooms by a fixed step.
+// mouse deltas in pixels, the wheel zooms by a fixed step. The scene shows the grab cursor, the drag one while
+// dragging (.sceneInput__down).
 const WHEEL_STEP = 600;
 const sceneInput = document.querySelector(".sceneInput");
 let dragging = false;
 let lastX = 0;
 let lastY = 0;
+
+function setDragging(isDragging) {
+    dragging = isDragging;
+    sceneInput.classList.toggle("sceneInput__down", isDragging);
+}
 
 function moveSpace(dx, dy, dz) {
     if (window.model) {
@@ -46,7 +52,7 @@ function setOverScene(isOver3dScene) {
 sceneInput.addEventListener("mousedown", (event) => {
     event.preventDefault();
     if (event.buttons === 1) {
-        dragging = true;
+        setDragging(true);
         lastX = event.clientX;
         lastY = event.clientY;
     }
@@ -65,7 +71,7 @@ sceneInput.addEventListener("mousemove", (event) => {
     }
 });
 window.addEventListener("mouseup", () => {
-    dragging = false;
+    setDragging(false);
 });
 sceneInput.addEventListener("wheel", (event) => {
     event.preventDefault();
@@ -196,7 +202,7 @@ class ScrollView {
 sceneInput.addEventListener("mouseover", () => setOverScene(true));
 sceneInput.addEventListener("mouseout", () => {
     setOverScene(false);
-    dragging = false;
+    setDragging(false);
 });
 
 // Battle selector: the card shows the selected battle, a click opens the list of the session's battles, a click on

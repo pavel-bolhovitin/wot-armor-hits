@@ -63,13 +63,19 @@ body {
     flex-direction: column;
 }
 
-/* Mouse over the 3D scene, under the panels: the space between the panels passes the mouse to the scene. */
+/* Mouse over the 3D scene, under the panels: the space between the panels passes the mouse to the scene. The cursors
+   of the client's SceneWrapper: grab, all-scroll while dragging; over the armor the armor cursor replaces them. */
 .sceneInput {
     position: absolute;
     top: 0;
     right: 0;
     bottom: 0;
     left: 0;
+    cursor: grab;
+}
+
+.sceneInput__down {
+    cursor: all-scroll;
 }
 
 .hitsView__content {

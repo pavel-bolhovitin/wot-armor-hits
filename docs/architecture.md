@@ -34,7 +34,7 @@ Core:
 | `config.py`        | ids, resource paths, texts, limits, the battle files folder `BATTLE_FILES_DIR` |
 | `lang.py`          | texts in the client language                                                 |
 | `settings.py`      | user settings from `mods/configs/sagtary_armor_hits/config.json`; `ModSettings` keeps them for the mod and writes the file when the settings menu changes one |
-| `trace.py`         | log of the calls (prefix `calls:`, counts on screen open and close) and texts for the checks of a hit (prefix `check:`, `check: MISMATCH` warnings) |
+| `trace.py`         | log of the calls (prefix `calls:`, counts on screen open and close), timings of functions and blocks (`@timed`, `with timed`, prefix `timing:`: slow calls, the time per second, totals on screen open and close; only with `debug`) and texts for the checks of a hit (prefix `check:`, `check: MISMATCH` warnings) |
 | `optional_mods.py` | the optional third-party mods, or `None` when not installed: OpenWG Gameface (`gfModInject`), ModsList API (`modsListApi`) |
 
 Data, without UI (`data/`):
