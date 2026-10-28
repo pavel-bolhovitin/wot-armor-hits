@@ -34,7 +34,7 @@ Core:
 | `config.py`        | ids, resource paths, texts, limits, the battle files folder `BATTLE_FILES_DIR` |
 | `lang.py`          | texts in the client language                                                 |
 | `settings.py`      | user settings from `mods/configs/sagtary_armor_hits/config.json`; `ModSettings` keeps them for the mod and writes the file when the settings menu changes one |
-| `trace.py`         | log of the calls (prefix `calls:`, counts on screen open and close), timings of functions and blocks (`@timed`, `with timed`, prefix `timing:`: slow calls, the time per second, totals on screen open and close; only with `debug`) and texts for the checks of a hit (prefix `check:`, `check: MISMATCH` warnings) |
+| `trace.py`         | log of the calls (prefix `calls:`, counts on screen open and close) and texts for the checks of a hit (prefix `check:`, `check: MISMATCH` warnings) |
 | `optional_mods.py` | the optional third-party mods, or `None` when not installed: OpenWG Gameface (`gfModInject`), ModsList API (`modsListApi`) |
 
 Data, without UI (`data/`):
@@ -215,6 +215,12 @@ the screen closes. For the penetration chance it sets the chosen hit's shell as 
 (`setShellParamsFromVehicle`): the shot of the shooter's gun with the hit's shell kind, premium or not (the shooter is
 the other vehicle of a received hit, the player's vehicle of a dealt one, with its modules from the compact
 descriptor).
+
+The armor tooltip is the client's `ArmorTooltipWindow`, made, filled and loaded as the armor page does. Its page
+tells the client its size only from its first drawing (a `ResizeObserver` set up once) and draws nothing without armor
+layers, so the window must be filled with armor before `load()`: a window loaded empty, or filled when it has loaded,
+is laid out only after the client's 3 s "Size calculation timeout". The presenter makes a window only where the mouse
+ray meets armor (a collision with a material), fills it, then loads it.
 
 ## Logging
 

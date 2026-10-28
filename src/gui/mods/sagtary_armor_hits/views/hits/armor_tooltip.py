@@ -14,10 +14,10 @@ laid out only when the client gives up waiting for its size, 3 s later ("Size ca
 filled before it loads, and made only where the mouse ray meets armor (a collision with a material); it goes when
 the ray meets none, or the mouse is away from the scene for _AWAY seconds: the page tells the mouse left the scene
 for a frame now and then. The client's armor cursor is on while there is a window; the page's scene shows the
-client's grab cursor, which the armor cursor replaces. The armor page shows the tooltip only over the vehicle the
-client has focused (HangarSpace.onMouseEnter, onMouseExit), but the focus comes late and goes early at the vehicle's
-edges; this one shows it wherever the mouse ray meets the vehicle's armor. The shell and the overlay type are the
-overlay panel's (overlay_panel.py): the chosen hit's shell.
+client's grab cursor, which the armor cursor replaces. As on the armor page, the window is there only while the client
+has the mouse over the hangar vehicle (HangarSpace.onMouseEnter, onMouseExit), the vehicle selectable while the
+screen is open (lockVehicleSelectable). The shell and the overlay type are the overlay panel's (overlay_panel.py):
+the chosen hit's shell.
 """
 import logging
 
@@ -29,8 +29,6 @@ from helpers import dependency
 from skeletons.account_helpers.settings_core import ISettingsCore
 from skeletons.gui.shared.utils import IHangarSpace
 
-from gui.mods.sagtary_armor_hits.trace import calls, timed
-
 _logger = logging.getLogger('sagtary.armor_hits')
 
 # Seconds the mouse is away from the scene before the tooltip goes.
@@ -38,7 +36,8 @@ _AWAY = 0.15
 
 
 def _hasArmor(collisions):
-    # The mouse ray meets armor: a collision with a material, which the window shows as a layer.
+    # The mouse ray meets armor: a collision with a material, which the window shows as a layer. A window is made only
+    # then: without layers its page draws nothing and the client waits 3 s for its size.
     return bool(collisions) and any(collision.matInfo is not None for collision in collisions)
 
 
@@ -54,17 +53,26 @@ class ArmorTooltipPresenter(object):
         # The callback that destroys the window when the mouse has been away from the scene for _AWAY seconds; None
         # without it.
         self._awayID = None
-        # The vehicle entity the window was made for; BigWorld.time() it was made at, for the log of its loading.
+        # The vehicle entity the window was made for.
         self._entity = None
-        self._madeAt = 0.0
+        # The client has the mouse over the hangar vehicle.
+        self._isMouseOver = False
 
     def init(self):
         self._isOn = True
         g_mouseEventHandlers.add(self._onMouseEvent)
         self.__hangarSpace.onNotifyCursorOver3dScene += self._onCursorOverScene
         self.__hangarSpace.onVehicleChangeStarted += self._onVehicleChangeStarted
+        self.__hangarSpace.onMouseEnter += self._onMouseEnter
+        self.__hangarSpace.onMouseExit += self._onMouseExit
+        if self.__hangarSpace.space is not None:
+            self.__hangarSpace.lockVehicleSelectable(self)
 
     def fini(self):
+        if self.__hangarSpace.space is not None:
+            self.__hangarSpace.unlockVehicleSelectable(self)
+        self.__hangarSpace.onMouseExit -= self._onMouseExit
+        self.__hangarSpace.onMouseEnter -= self._onMouseEnter
         self.__hangarSpace.onVehicleChangeStarted -= self._onVehicleChangeStarted
         self.__hangarSpace.onNotifyCursorOver3dScene -= self._onCursorOverScene
         self._stop()
@@ -76,17 +84,27 @@ class ArmorTooltipPresenter(object):
         g_mouseEventHandlers.discard(self._onMouseEvent)
         self._cancelAway()
 
-    @timed('armor tooltip: mouse event')
     def _onMouseEvent(self, _):
         self._run(self._update)
         # Not handled: the other handlers get it too.
         return False
 
-    def _onCursorOverScene(self, isOver):
-        calls('armor tooltip: cursor over scene', '%s' % isOver)
+    def _onCursorOverScene(self, *args):
         self._run(self._update)
 
     def _onVehicleChangeStarted(self, *args):
+        self._run(self._destroy)
+
+    def _onMouseEnter(self, entity):
+        if entity != self.__hangarSpace.getVehicleEntity():
+            return
+        self._isMouseOver = True
+        self._run(self._update)
+
+    def _onMouseExit(self, entity):
+        if entity != self.__hangarSpace.getVehicleEntity():
+            return
+        self._isMouseOver = False
         self._run(self._destroy)
 
     def _onAway(self):
@@ -113,19 +131,18 @@ class ArmorTooltipPresenter(object):
         cursor = GUI.mcursor()
         return cursor.inWindow and cursor.inFocus and self.__hangarSpace.isCursorOver3DScene
 
-    @timed('armor tooltip: update')
     def _update(self):
         if not self._isOverScene():
             if self._tooltip is not None and self._awayID is None:
                 self._awayID = BigWorld.callback(_AWAY, self._onAway)
             return
         self._cancelAway()
-        entity = self.__hangarSpace.getVehicleEntity() if self.__hangarSpace.isModelLoaded else None
+        isOver = self._isMouseOver and self.__hangarSpace.isModelLoaded
+        entity = self.__hangarSpace.getVehicleEntity() if isOver else None
         collisions = None
         if entity is not None:
             from gui.impl.lobby.vehicle_hub.sub_presenters.armor.utils import getCollisionsAtCursor
-            with timed('armor tooltip: collisions at the mouse'):
-                collisions = getCollisionsAtCursor(entity)
+            collisions = getCollisionsAtCursor(entity)
         if not _hasArmor(collisions):
             self._destroy()
             return
@@ -134,19 +151,15 @@ class ArmorTooltipPresenter(object):
         if self._tooltip is None:
             self._make(entity, collisions)
             return
-        with timed('armor tooltip: window move and update'):
-            self._fill(collisions)
+        self._fill(collisions)
 
-    @timed('armor tooltip: make')
     def _make(self, entity, collisions):
-        # Filled before it loads: its page draws its first armor layers then (see the module's text).
+        # Filled with armor before load(), never after: a window loaded empty waits 3 s for its size (the client's
+        # "Size calculation timeout"; see the module's text).
         from gui.impl.lobby.vehicle_hub.sub_presenters.armor.armor_tooltip import ArmorTooltipWindow
-        calls('armor tooltip: create')
         self._tooltip = ArmorTooltipWindow(entity)
         self._entity = entity
-        self._madeAt = BigWorld.time()
         self._tooltip.onStatusChanged += self._onStatusChanged
-        self._tooltip.onReady += self._onWindowReady
         self._fill(collisions)
         self._tooltip.load()
         GUI.switchArmorInspectorCursor(True)
@@ -166,10 +179,6 @@ class ArmorTooltipPresenter(object):
         if status == WindowStatus.DESTROYED:
             self._destroy(isDestroyed=True)
 
-    def _onWindowReady(self):
-        _logger.info('armor tooltip: window ready at %.0f ms', (BigWorld.time() - self._madeAt) * 1000)
-
-    @timed('armor tooltip: destroy')
     def _destroy(self, isDestroyed=False):
         # isDestroyed: the window is gone already (the client destroyed it).
         self._cancelAway()
@@ -177,9 +186,7 @@ class ArmorTooltipPresenter(object):
         self._entity = None
         if tooltip is None:
             return
-        calls('armor tooltip: destroy', 'by the client' if isDestroyed else '')
         tooltip.onStatusChanged -= self._onStatusChanged
-        tooltip.onReady -= self._onWindowReady
         if not isDestroyed:
             tooltip.destroy()
         GUI.switchArmorInspectorCursor(False)
