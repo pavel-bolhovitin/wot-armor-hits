@@ -1509,14 +1509,12 @@ body {
     color: var(--color-general-secondary);
 }
 
-/* The frame: its left side is the first choice's border. */
+/* Each choice has its own frame; neighbors share a side, so the chosen one, on top, shows its whole frame in the
+   accent like the hit type chips. The gray is opaque: a shared side drawn twice stays the same. */
 .settingsMenu__choices {
     display: flex;
     flex-shrink: 0;
     margin-left: 10rem;
-    border-top: 1rem solid rgba(255, 255, 255, 0.2);
-    border-right: 1rem solid rgba(255, 255, 255, 0.2);
-    border-bottom: 1rem solid rgba(255, 255, 255, 0.2);
 }
 
 .settingsMenu__choice {
@@ -1524,8 +1522,12 @@ body {
     font-size: 12rem;
     line-height: 16rem;
     color: var(--color-general-tertiary);
-    border-left: 1rem solid rgba(255, 255, 255, 0.2);
+    border: 1rem solid #3e4041;
     cursor: pointer;
+}
+
+.settingsMenu__choice + .settingsMenu__choice {
+    margin-left: -1rem;
 }
 
 .settingsMenu__choice:hover {
@@ -1535,7 +1537,10 @@ body {
 
 .settingsMenu__choiceSelected,
 .settingsMenu__choiceSelected:hover {
-    color: var(--color-general-primary);
+    position: relative;
+    z-index: 1;
+    color: #f2c47e;
+    border-color: #e0a248;
     background-color: rgba(224, 162, 72, 0.25);
 }
 
