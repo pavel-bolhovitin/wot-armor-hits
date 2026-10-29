@@ -120,7 +120,7 @@ def _vehicleState(vehicle):
             state['turretMatrix'] = _plain(Math.Matrix(appearance.turretMatrix))
             state['gunMatrix'] = _plain(Math.Matrix(appearance.gunMatrix))
         except Exception:
-            _logger.debug('debug: no matrices for vehicle %s', vehicle.id, exc_info=True)
+            pass
     return state
 
 
@@ -227,7 +227,6 @@ class DebugRecorder(object):
                 self._arena.onVehicleAdded += self._onArenaVehicle
                 self._arena.onVehicleUpdated += self._onArenaVehicle
                 self._onArenaList()
-            _logger.info('debug: %s', self._path)
         except Exception:
             _logger.exception('debug: cannot start the record')
             self._stop()
@@ -243,7 +242,6 @@ class DebugRecorder(object):
         try:
             self._write({'event': 'end', 'time': time.time(), 'calls': self._count})
             self._file.close()
-            _logger.info('debug: %d calls in %s', self._count, self._path)
         except Exception:
             _logger.exception('debug: cannot close %s', self._path)
         self._file = None

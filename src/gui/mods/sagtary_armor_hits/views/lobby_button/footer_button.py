@@ -61,7 +61,6 @@ class FooterButton(object):
                 cls = getattr(importlib.import_module(path), name)
             except (ImportError, AttributeError):
                 # A mode that is not in this client.
-                _logger.debug('no footer %s.%s', path, name)
                 continue
             self._patch(cls)
 

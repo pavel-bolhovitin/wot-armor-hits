@@ -75,11 +75,6 @@ class HitPoint(Record):
         return effectCode(self.effect)
 
     @property
-    def hitTypeCode(self):
-        # The constants.VEHICLE_HIT_EFFECT code of the hit type, None when not known.
-        return effectCode(self.hitType)
-
-    @property
     def isOnVehiclePart(self):
         # On the chassis, hull, turret or gun, the parts the hangar vehicle's points are drawn on.
         return 0 <= self.tankPartIndex < _VEHICLE_PARTS

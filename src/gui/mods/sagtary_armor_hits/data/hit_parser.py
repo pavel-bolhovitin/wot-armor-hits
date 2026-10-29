@@ -17,7 +17,6 @@ and gives it here, so the same rules can make the hits from any source of the sa
   gravity, as floats) gives the shell's direction at the first point: the tracer whose way passes the point nearest,
   within _TRACER_MISS metres; none when there was no such tracer.
 """
-import logging
 import math
 
 import Math
@@ -26,8 +25,6 @@ from constants import SHELL_TYPES, SHELL_TYPES_LIST
 from items.vehicles import DEVICE_TANKMAN_NAMES_TO_VEHICLE_EXTRA_NAMES
 
 from gui.mods.sagtary_armor_hits.data.hits import DamagedDevice, Hit, HitPoint, VehiclePose, effectName
-
-_logger = logging.getLogger('sagtary.armor_hits')
 
 # Decimals of the hit point coordinates in metres: the server sends them to about 1 cm; of a direction's; of a caliber
 # in millimetres: the server sends it to 0.1 mm; of an angle in radians.
@@ -219,15 +216,8 @@ def shotDirection(tracers, attackerID, matrix, point):
     start, end = Math.Vector3(*point.start), Math.Vector3(*point.end)
     best = tracers.nearest(attackerID, matrix.applyPoint((start + end) * 0.5))
     if best is None or best[0] > _TRACER_MISS:
-        _logger.info('hits: no tracer of vehicle %s for its hit (nearest %s m)', attackerID,
-                     '%.2f' % best[0] if best is not None else None)
         return ()
     matrix.invert()
     direction = matrix.applyVector(best[1])
     direction.normalise()
-    way = end - start
-    if way.length > 1e-6:
-        way.normalise()
-        _logger.info('hits: tracer of vehicle %s: %.2f m from the hit point, %.2f degrees from the hit points\' '
-                     'way', attackerID, best[0], math.degrees(math.acos(max(-1.0, min(1.0, way.dot(direction))))))
     return tuple(round(value, _DIRECTION_DECIMALS) for value in (direction.x, direction.y, direction.z))

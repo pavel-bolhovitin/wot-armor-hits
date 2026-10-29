@@ -23,7 +23,6 @@ from skeletons.gui.shared.utils import IHangarSpace
 from gui.mods.sagtary_armor_hits.data.client_names import clientText
 from gui.mods.sagtary_armor_hits.views.hits.hits_panel import DEALT
 from gui.mods.sagtary_armor_hits.views.models.overlay_panel_model import OverlayItemModel
-from gui.mods.sagtary_armor_hits.trace import calls, modulesText
 
 _logger = logging.getLogger('sagtary.armor_hits')
 
@@ -51,7 +50,6 @@ def _vehicleDescriptor(vehicleId, descr):
         _, nationID, typeID = parseIntCompactDescr(vehicleId)
         return VehicleDescr(typeID=(nationID, typeID))
     except Exception:
-        _logger.debug('overlay panel: no descriptor of vehicle %s', vehicleId, exc_info=True)
         return None
 
 
@@ -71,21 +69,10 @@ def _hitShot(battle, side, hit):
         for turret in reversed(turrets):
             guns.extend(reversed(turret.guns))
     shots = [(gun, shot) for gun in guns for shot in gun.shots if shot.shell.kind == hit.shellType]
-    found = None
     for gun, shot in shots:
         if bool(shot.shell.isGold) == bool(hit.isGoldShell):
-            found = gun, shot
-            break
-    else:
-        found = shots[0] if shots else None
-    _logger.info('check: shell of the hit (%s%s) by %s: %s; %d shots of the kind: %s', hit.shellType,
-                 ' gold' if hit.isGoldShell else '', modulesText(descriptor),
-                 '%s of gun %s%s%s' % (found[1].shell.name, found[0].name,
-                                       '' if found[0].name == descriptor.gun.name else ' (NOT THE INSTALLED GUN)',
-                                       '' if bool(found[1].shell.isGold) == bool(hit.isGoldShell)
-                                       else ' (OTHER PREMIUM FLAG)') if found else 'NONE',
-                 len(shots), ', '.join('%s/%s' % (gun.name, shot.shell.name) for gun, shot in shots))
-    return found
+            return gun, shot
+    return shots[0] if shots else None
 
 
 class OverlayPanelPresenter(object):
@@ -139,7 +126,6 @@ class OverlayPanelPresenter(object):
 
     def _onSelect(self, args=None):
         overlayId = (args or {}).get('id')
-        calls('overlay panel: select', '%s, was %s' % (overlayId, self._selected))
         if overlayId in [item for item, _ in _OVERLAYS] and overlayId != self._selected:
             self._selected = overlayId
             self._model.setSelectedId(overlayId)
@@ -151,11 +137,9 @@ class OverlayPanelPresenter(object):
         self._showOverlay()
 
     def _onVehicleChangeStarted(self, *args):
-        calls('overlay panel: vehicle change started')
         self._removeOverlay()
 
     def _onVehicleChanged(self, *args):
-        calls('overlay panel: vehicle changed', 'overlay on %s' % (self._gameObject is not None))
         if self._gameObject is None:
             self._removeOverlay()
             self._showOverlay()
@@ -171,7 +155,6 @@ class OverlayPanelPresenter(object):
         entity = self._vehicleEntity()
         appearance = getattr(entity, 'appearance', None) if entity is not None else None
         gameObject = getattr(appearance, 'gameObject', None) if appearance is not None else None
-        calls('overlay panel: show', '%s, game object %s' % (self._selected, gameObject is not None))
         if self._selected == NO_OVERLAY or gameObject is None:
             return
         try:
@@ -181,7 +164,6 @@ class OverlayPanelPresenter(object):
                 component.showProbability = self._selected == PENETRATION
                 gameObject.assignComponent(component)
             self._gameObject = gameObject
-            _logger.info('overlay panel: %s overlay on vehicle %s', self._selected, entity.typeDescriptor.name)
         except Exception:
             _logger.exception('overlay panel: cannot show the overlay')
 
@@ -190,7 +172,6 @@ class OverlayPanelPresenter(object):
             BigWorld.cancelCallback(self._callbackID)
             self._callbackID = None
         gameObject, self._gameObject = self._gameObject, None
-        calls('overlay panel: remove', 'overlay on %s' % (gameObject is not None))
         if gameObject is None:
             return
         if self.__hangarSpace.spaceID is None:
@@ -202,12 +183,11 @@ class OverlayPanelPresenter(object):
                 gameObject.removeComponent(ArmorInspectorComponent)
         except Exception:
             # The hangar has already destroyed the vehicle's game object, and the overlay with it.
-            _logger.debug('overlay panel: cannot remove the overlay', exc_info=True)
+            pass
 
     def _setShell(self):
         # The penetration chance overlay and the armor tooltip count the chance of the chosen hit's shell.
         battle, side, hit = self._hitsPanel.selection
-        calls('overlay panel: set shell')
         self.gunShot = _hitShot(battle, side, hit)
         self.shellParams = None
         if self.gunShot is None:
@@ -216,6 +196,5 @@ class OverlayPanelPresenter(object):
         try:
             from gui.impl.lobby.vehicle_hub.sub_presenters.armor.penetration_utils import setShellParamsFromVehicle
             self.shellParams = setShellParamsFromVehicle(shot, self.__hangarSpace.spaceID)
-            _logger.info('overlay panel: penetration chance of shell %s', shot.shell.name)
         except Exception:
             _logger.exception('overlay panel: cannot set the shell')

@@ -31,7 +31,6 @@ def load():
     if not os.path.isfile(SETTINGS_PATH):
         try:
             _write(SETTINGS_PATH, settings)
-            _logger.info('settings: wrote the defaults to %s', SETTINGS_PATH)
         except (IOError, OSError):
             _logger.exception('settings: cannot write %s', SETTINGS_PATH)
         return settings
@@ -76,7 +75,6 @@ class ModSettings(object):
         self.values = dict(self.values, **{key: value})
         try:
             _write(SETTINGS_PATH, self.values)
-            _logger.info('settings: %s set to %r in %s', key, value, SETTINGS_PATH)
         except (IOError, OSError):
             _logger.exception('settings: cannot write %s', SETTINGS_PATH)
         self.onChanged(key)

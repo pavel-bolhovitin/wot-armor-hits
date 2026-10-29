@@ -19,8 +19,6 @@ from skeletons.gui.shared.utils import IHangarSpace
 
 from gui.mods.sagtary_armor_hits.data.client_names import shownVehicleDescr, shownVehicleId
 from gui.mods.sagtary_armor_hits.views.hits.hits_panel import DEALT
-from gui.mods.sagtary_armor_hits.views.hits.scene_log import sceneState
-from gui.mods.sagtary_armor_hits.trace import calls
 
 _logger = logging.getLogger('sagtary.armor_hits')
 
@@ -47,12 +45,6 @@ def hitsVehicle(battle, side, hit):
             return _NO_VEHICLE
         return _shownVehicle(hit.vehicleId, hit.vehicleDescriptor) or _NO_VEHICLE
     return _shownVehicle(battle.vehicleId, battle.vehicleDescriptor) or _NO_VEHICLE
-
-
-def _vehicleText(vehicle):
-    if isinstance(vehicle, tuple):
-        return '%s%s' % (vehicle[0], ' with modules' if vehicle[1] else '')
-    return str(vehicle)
 
 
 class HangarVehiclePresenter(object):
@@ -87,16 +79,11 @@ class HangarVehiclePresenter(object):
 
     def _update(self):
         vehicle = hitsVehicle(*self._hitsPanel.selection)
-        calls('hangar vehicle: update', _vehicleText(vehicle))
         if vehicle == self._vehicle:
-            _logger.info('scene: hangar vehicle stays (wanted %s)', _vehicleText(vehicle))
             return
         previous, self._vehicle = self._vehicle, vehicle
-        _logger.info('scene: hangar vehicle %s, was %s: %s', _vehicleText(vehicle), _vehicleText(previous),
-                     sceneState())
         try:
             if vehicle == _NO_VEHICLE:
-                _logger.info('scene: hangar vehicle: removeVehicle')
                 self.__hangarSpace.removeVehicle()
             else:
                 self._show(vehicle, previous)
@@ -117,14 +104,9 @@ class HangarVehiclePresenter(object):
             if previous == _NO_VEHICLE and self._lastShown == vehicle:
                 # Still the preview vehicle, its model removed for no hits: the client does not load the same
                 # vehicle again by itself.
-                _logger.info('scene: hangar vehicle: updatePreviewVehicle of the preview vehicle')
                 self.__hangarSpace.updatePreviewVehicle(g_currentPreviewVehicle.item, outfit, showWaitingBg=False)
                 return
             # The same vehicle with other modules: the client loads it again only after another selection.
-            _logger.info('scene: hangar vehicle: selectNoVehicle first, same vehicle with other modules')
             g_currentPreviewVehicle.selectNoVehicle()
         self._lastShown = vehicle
-        _logger.info('scene: hangar vehicle: selectVehicle %s, modules %s, in garage %s', vehicleId, bool(strCD),
-                     item.isInInventory)
         g_currentPreviewVehicle.selectVehicle(vehicleId, vehicleStrCD=strCD, outfit=outfit, showWaitingBg=False)
-        _logger.info('scene: hangar vehicle: selectVehicle done: %s', sceneState())

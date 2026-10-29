@@ -61,14 +61,12 @@ class HitsState(SFViewLobbyState, SubhangarStateGroupConfigProvider):
     def getSubhangarStateGroupConfig(self):
         armorGroup = selectItemByTankSize(_TANK_SIZE_LOWER_BOUNDS, _ARMOR_GROUPS_BY_TANK_SIZE,
                                           SubhangarStateGroups.VehicleHubArmorMediumTank)
-        _logger.info('hits screen: subhangar groups %s', armorGroup)
         # The camera goes to the armor camera at once, like the first move of the client's VehicleHubCameraMover;
         # a smooth move would fly it from the hangar up to the customization place.
         return SubhangarStateGroupConfig((SubhangarStateGroups.VehicleHub, armorGroup), CameraMover())
 
     def _onEntered(self, event):
         super(HitsState, self)._onEntered(event)
-        _logger.info('hits screen: opened')
         try:
             _moveVehicleToCustomizationPlace()
         except Exception:
@@ -82,5 +80,4 @@ class HitsState(SFViewLobbyState, SubhangarStateGroupConfigProvider):
                 self.__hangarSpace.space.turretAndGunAngles.reset()
         except Exception:
             _logger.exception('hits screen: cannot put the vehicle back')
-        _logger.info('hits screen: closed')
         super(HitsState, self)._onExited()

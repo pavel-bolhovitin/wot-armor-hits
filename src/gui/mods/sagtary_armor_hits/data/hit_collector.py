@@ -31,7 +31,6 @@ from vehicle_systems.tankStructure import TankPartIndexes, TankPartNames
 
 from gui.mods.sagtary_armor_hits.data import hit_parser
 from gui.mods.sagtary_armor_hits.data.hits import compactDescriptor, ownShellIsGold
-from gui.mods.sagtary_armor_hits.trace import hitText
 
 _logger = logging.getLogger('sagtary.armor_hits')
 
@@ -46,7 +45,6 @@ def _chassisPoint(vehicle, point):
         try:
             matrix = Math.Matrix(vehicle.matrix)
         except Exception:
-            _logger.debug('hits: no matrix of vehicle %s', vehicle.id, exc_info=True)
             return ()
     matrix.invert()
     return hit_parser.vector(matrix.applyPoint(Math.Vector3(point)))
@@ -65,7 +63,6 @@ def _partMatrix(vehicle, part):
         nodeName = TankPartNames.getActualNodeNameByPartName(TankPartIndexes.getName(part))
         return Math.Matrix(vehicle.appearance.compoundModel.node(nodeName))
     except Exception:
-        _logger.debug('hits: no node of part %s of vehicle %s', part, vehicle.id, exc_info=True)
         return None
 
 
@@ -108,7 +105,6 @@ def _ownShellIsGold(player, shellType):
         ammo = player.guiSessionProvider.shared.ammo
         isGold = ownShellIsGold(player.vehicleTypeDescriptor, shellType, ammo.getCurrentShellCD())
     except Exception:
-        _logger.debug('hits: no shell of the player', exc_info=True)
         isGold = None
     return bool(isGold)
 
@@ -153,7 +149,6 @@ class HitCollector(object):
         field, otherID = side
         # A shell on a destroyed vehicle does nothing: not a hit. The shell that destroys it comes while it is alive.
         if not vehicle.isAlive():
-            _logger.info('hits: %s of vehicle %s on a destroyed vehicle: skipped', field, otherID)
             return
         battle = self._store.getBattle(player.arenaUniqueID)
         if battle is None:
@@ -177,7 +172,6 @@ class HitCollector(object):
         hit = self._pairing.withPending(key, hit, now)
         hits = getattr(battle, field) + (hit,)
         self._pairing.noteHit(key, now, battle.battleId, len(hits) - 1)
-        _logger.info('hits: %s #%d of vehicle %s: %s', field, len(hits), otherID, hitText(hit))
         self._store.update(battle.replace(**{field: hits}))
 
     def _shotDirection(self, vehicle, attackerID, point):
@@ -208,7 +202,6 @@ class HitCollector(object):
         if vehicleID != getattr(avatar, 'playerVehicleID', None):
             return
         code = DAMAGE_INFO_CODES[damageIndex]
-        _logger.info('hits: damage info %s, extra %s, attacker %s', code, extraIndex, attackerID)
         if not hit_parser.isShotCode(code):
             return
         extra = avatar.vehicleTypeDescriptor.extras[extraIndex].name if extraIndex else ''
@@ -220,11 +213,9 @@ class HitCollector(object):
         last = self._pairing.lastHit(key, now)
         battle = self._store.getBattle(last[0]) if last is not None else None
         if battle is None:
-            _logger.info('hits: %s of vehicle %s waits for its hit: %s', key[0], key[1], info)
             self._pairing.keep(key, now, info)
             return
         field = key[0]
         hits, index = getattr(battle, field), last[1]
-        _logger.info('hits: %s #%d of vehicle %s gets %s', field, index + 1, key[1], info)
         hits = hits[:index] + (hit_parser.withInfo(hits[index], info),) + hits[index + 1:]
         self._store.update(battle.replace(**{field: hits}))

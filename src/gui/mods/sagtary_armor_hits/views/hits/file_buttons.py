@@ -15,7 +15,6 @@ from gui.shared.notifications import NotificationPriorityLevel
 
 from gui.mods.sagtary_armor_hits.data.battle_file import BattleFileError
 from gui.mods.sagtary_armor_hits.data.client_names import clientText
-from gui.mods.sagtary_armor_hits.trace import calls
 
 _logger = logging.getLogger('sagtary.armor_hits')
 
@@ -66,7 +65,6 @@ class FileButtonsPresenter(object):
         return self._hitsPanel.selection[0]
 
     def _update(self, *args):
-        calls('file buttons: update')
         with self._model.transaction() as model:
             model.setCanSave(self._chosenBattle() is not None)
             model.setCanDelete(bool(self._store.getBattles()))

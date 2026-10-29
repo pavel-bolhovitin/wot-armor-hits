@@ -60,8 +60,6 @@ from vehicle_systems.tankStructure import TankPartIndexes, TankPartNames
 from gui.mods.sagtary_armor_hits.views.hits.hangar_vehicle import hitsVehicle
 from gui.mods.sagtary_armor_hits.views.hits.hit_way import drawWay
 from gui.mods.sagtary_armor_hits.views.hits.scene_lines import SceneLines
-from gui.mods.sagtary_armor_hits.views.hits.scene_log import sceneState
-from gui.mods.sagtary_armor_hits.trace import calls, effectsText, modulesText
 
 _logger = logging.getLogger('sagtary.armor_hits')
 
@@ -83,10 +81,6 @@ _RICOCHETS = (VEHICLE_HIT_EFFECT.INTERMEDIATE_RICOCHET, VEHICLE_HIT_EFFECT.FINAL
 _GOES_ON = _RICOCHETS + (VEHICLE_HIT_EFFECT.ARMOR_PIERCED_NO_DAMAGE,)
 
 
-def _text(vector):
-    return '(%.2f, %.2f, %.2f)' % (vector.x, vector.y, vector.z)
-
-
 def _unit(vector):
     vector = Math.Vector3(vector)
     vector.normalise()
@@ -99,7 +93,6 @@ def _partNode(compoundModel, part):
     try:
         return Math.Matrix(compoundModel.node(nodeName))
     except Exception:
-        _logger.debug('hit lines: no node %s', nodeName)
         return None
 
 
@@ -112,7 +105,6 @@ def _armorNormal(collisions, point):
     try:
         distance, _, normal, _ = collisions.collideLocal(point.tankPartIndex, start, end)
     except Exception:
-        _logger.debug('hit lines: no collision of part %s', point.tankPartIndex, exc_info=True)
         return None
     if distance < 0.0 or distance > (end - start).length + 0.01 or not 0.5 < Math.Vector3(normal).length < 1.5:
         return None
@@ -135,22 +127,6 @@ def _setPose(entity, pose):
         rotator.start(pose.turretYaw, 0.0)
     if gun.staticPitch is None:
         appearance.rotateGunForAngle(pose.gunPitch)
-
-
-def _poseText(compoundModel):
-    # The turret's yaw on the hull and the gun's pitch on the turret as the parts' nodes have them.
-    nodes = [_partNode(compoundModel, part) for part in (TankPartIndexes.HULL, TankPartIndexes.TURRET,
-                                                           TankPartIndexes.GUN)]
-    if None in nodes:
-        return 'no nodes'
-    hull, turret, gun = nodes
-    hull.invert()
-    turret.postMultiply(hull)
-    turretOnHull = Math.Matrix(turret)
-    turret.invert()
-    gun.postMultiply(hull)
-    gun.postMultiply(turret)
-    return 'turret %.4f, gun %.4f' % (turretOnHull.yaw, gun.pitch)
 
 
 def _drawn(hit):
@@ -251,25 +227,6 @@ def _hitWay(hit, compoundModel, normals):
     return way
 
 
-def _checkPoints(hit, collisions):
-    # The log of where the hangar vehicle's armor is on the way of each of the hit's points: a point without armor on
-    # its way is on other modules or another vehicle than the hangar's.
-    for index, point in enumerate(hit.vehiclePoints):
-        start, end = Math.Vector3(*point.start), Math.Vector3(*point.end)
-        text = 'no collision model'
-        if collisions is not None:
-            try:
-                found = collisions.collideLocal(point.tankPartIndex, start, end)
-            except Exception:
-                found = None
-            if found is None or found[0] < 0.0:
-                text = 'NO ARMOR on the way (other modules or another vehicle?)'
-            else:
-                text = 'armor at %.3f m of the %.3f m way' % (found[0], (end - start).length)
-        _logger.info('check: hit lines: point %d, part %s, %s: %s', index, point.tankPartIndex,
-                     effectsText((point.effectCode,)), text)
-
-
 class HitLinesPresenter(object):
     __hangarSpace = dependency.descriptor(IHangarSpace)
 
@@ -323,46 +280,34 @@ class HitLinesPresenter(object):
             others = tuple(other for number, other in self._hitsPanel.shownHits if number != selected and _drawn(other))
         chosen = hit if hit is not None and _drawn(hit) else None
         target = (vehicle, chosen, others) if isinstance(vehicle, tuple) and (chosen or others) else None
-        calls('hit lines: update')
-        _logger.info('scene: hit lines: selection battle %s, side %s, hit at %s with %d points, %d other hits, '
-                     'vehicle %s; %s', battle.battleId if battle is not None else None, side,
-                     hit.time if hit is not None else None, len(hit.vehiclePoints) if hit is not None else 0,
-                     len(others),
-                     vehicle[0] if isinstance(vehicle, tuple) else vehicle,
-                     'same target' if target == self._target else 'new target')
         if target == self._target:
             return
         self._target = target
         self._clear()
         if target is not None:
-            self._draw('hits chosen')
+            self._draw()
         else:
             self._resetPose()
 
     def _onScenePanelChanged(self):
-        calls('hit lines: scene panel changed')
         if not self._scenePanel.shooterView and self._cameraMoved:
             self._resetCamera()
         self._target = None
         self._update()
 
     def _onResetCamera(self):
-        calls('hit lines: reset camera', 'shooter view %s, line %s' % (self._scenePanel.shooterView,
-                                                                     self.chosenShot is not None))
         if self._scenePanel.shooterView and self.chosenShot is not None:
             self._moveCamera(*self.chosenShot)
         else:
             self._resetCamera()
 
     def _onVehicleChangeStarted(self, *args):
-        calls('hit lines: vehicle change started')
         self._clear()
 
     def _onVehicleChanged(self, *args):
-        calls('hit lines: vehicle changed', 'target %s' % (self._target is not None))
         if self._target is not None:
             self._clear()
-            self._draw('vehicle loaded')
+            self._draw()
 
     def _hangarModel(self):
         # (compound model, collisions) of the hangar vehicle when it is the vehicle of the hits and has loaded.
@@ -378,14 +323,12 @@ class HitLinesPresenter(object):
             return None
         return compoundModel, getattr(appearance, 'collisions', None)
 
-    def _draw(self, reason):
-        calls('hit lines: draw', reason)
+    def _draw(self):
         hangarModel = self._hangarModel()
         if hangarModel is None:
-            _logger.info('scene: hit lines: %s, not the vehicle of the hits yet: %s', reason, sceneState())
             return
         try:
-            self._drawOn(reason, *hangarModel)
+            self._drawOn(*hangarModel)
         except Exception:
             _logger.exception('hit lines: cannot draw')
 
@@ -398,7 +341,7 @@ class HitLinesPresenter(object):
         except Exception:
             _logger.exception('hit lines: cannot reset the vehicle pose')
 
-    def _drawOn(self, reason, compoundModel, collisions):
+    def _drawOn(self, compoundModel, collisions):
         _, chosen, others = self._target
         pose = chosen.vehiclePose if chosen is not None else None
         _setPose(self.__hangarSpace.getVehicleEntity(), pose)
@@ -408,22 +351,8 @@ class HitLinesPresenter(object):
         if waitsNormal and self._normalTries < _NORMAL_TRIES:
             self._normalTries += 1
             self._callbackID = BigWorld.callback(_NORMAL_RETRY, self._onNormalRetry)
-        if chosen is not None:
-            if chosen.splashCenter and not chosen.vehiclePoints:
-                _logger.info('check: hit lines: splash at %s of the chassis', chosen.splashCenter)
-            entity = self.__hangarSpace.getVehicleEntity()
-            _logger.info('check: hit lines: drawn on %s', modulesText(getattr(entity, 'typeDescriptor', None)))
-            _checkPoints(chosen, collisions)
-            _logger.info('check: hit lines: pose of the hit: %s; of the hangar vehicle: %s',
-                         'turret %.4f, gun %.4f' % (pose.turretYaw, pose.gunPitch) if pose is not None else None,
-                         _poseText(compoundModel))
         if not self._told:
-            calls('hit lines: onDrawn', 'drawn, %d listeners' % len(self.onDrawn))
             self.onDrawn()
-        first = self.chosenShot
-        _logger.info('scene: hit lines: %s: %d shapes, %d other hits, chosen hit at %s, direction %s',
-                     reason, len(self._lines), len(others),
-                     _text(first[0]) if first else None, _text(first[1]) if first else None)
 
     def _putWays(self, lines, chosen, others, compoundModel, normals):
         # The hits' ways into the lines by the parts' nodes as they are now (on every frame); when the chosen hit's
@@ -436,21 +365,16 @@ class HitLinesPresenter(object):
         drawWay(lines, way, True)
         if not _shotMoved(self.chosenShot, way.first):
             return
-        if self.chosenShot is not None:
-            _logger.info('scene: hit lines: the chosen hit moved with the vehicle\'s parts to %s',
-                         _text(way.first[0]) if way.first else None)
         self.chosenShot = way.first
         self._told = True
         if way.first is not None and self._scenePanel.shooterView:
             self._moveCamera(*way.first)
-        calls('hit lines: onDrawn', 'drawn, %d listeners' % len(self.onDrawn))
         self.onDrawn()
 
     def _onNormalRetry(self):
         self._callbackID = None
-        _logger.info('scene: hit lines: again for the ricochet normal (%d)', self._normalTries)
         self._lines.clear()
-        self._draw('ricochet normal')
+        self._draw()
 
     def _cameraSystem(self):
         # The hangar camera, None when the hangar space is gone (the client closes it before the screen on exit).
@@ -479,8 +403,6 @@ class HitLinesPresenter(object):
             self._callbackID = None
         self._normalTries = 0
         self._lines.clear()
-        calls('hit lines: clear', 'chosen line %s' % (self.chosenShot is not None))
         if self.chosenShot is not None:
             self.chosenShot = None
-            calls('hit lines: onDrawn', 'cleared, %d listeners' % len(self.onDrawn))
             self.onDrawn()

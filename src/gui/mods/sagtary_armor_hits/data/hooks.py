@@ -13,8 +13,6 @@ wrapper of another mod (def wrapper(*args, **kwargs)) whose names cannot be read
 import inspect
 import logging
 
-from gui.mods.sagtary_armor_hits.trace import calls
-
 _logger = logging.getLogger('sagtary.armor_hits')
 
 # Argument names of the client 2.4.1 methods.
@@ -105,7 +103,6 @@ class ClientHooks(object):
         hooks = self
 
         def wrapper(entity, *args, **kwargs):
-            calls('hooks: %s' % name, quiet=True)
             call = Call(cls, name, entity, args, kwargs, hooks._argNames.get(key, ()))
             for listener in list(hooks._listeners.get(key, ())):
                 try:

@@ -15,7 +15,6 @@ from Event import Event
 
 from gui.mods.sagtary_armor_hits.data.client_names import clientText
 from gui.mods.sagtary_armor_hits.views.hits.hits_panel import DEALT
-from gui.mods.sagtary_armor_hits.trace import calls
 
 _CAMERA_KEY = '#settings:keyboard/keysBlocks/group/camera'
 _RESET_KEY = '#settings:colorSettings/view/resetBtn'
@@ -83,8 +82,6 @@ class ScenePanelPresenter(object):
         self.onResetCamera()
 
     def _update(self, *args):
-        calls('scene panel: update', 'all lines %s, enabled %s, shooter view %s' % (
-            self.allLines, self.canShowAllLines, self.shooterView))
         with self._model.transaction() as model:
             model.setAllLines(self.showsAllLines)
             model.setAllLinesEnabled(self.canShowAllLines)

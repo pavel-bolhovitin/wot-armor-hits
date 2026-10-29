@@ -24,10 +24,8 @@ class LobbyButton(object):
         api = modsListApi() if inModsMenu else None
         if api is not None:
             self._button = ModsListEntry(api, self._click)
-            _logger.info('lobby button: ModsList API entry')
         elif gfModInject() is not None:
             self._button = FooterButton(self._click)
-            _logger.info('lobby button: hangar footer')
         else:
             _logger.warning('no lobby button: it needs OpenWG Gameface (or ModsList API with showButtonInModsMenu on)')
             return

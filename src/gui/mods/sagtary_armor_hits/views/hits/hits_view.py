@@ -25,7 +25,6 @@ from gui.impl.pub.view_component import ViewComponent
 from gui.shared import EVENT_BUS_SCOPE, events, g_eventBus
 
 from gui.mods.sagtary_armor_hits.lang import text
-from gui.mods.sagtary_armor_hits.trace import summary
 from gui.mods.sagtary_armor_hits.views.hits.armor_tooltip import ArmorTooltipPresenter
 from gui.mods.sagtary_armor_hits.views.hits.battle_selector import BattleSelectorPresenter
 from gui.mods.sagtary_armor_hits.views.hits.file_buttons import FileButtonsPresenter
@@ -37,7 +36,6 @@ from gui.mods.sagtary_armor_hits.views.hits.overlay_panel import OverlayPanelPre
 from gui.mods.sagtary_armor_hits.views.hits.scene_panel import ScenePanelPresenter
 from gui.mods.sagtary_armor_hits.views.hits.settings_menu import SettingsMenuPresenter
 from gui.mods.sagtary_armor_hits.views.hits.shot_panel import ShotPanelPresenter
-from gui.mods.sagtary_armor_hits.views.hits.scene_log import SceneLog
 from gui.mods.sagtary_armor_hits.views.models.hits_view_model import HitsViewModel
 
 # Alias of the Scaleform view setting of the screen.
@@ -81,10 +79,7 @@ class HitsView(ViewComponent):
 
     def _onLoading(self, *args, **kwargs):
         super(HitsView, self)._onLoading(*args, **kwargs)
-        summary('before the screen')
         model = self.getViewModel()
-        # The scene's log first: it logs the client's events while the others set the scene up.
-        self._presenters.append(SceneLog())
         battleSelector = BattleSelectorPresenter(model.battleSelector, self._battleStore, {
             'empty': text('battles/empty')})
         self._presenters.append(battleSelector)
@@ -126,7 +121,6 @@ class HitsView(ViewComponent):
             presenter.fini()
         self._presenters = []
         self._shotPanel = None
-        summary('while the screen was open')
         self._battleStore = None
         self._battleFiles = None
         self._settings = None

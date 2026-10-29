@@ -34,7 +34,6 @@ Core:
 | `config.py`        | ids, resource paths, texts, limits, the battle files folder `BATTLE_FILES_DIR` |
 | `lang.py`          | texts in the client language                                                 |
 | `settings.py`      | user settings from `mods/configs/sagtary_armor_hits/config.json`; `ModSettings` keeps them for the mod and writes the file when the settings menu changes one |
-| `trace.py`         | log of the calls (prefix `calls:`, counts on screen open and close) and texts for the checks of a hit (prefix `check:`, `check: MISMATCH` warnings) |
 | `optional_mods.py` | the optional third-party mods, or `None` when not installed: OpenWG Gameface (`gfModInject`), ModsList API (`modsListApi`) |
 
 Data, without UI (`data/`):
@@ -68,7 +67,6 @@ UI (`views/`), a package per screen or button. The view models, the data the Gam
 | `views/hits/hit_lines.py`                 | presenter of the hit lines: the chosen hit's way (`Way`: lead, pieces on, ricochet's way out, splash) in the 3D scene over the hangar vehicle, turned to the hit's pose (turret yaw, gun pitch) first |
 | `views/hits/hit_way.py`                   | the look of a hit's way: a solid white line to the first point, white dashes after a ricochet or spaced armor, at the line's start a white dot and rings as a cone back towards the shooter |
 | `views/hits/scene_lines.py`               | shapes in the 3D scene drawn every frame with the client's debug drawer (`DebugDrawer`), over the armor overlay: tubes, dashed tubes (with gaps), spheres, rings; shapes that follow the vehicle's parts are put again before every frame (`follow`) |
-| `views/hits/scene_log.py`                 | log of the scene (prefix `scene:`): the client's hangar vehicle events with the vehicle's state |
 | `views/hits/overlay_panel.py`             | presenter of the overlay panel: the armor page's three overlay types (client texts) and the client's armor overlay on the hangar vehicle |
 | `views/hits/shot_panel.py`                | presenter of the shot panel: the chosen hit's shooter and target cards (vehicle; icons of the shooter's gun and shell, the target's turret and gun, with the client's module and shell tooltips), result, and sections (damage, penetration, armor and angle counted in the garage, distance, modules and crew: on a hit on the player's vehicle the battle damage panel's icons copied into `gui/maps/sagtary_armor_hits/modules/`, a tile per module kind and crew role that shot damaged, in rows of four, the crew under them, with the client's names of the damaged parts and crew members under the icon in their state's color) |
 | `views/hits/armor_tooltip.py`             | presenter of the armor tooltip: the client's armor page tooltip (`ArmorTooltipWindow`) for the armor under the mouse, with the chosen hit's shell |
@@ -224,5 +222,7 @@ ray meets armor (a collision with a material), fills it, then loads it.
 
 ## Logging
 
-All modules log to the `sagtary.armor_hits` logger. The lines go to `game.log` in the game folder, for example
-`[INFO] [Main] [SCRIPT] [sagtary.armor_hits] init v0.1.0`.
+All modules log to the `sagtary.armor_hits` logger. The lines go to `game.log` in the game folder. The mod logs one
+line when it starts, `[INFO] [Main] [SCRIPT] [sagtary.armor_hits] init v1.2.0` (`, debug on` with the `debug`
+setting), and then only what fails: warnings and errors with their tracebacks. The `debug` setting turns on the debug
+record only (`data/debug_recorder.py`): raw server calls in files, nothing more in the log.

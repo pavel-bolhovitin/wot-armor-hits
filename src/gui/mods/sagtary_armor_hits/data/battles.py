@@ -21,7 +21,6 @@ from PlayerEvents import g_playerEvents
 from gui.mods.sagtary_armor_hits.config import BATTLES_LIMIT
 from gui.mods.sagtary_armor_hits.data.hits import Hit, compactDescriptor, vehicleTypeId
 from gui.mods.sagtary_armor_hits.data.record import Record
-from gui.mods.sagtary_armor_hits.trace import calls
 
 _logger = logging.getLogger('sagtary.armor_hits')
 
@@ -121,7 +120,6 @@ class BattleStore(object):
         self._battles = [item for item in self._battles if item.battleId != battle.battleId]
         self._battles.insert(0, battle)
         del self._battles[self._limit:]
-        calls('store: changed', 'add battle %s, %d listeners' % (battle.battleId, len(self.onChanged)))
         self.onChanged()
 
     def update(self, battle):
@@ -129,7 +127,6 @@ class BattleStore(object):
         for index, item in enumerate(self._battles):
             if item.battleId == battle.battleId:
                 self._battles[index] = battle
-                calls('store: changed', 'update battle %s, %d listeners' % (battle.battleId, len(self.onChanged)))
                 self.onChanged()
                 return True
         return False
@@ -140,12 +137,10 @@ class BattleStore(object):
         ids = set(battle.battleId for battle in battles)
         merged = list(battles) + [item for item in self._battles if item.battleId not in ids]
         self._battles = sorted(merged, key=lambda battle: battle.startedAt, reverse=True)[:self._limit]
-        calls('store: changed', 'add %d battles, %d listeners' % (len(battles), len(self.onChanged)))
         self.onChanged()
 
     def clear(self):
         self._battles = []
-        calls('store: changed', 'clear, %d listeners' % len(self.onChanged))
         self.onChanged()
 
 
@@ -176,11 +171,9 @@ class BattleCollector(object):
             _logger.exception('battles: cannot read the battle')
             return
         if self._isKept is not None and not self._isKept(battle):
-            _logger.info('battles: %s not kept (battle type %s)', battle.battleId, battle.battleType)
             return
         self._battleId = battle.battleId
         self._store.add(battle)
-        _logger.info('battles: %s, map %s, vehicle %s', battle.battleId, battle.mapId, battle.vehicleId)
 
     def _onRoundFinished(self, winnerTeam, reason, *args):
         battle = self._store.getBattle(self._battleId) if self._battleId is not None else None
@@ -188,8 +181,6 @@ class BattleCollector(object):
             return
         battle = battle.replace(winnerTeam=winnerTeam, endReason=reason)
         self._store.update(battle)
-        _logger.info('battles: %s finished, %s (winner team %s, reason %s)', battle.battleId, battle.result,
-                     winnerTeam, reason)
 
     def _onAvatarBecomeNonPlayer(self, *args):
         battle = self._store.getBattle(self._battleId) if self._battleId is not None else None

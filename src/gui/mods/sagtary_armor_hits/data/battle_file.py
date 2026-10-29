@@ -18,15 +18,11 @@ same.
 import glob
 import io
 import json
-import logging
 import os
 import time
 from collections import OrderedDict
 
 from gui.mods.sagtary_armor_hits.data.battles import Battle
-from gui.mods.sagtary_armor_hits.trace import mainLogger
-
-_logger = logging.getLogger('sagtary.armor_hits')
 
 FORMAT_VERSION = 1
 # The file of a battle by its id, and the names of the files loaded.
@@ -73,7 +69,6 @@ def writeBattles(path, battles, appVersion):
             f.write(content)
     except (IOError, OSError, TypeError, ValueError) as error:
         raise BattleFileError('cannot write %s: %s' % (path, error))
-    mainLogger.info('battle file: %d battles written to %s', len(battles), path)
 
 
 def readBattles(path):
@@ -92,7 +87,6 @@ def readBattles(path):
         raise BattleFileError('%s has format version %r, this mod reads up to %d' % (
             path, formatVersion, FORMAT_VERSION))
     battles = [Battle.fromDict(item) for item in data['battles'] if isinstance(item, dict)]
-    _logger.info('battle file: %d battles read from %s (app version %s)', len(battles), path, data.get('appVersion'))
     return battles
 
 
@@ -126,8 +120,6 @@ class BattleFiles(object):
                 battles.extend(readBattles(path))
             except BattleFileError as error:
                 errors.append((path, error))
-        mainLogger.info('battle file: %d battles read from %d of %d files in %s', len(battles),
-                        len(paths) - len(errors), len(paths), self._folder)
         return battles, errors
 
     def deleteAll(self):
@@ -139,6 +131,4 @@ class BattleFiles(object):
                 os.remove(path)
             except OSError as error:
                 errors.append(BattleFileError('cannot delete %s: %s' % (path, error)))
-        mainLogger.info('battle file: %d of %d files deleted in %s', len(paths) - len(errors), len(paths),
-                        self._folder)
         return errors

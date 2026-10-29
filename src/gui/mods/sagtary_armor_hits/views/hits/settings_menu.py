@@ -11,7 +11,6 @@ client's text, the labels the mod's: the client has none for the hits both on al
 """
 from gui.mods.sagtary_armor_hits.data import battle_modes
 from gui.mods.sagtary_armor_hits.data.client_names import clientText
-from gui.mods.sagtary_armor_hits.trace import calls
 from gui.mods.sagtary_armor_hits.views.models.settings_menu_model import BattleModeModel, SettingItemModel
 
 _TITLE_KEY = '#settings:title'
@@ -59,7 +58,6 @@ class SettingsMenuPresenter(object):
             self._settings.set('battleModes', dict(self._settings.values['battleModes'], **{str(group): str(saving)}))
 
     def _update(self, *args):
-        calls('settings menu: update', ', '.join('%s %s' % (key, self._settings.values[key]) for key, _, _ in _ITEMS))
         with self._model.transaction() as model:
             items = model.getItems()
             items.clear()

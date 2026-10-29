@@ -5,13 +5,9 @@ client, in the client language.
 A Battle keeps only the ids (vehicleId, mapId), so a battle read from a file is shown in the current client language.
 None when the client does not have the vehicle or the map (removed in an update).
 """
-import logging
-
 import ArenaType
 from helpers import i18n
 from items import vehicles
-
-_logger = logging.getLogger('sagtary.armor_hits')
 
 
 # The maps training dummies ('ussr:R72_T150_MapsTraining_Dummy_HT_2') are named by their class only ("Heavy Tank");
@@ -27,7 +23,7 @@ def _shownVehicleType(vehicleId):
             nationID, typeID = vehicles.g_list.getIDsByName(copiedName(vehicleType.name))
             vehicleType = vehicles.g_cache.vehicle(nationID, typeID)
         except Exception:
-            _logger.debug('client names: no vehicle copied by %s', vehicleType.name)
+            pass
     return vehicleType
 
 
@@ -38,7 +34,6 @@ def vehicleShortName(vehicleId):
     try:
         return _shownVehicleType(vehicleId).shortUserString
     except Exception:
-        _logger.debug('client names: no vehicle %s', vehicleId)
         return None
 
 
@@ -50,7 +45,6 @@ def shownVehicleId(vehicleId):
     try:
         return _shownVehicleType(vehicleId).compactDescr
     except Exception:
-        _logger.debug('client names: no vehicle %s', vehicleId)
         return None
 
 
@@ -74,7 +68,6 @@ def shownVehicleDescr(vehicleId, descr):
         copy = vehicles.VehicleDescr(compactDescr=descr)
         shown = vehicles.VehicleDescr(typeID=shownType.id)
     except Exception:
-        _logger.debug('client names: no descriptor of vehicle %s', vehicleId, exc_info=True)
         return None
     for module, choices in ((copy.chassis, shownType.chassis), (copy.engine, shownType.engines),
                             (copy.fuelTank, shownType.fuelTanks), (copy.radio, shownType.radios)):
@@ -83,7 +76,7 @@ def shownVehicleDescr(vehicleId, descr):
                 try:
                     shown.installComponent(choice.compactDescr)
                 except Exception:
-                    _logger.debug('client names: cannot install %s', choice.name, exc_info=True)
+                    pass
     for turret in shownType.turrets[0]:
         if turret.name != copiedName(copy.turret.name):
             continue
@@ -92,7 +85,7 @@ def shownVehicleDescr(vehicleId, descr):
                 try:
                     shown.installTurret(turret.compactDescr, gun.compactDescr)
                 except Exception:
-                    _logger.debug('client names: cannot install %s', turret.name, exc_info=True)
+                    pass
     return shown.makeCompactDescr()
 
 
@@ -104,7 +97,6 @@ def mapNames(mapId):
         geometry = ArenaType.g_geometryCache[mapId]
         return i18n.makeString(geometry.name), geometry.geometryName
     except Exception:
-        _logger.debug('client names: no map %s', mapId)
         return None
 
 
@@ -115,7 +107,6 @@ def vehicleClass(vehicleId):
     try:
         return vehicles.getVehicleClass(vehicleId)
     except Exception:
-        _logger.debug('client names: no vehicle %s', vehicleId)
         return None
 
 

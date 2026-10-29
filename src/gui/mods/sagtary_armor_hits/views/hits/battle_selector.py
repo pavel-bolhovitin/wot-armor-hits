@@ -18,7 +18,6 @@ from helpers import i18n
 
 from gui.mods.sagtary_armor_hits.data.battles import BattleResult
 from gui.mods.sagtary_armor_hits.data.client_names import mapNames, vehicleShortName
-from gui.mods.sagtary_armor_hits.trace import calls
 from gui.mods.sagtary_armor_hits.views.models.battle_selector_model import BattleItemModel
 
 _logger = logging.getLogger('sagtary.armor_hits')
@@ -114,8 +113,6 @@ class BattleSelectorPresenter(object):
                 items.addViewModel(item)
             items.invalidate()
             model.setSelectedId(str(self._selectedID) if self._selectedID is not None else '')
-        calls('battle selector: update', '%d battles, selected %s, was %s' % (len(battles), self._selectedID,
-                                                                             previous))
         if self._selectedID != previous:
             self.onBattleSelected(self.selectedBattle)
 
@@ -123,7 +120,6 @@ class BattleSelectorPresenter(object):
         battleId = (args or {}).get('id')
         for battle in self._store.getBattles():
             if str(battle.battleId) == battleId:
-                _logger.info('battle selector: %s', battle.battleId)
                 self.select(battle.battleId)
                 return
         _logger.warning('battle selector: unknown battle %r', battleId)

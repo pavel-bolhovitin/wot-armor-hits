@@ -7,9 +7,8 @@ DEFAULT_SETTINGS = {
     # Put the lobby button into the ModsList API mods list when ModsList API is installed;
     # false: always the button of its own in the hangar footer.
     'showButtonInModsMenu': True,
-    # Write the debug record of every battle (every server call about shots, one JSON Lines file per battle in
-    # RECORDS_DIR) and the mod's info lines into the client's log (calls, checks, the hits of a battle); without it the
-    # log has the mod's start, its battle files, its warnings and errors only.
+    # Write the debug record of every battle: every server call about shots, one JSON Lines file per battle in
+    # RECORDS_DIR.
     'debug': False,
     # Show the hits on allies (and of allies on the player) in the hits list; they do no damage.
     'showFriendlyFire': False,

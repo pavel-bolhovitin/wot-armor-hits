@@ -36,7 +36,6 @@ class HangarScenePresenter(object):
     def init(self):
         spaceID = self.__hangarSpace.spaceID
         if spaceID is None:
-            _logger.info('hangar scene: no space')
             return
         self._cameraSystem = CGF.getSystem(spaceID, HangarCameraSystem)
         if self._cameraSystem is not None:
@@ -72,7 +71,5 @@ class HangarScenePresenter(object):
                 camera.enableCollisions(collisions)
             if params is not None and pitch is not None:
                 params.pitchConstraints = Math.Vector2(pitch)
-            _logger.info('hangar scene: camera collisions %s, pitch limits %s', collisions,
-                         tuple(params.pitchConstraints) if params is not None else None)
         except Exception:
             _logger.exception('hangar scene: cannot set the camera')

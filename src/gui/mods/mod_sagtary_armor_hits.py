@@ -16,17 +16,17 @@ from gui.mods.sagtary_armor_hits.data.debug_recorder import DebugRecorder
 from gui.mods.sagtary_armor_hits.data.hit_collector import HitCollector
 from gui.mods.sagtary_armor_hits.data.hooks import ClientHooks
 from gui.mods.sagtary_armor_hits.views.hits.hits_screen import HitsScreen
-from gui.mods.sagtary_armor_hits.trace import mainLogger, setVerbose
 from gui.mods.sagtary_armor_hits.views.lobby_button.lobby_button import LobbyButton
 
 __version__ = '1.2.0'
 
+# The mod logs failures only, and one line when it starts: its version, whatever level the client gives the loggers.
 _logger = logging.getLogger('sagtary.armor_hits')
+_logger.setLevel(logging.INFO)
 
 
 def _openViewer():
     # The mod's own hits screen; only the layout of its panels for now.
-    _logger.info('lobby button clicked')
     _hitsScreen.open()
 
 
@@ -60,10 +60,8 @@ _isImported = False
 
 
 def _onSettingChanged(key):
-    # The debug record and the info lines of the log start and stop with their setting; the lobby button's place
-    # changes with the next client start.
+    # The debug record starts and stops with its setting; the lobby button's place changes with the next client start.
     if key == 'debug':
-        setVerbose(_settings.values['debug'])
         if _settings.values['debug']:
             _debugRecorder.install()
         else:
@@ -90,8 +88,7 @@ def _onAccountShowGUI(*args):
     _isImported = True
     try:
         battles, errors = _battleFiles.loadAll()
-    except BattleFileError as error:
-        _logger.info('import: %s', error)
+    except BattleFileError:
         return
     for _, error in errors:
         _logger.warning('import: %s', error)
@@ -102,7 +99,6 @@ def _onAccountShowGUI(*args):
 def init():
     # Called by gui.mods after all mods are imported.
     values = _settings.load()
-    setVerbose(values['debug'])
     _settings.onChanged += _onSettingChanged
     if values['debug']:
         _debugRecorder.install()
@@ -112,7 +108,7 @@ def init():
     _hitCollector.install()
     _hitsScreen.install()
     _button.add(values['showButtonInModsMenu'])
-    mainLogger.info('init v%s%s', __version__, ', debug on' if values['debug'] else '')
+    _logger.info('init v%s%s', __version__, ', debug on' if values['debug'] else '')
 
 
 def fini():

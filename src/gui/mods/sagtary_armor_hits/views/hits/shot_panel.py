@@ -27,10 +27,6 @@ vehicle's collision model, which comes a few frames after the vehicle: without i
 _RETRY seconds, up to _TRIES times. The panel is filled once in the frame after a change, as one change comes from
 the hits panel and the hit lines together. The armor is what the line meets from _RAY / 2 before the hit point: a
 part in front of it is not what the shell hit. A value counted in the garage is marked (counted) for the page.
-
-Each fill logs its reason ("calls:") and what it shows the hit with ("check:"): the hit as recorded, the shell, the
-hangar vehicle's modules against the hit's, the armor along the line; a "check: MISMATCH" line tells a number of the
-hit that does not fit them (pierced with no chance in the garage, a damage far from the shell's, other modules).
 """
 import logging
 import math
@@ -50,8 +46,6 @@ from skeletons.gui.shared.utils import IHangarSpace
 from gui.mods.sagtary_armor_hits.data.client_names import (clientText, copiedName, shownVehicleDescr,
                                                            shownVehicleId, vehicleShortName)
 from gui.mods.sagtary_armor_hits.data.hits import HitResult
-from gui.mods.sagtary_armor_hits.trace import calls, hitText, modulesText
-from gui.mods.sagtary_armor_hits.views.hits.hangar_vehicle import hitsVehicle
 from gui.mods.sagtary_armor_hits.views.hits.hits_panel import DEALT
 from gui.mods.sagtary_armor_hits.views.models.shot_panel_model import (ShotDeviceModel, ShotModuleModel, ShotRowModel,
                                                                        ShotSectionModel)
@@ -102,11 +96,6 @@ _RAY = 2.5
 # The armor is counted again while the collision model has not come: seconds between, how many times.
 _RETRY = 0.2
 _TRIES = 5
-# The VEHICLE_HIT_EFFECT values of a pierced armor and of a ricochet.
-_PIERCED_EFFECTS = (0, 4, 5, 6)
-_RICOCHET_EFFECTS = (1, 2)
-# A shell's damage is its average within this part of it, both ways.
-_DAMAGE_SPREAD = 0.25
 
 
 def _descriptor(vehicleId, descr):
@@ -117,7 +106,6 @@ def _descriptor(vehicleId, descr):
         nationID, typeID = parseIntCompactDescr(vehicleId)[1:]
         return vehicles.VehicleDescr(typeID=(nationID, typeID))
     except Exception:
-        _logger.debug('shot panel: no descriptor of vehicle %s', vehicleId, exc_info=True)
         return None
 
 
@@ -127,7 +115,6 @@ def _vehicleImages(vehicleId):
         vehicleType = vehicles.getVehicleType(shownVehicleId(vehicleId) or vehicleId)
         return _VEHICLE_ICON % vehicleType.name.replace(':', '-'), _FLAG % nations.NAMES[vehicleType.id[0]]
     except Exception:
-        _logger.debug('shot panel: no images of vehicle %s', vehicleId, exc_info=True)
         return '', ''
 
 
@@ -139,7 +126,6 @@ def _shownVehicle(vehicleId, descr):
             return Vehicle(strCompactDescr=strCD)
         return Vehicle(typeCompDescr=shownVehicleId(vehicleId) or vehicleId)
     except Exception:
-        _logger.debug('shot panel: no vehicle item of %s', vehicleId, exc_info=True)
         return None
 
 
@@ -225,17 +211,12 @@ def _materials(entity, start, end, shellParams):
     from gui.impl.lobby.vehicle_hub.sub_presenters.armor.penetration_utils import calculatePenetrationInfo
     collisions = getattr(entity.appearance, 'collisions', None)
     if collisions is None:
-        _logger.info('check: armor: no collision model yet')
         return None
     found = collisions.collideAllWorld(start, end)
-    _logger.info('check: armor: collisions along the line (distance, cos, material, part) %s; the hit point is at '
-                 '%.2f', [(round(item[0], 3), round(item[1], 3), item[2], item[3]) for item in found or ()], _RAY)
     # What the line meets well before the hit point (another part in front of it: a gun, a track guard) is not what
     # the shell hit there.
     found = [item for item in found or () if item[0] >= _RAY * 0.5]
     if not found or found[0][0] - _RAY > _RAY * 0.5:
-        _logger.info('check: armor: the line MISSES the armor at the hit point (model not ready, other modules or '
-                     'another vehicle?)')
         return None
     isWheeled = entity.typeDescriptor.type.isWheeledVehicle
     segments = [SegmentCollisionResultExt(distance, angleCos, getMatinfo(entity, part, kind, isWheeled), part)
@@ -258,10 +239,6 @@ class ShotPanelPresenter(object):
         # The fill of the next frame or the next try of the armor.
         self._callbackID = None
         self._tries = 0
-        # The reasons of the fill to come, for the log.
-        self._reasons = []
-        # (battle id, side, number) of the hit last logged in full.
-        self._checked = None
         # {role: (vehicle item, [(tooltip alias, compact descriptor)] of its modules in order)}
         self._tooltips = {}
 
@@ -271,21 +248,20 @@ class ShotPanelPresenter(object):
         if vehicle is None or not 0 <= index < len(modules):
             return None
         alias, compactDescr = modules[index]
-        calls('shot panel: tooltip', '%s %d: %s %s' % (role, index, alias, compactDescr))
         return createTooltipData(isSpecial=True, specialAlias=alias, specialArgs=(compactDescr, vehicle))
 
     def init(self):
         with self._model.transaction() as model:
             model.setTooltipContentId(R.views.common.tooltip_window.backport_tooltip_content.BackportTooltipContent())
             model.setTooltipDecoratorId(R.views.common.tooltip_window.tooltip_window.TooltipWindow())
-        self._hitsPanel.onChanged += self._onHitsChanged
-        self._hitLines.onDrawn += self._onLinesDrawn
-        self._update('init')
+        self._hitsPanel.onChanged += self._update
+        self._hitLines.onDrawn += self._update
+        self._update()
 
     def fini(self):
         self._cancel()
-        self._hitLines.onDrawn -= self._onLinesDrawn
-        self._hitsPanel.onChanged -= self._onHitsChanged
+        self._hitLines.onDrawn -= self._update
+        self._hitsPanel.onChanged -= self._update
         self._model = None
         self._hitsPanel = None
         self._overlayPanel = None
@@ -297,34 +273,18 @@ class ShotPanelPresenter(object):
             BigWorld.cancelCallback(self._callbackID)
             self._callbackID = None
 
-    def _onRetry(self):
-        self._callbackID = None
-        self._fill('retry %d' % self._tries)
-
-    def _onHitsChanged(self):
-        self._update('hits panel changed')
-
-    def _onLinesDrawn(self):
-        self._update('hit lines drawn' if self._hitLines.chosenShot is not None else 'hit lines cleared')
-
-    def _update(self, reason):
+    def _update(self):
         # One change of the hits panel tells it up to three times (the lines cleared, drawn, the panel changed), and
         # the overlay panel sets the hit's shell after the hit lines: filled once, in the next frame, when all of
         # them are done.
         self._cancel()
         self._tries = 0
-        self._reasons.append(reason)
         self._callbackID = BigWorld.callback(0.0, self._onFrame)
 
     def _onFrame(self):
+        # The fill of the frame after a change, or the next try of the armor.
         self._callbackID = None
-        reasons, self._reasons = self._reasons, []
-        self._fill(', '.join(reasons))
-
-    def _fill(self, reason):
         battle, side, hit = self._hitsPanel.selection
-        calls('shot panel: fill', '%s; hit %s, line %s' % (reason, self._hitsPanel.selectedNumber,
-                                                          self._hitLines.chosenShot is not None))
         if battle is None or hit is None:
             self._model.setIsVisible(False)
             return
@@ -333,15 +293,10 @@ class ShotPanelPresenter(object):
         except Exception:
             _logger.exception('shot panel: cannot count the armor')
             armor = None
-        waits = armor is None and self._hitLines.chosenShot is not None and self._tries < _TRIES
-        if waits:
+        if armor is None and self._hitLines.chosenShot is not None and self._tries < _TRIES:
             self._tries += 1
-            self._callbackID = BigWorld.callback(_RETRY, self._onRetry)
+            self._callbackID = BigWorld.callback(_RETRY, self._onFrame)
         gunShot = self._overlayPanel.gunShot
-        try:
-            self._check(battle, side, hit, gunShot, armor, waits)
-        except Exception:
-            _logger.exception('shot panel: cannot check the hit')
         # The name of the player who played the battle, not of the one who watches it.
         myName = battle.playerName
         if side == DEALT:
@@ -385,9 +340,8 @@ class ShotPanelPresenter(object):
         try:
             tiles = _devices(descriptor, hit)
         except Exception:
-            _logger.exception('shot panel: no modules of %s', modulesText(descriptor))
+            _logger.exception('shot panel: no modules of %s', descriptor.type.name)
             return []
-        _logger.info('check: modules and crew: %s', ', '.join(icon for icon, _, _ in tiles))
         return tiles
 
     @staticmethod
@@ -455,74 +409,6 @@ class ShotPanelPresenter(object):
         position, direction = chosenShot
         return _materials(entity, position - direction * _RAY, position + direction * _RAY,
                           self._overlayPanel.shellParams)
-
-    def _check(self, battle, side, hit, gunShot, armor, waits):
-        # The log of what the panel shows the hit with: the hit and its shell once per hit, the hangar vehicle and
-        # the armor each time; then the numbers of the hit that do not fit them.
-        number = self._hitsPanel.selectedNumber
-        key = (battle.battleId, side, number)
-        if key != self._checked:
-            self._checked = key
-            _logger.info('check: hit #%s %s of battle %s: %s', number, side, battle.battleId, hitText(hit))
-            _logger.info('check: battle vehicle %s, compact descriptor %s', battle.vehicleId,
-                         'yes' if battle.vehicleDescriptor else 'no')
-            if gunShot is not None:
-                gun, shot = gunShot
-                _logger.info('check: shell %s (%s%s) of gun %s: damage %s, penetration %s, speed %s',
-                             shot.shell.name, shot.shell.kind, ' gold' if shot.shell.isGold else '', gun.name,
-                             shot.shell.armorDamage, shot.piercingPower, shot.speed)
-            else:
-                _logger.info('check: no shell of the hit')
-        mismatches = []
-        wanted = hitsVehicle(battle, side, hit)
-        entity = self.__hangarSpace.getVehicleEntity() if self.__hangarSpace.isModelLoaded else None
-        shown = modulesText(getattr(entity, 'typeDescriptor', None))
-        if isinstance(wanted, tuple):
-            wantedText = modulesText(_descriptor(wanted[0], wanted[1].encode('hex') if wanted[1] else ''))
-        else:
-            wantedText = str(wanted)
-        _logger.info('check: hangar vehicle %s, the hit is on %s', shown, wantedText)
-        chosenShot = self._hitLines.chosenShot
-        # While the hangar changes the vehicle, no line is drawn.
-        if chosenShot is not None and shown != wantedText:
-            mismatches.append('the hangar vehicle %s is not the hit vehicle %s' % (shown, wantedText))
-        if chosenShot is not None:
-            position, direction = chosenShot
-            _logger.info('check: hit line at (%.3f, %.3f, %.3f), direction (%.3f, %.3f, %.3f)', position.x,
-                         position.y, position.z, direction.x, direction.y, direction.z)
-        elif hit.vehiclePoints:
-            _logger.info('check: no hit line drawn yet for %d points', len(hit.vehiclePoints))
-        if armor is not None:
-            materials, info = armor
-            _logger.info('check: armor: chance %s, result %s; layers %s', getattr(info, 'chance', None),
-                         getattr(info, 'resultType', None), ['%s nominal %s resulting %.1f angle %.1f%s' % (
-                             material.partName, material.nominalArmor, material.resArmor, material.viewAngle,
-                             ' spaced' if material.isSpacedArmor else '') for material in materials])
-        elif chosenShot is not None and not waits:
-            mismatches.append('the hit line meets no armor of the hangar vehicle')
-        isHighExplosive = hit.shellType == 'HIGH_EXPLOSIVE'
-        pierced = any(effect in _PIERCED_EFFECTS for effect in hit.hitEffects)
-        ricochet = any(effect in _RICOCHET_EFFECTS for effect in hit.hitEffects)
-        chance = getattr(armor[1], 'chance', None) if armor is not None else None
-        if chance is not None and not isHighExplosive and not hit.isSplash:
-            if pierced and hit.damage > 0 and chance <= 0:
-                mismatches.append('pierced, the garage chance is %s%%' % chance)
-            if hit.hitEffects and not pierced and not ricochet and chance >= 100:
-                mismatches.append('not pierced, the garage chance is %s%%' % chance)
-        if gunShot is not None:
-            shell = gunShot[1].shell
-            average = shell.armorDamage[0]
-            if hit.damage > 0 and pierced and not isHighExplosive and not (
-                    (1 - _DAMAGE_SPREAD) * average - 1 <= hit.damage <= (1 + _DAMAGE_SPREAD) * average + 1):
-                mismatches.append('damage %s is not the shell average %s +-%d%% (the last hit points, another shell?)'
-                                  % (hit.damage, average, _DAMAGE_SPREAD * 100))
-            # A hit without damage events does not know its premium flag: a mismatch only when the gun has another
-            # shell of the kind to choose.
-            kinds = [shot for shot in gunShot[0].shots if shot.shell.kind == hit.shellType]
-            if len(kinds) > 1 and bool(shell.isGold) != bool(hit.isGoldShell):
-                mismatches.append('the shell %s is not of the hit premium flag %s' % (shell.name, hit.isGoldShell))
-        for mismatch in mismatches:
-            _logger.info('check: MISMATCH hit #%s %s: %s', number, side, mismatch)
 
     def _sections(self, hit, gunShot, armor):
         texts = self._texts
