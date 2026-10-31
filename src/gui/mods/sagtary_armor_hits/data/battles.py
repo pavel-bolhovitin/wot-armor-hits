@@ -6,9 +6,11 @@
 - BattleStore: the battles of this session in memory, newest first, up to BATTLES_LIMIT. It tells its listeners
   when the list changes (onChanged). The store is not saved by itself; battle_file.py writes and reads it on demand.
 - BattleCollector: adds a Battle to the store when the player enters a battle or starts a replay, and writes the
-  winner to it when the round finishes. A battle the player left before its end has no winner (result UNKNOWN). It
-  tells its listeners when the player leaves the battle (onBattleLeft, with the battle as it is in the store). A
-  battle that is not to be kept (isKept: the battleModes setting) is not added, so its hits are not collected.
+  winner to it when the round finishes. A battle the player left before its end gets its winner later, from the
+  battle results the server puts into the service channel when the battle ends (onResultReceived); until then it
+  has none (result UNKNOWN). It tells its listeners when the player leaves the battle (onBattleLeft, with the battle
+  as it is in the store). A battle that is not to be kept (isKept: the battleModes setting) is not added, so its hits
+  are not collected.
 """
 import logging
 import time
@@ -17,6 +19,8 @@ import BattleReplay
 import BigWorld
 from Event import Event
 from PlayerEvents import g_playerEvents
+from chat_shared import SYS_MESSAGE_TYPE
+from messenger.proto.events import g_messengerEvents
 
 from gui.mods.sagtary_armor_hits.config import BATTLES_LIMIT
 from gui.mods.sagtary_armor_hits.data.hits import Hit, compactDescriptor, vehicleTypeId
@@ -35,6 +39,8 @@ class BattleResult(object):
 
 # Battle.winnerTeam of a draw.
 DRAW_TEAM = 0
+# The two teams of a battle.
+_TEAMS = (1, 2)
 
 # The client's arenaTypeID is (gameplayID << 16) | geometryID.
 _GAMEPLAY_ID_SHIFT = 16
@@ -70,12 +76,24 @@ class Battle(Record):
 
     @property
     def result(self):
-        # Not known when the player left before the end or the battle is still going.
+        # Not known while the battle is still going, or after the player left it before its end until its results come.
         if self.winnerTeam is None:
             return BattleResult.UNKNOWN
         if self.winnerTeam == DRAW_TEAM:
             return BattleResult.DRAW
         return BattleResult.WIN if self.winnerTeam == self.playerTeam else BattleResult.DEFEAT
+
+
+def _winnerTeam(isWinner, playerTeam):
+    # Battle.winnerTeam from the battle results' isWinner: 1 the player's team won, -1 it lost, 0 a draw; None when
+    # not known.
+    if isWinner == 0:
+        return DRAW_TEAM
+    if playerTeam not in _TEAMS or isWinner not in (1, -1):
+        return None
+    if isWinner == 1:
+        return playerTeam
+    return _TEAMS[0] if playerTeam == _TEAMS[1] else _TEAMS[1]
 
 
 def battleFromAvatar(player):
@@ -153,16 +171,40 @@ class BattleCollector(object):
         # Id of the battle the player is in, None out of battle or in a battle not kept.
         self._battleId = None
         self.onBattleLeft = Event()
+        self.onResultReceived = Event()
 
     def install(self):
         g_playerEvents.onAvatarReady += self._onAvatarReady
         g_playerEvents.onRoundFinished += self._onRoundFinished
         g_playerEvents.onAvatarBecomeNonPlayer += self._onAvatarBecomeNonPlayer
+        g_messengerEvents.serviceChannel.onChatMessageReceived += self._onServiceMessage
 
     def uninstall(self):
+        g_messengerEvents.serviceChannel.onChatMessageReceived -= self._onServiceMessage
         g_playerEvents.onAvatarBecomeNonPlayer -= self._onAvatarBecomeNonPlayer
         g_playerEvents.onRoundFinished -= self._onRoundFinished
         g_playerEvents.onAvatarReady -= self._onAvatarReady
+
+    def _onServiceMessage(self, clientID, message):
+        # The battle results the server puts into the service channel when a battle ends, also of a battle the player
+        # has left before its end (its round's end did not come); the client's AwardController reads them the same
+        # way. They give the winner of a battle in the store that has none yet.
+        if message is None or message.type != SYS_MESSAGE_TYPE.battleResults.index() or not message.data:
+            return
+        try:
+            data = message.data
+            battle = self._store.getBattle(data.get('arenaUniqueID'))
+            if battle is None or battle.winnerTeam is not None:
+                return
+            winnerTeam = _winnerTeam(data.get('isWinner'), battle.playerTeam or data.get('team'))
+            if winnerTeam is None:
+                return
+            battle = battle.replace(winnerTeam=winnerTeam)
+        except Exception:
+            _logger.exception('battles: cannot read the battle results')
+            return
+        self._store.update(battle)
+        self.onResultReceived(battle)
 
     def _onAvatarReady(self):
         try:

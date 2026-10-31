@@ -68,9 +68,9 @@ def _onSettingChanged(key):
             _debugRecorder.uninstall()
 
 
-def _onBattleLeft(battle):
-    # The battle's file when the player leaves a battle of a group kept in files (battleModes); a replay is not saved
-    # (it would write over the file of the battle played).
+def _autoSave(battle):
+    # The battle's file when the player leaves a battle of a group kept in files (battleModes), and again when its
+    # result comes after that; a replay is not saved (it would write over the file of the battle played).
     if battle.isReplay or _saving(battle) != battle_modes.FILE:
         return
     try:
@@ -102,7 +102,8 @@ def init():
     _settings.onChanged += _onSettingChanged
     if values['debug']:
         _debugRecorder.install()
-    _battleCollector.onBattleLeft += _onBattleLeft
+    _battleCollector.onBattleLeft += _autoSave
+    _battleCollector.onResultReceived += _autoSave
     g_playerEvents.onAccountShowGUI += _onAccountShowGUI
     _battleCollector.install()
     _hitCollector.install()
@@ -118,6 +119,7 @@ def fini():
     _debugRecorder.uninstall()
     _hitCollector.uninstall()
     _battleCollector.uninstall()
-    _battleCollector.onBattleLeft -= _onBattleLeft
+    _battleCollector.onResultReceived -= _autoSave
+    _battleCollector.onBattleLeft -= _autoSave
     g_playerEvents.onAccountShowGUI -= _onAccountShowGUI
     _hitsScreen.uninstall()
