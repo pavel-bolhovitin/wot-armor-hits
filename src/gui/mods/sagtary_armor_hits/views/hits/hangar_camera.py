@@ -77,15 +77,13 @@ class HangarCamera(object):
         self.moved = False
 
     def init(self):
-        _logger.info('hangar camera: screen opened')
-        self.__hangarSpace.onVehicleChanged += self._onVehicleChanged
+        self.__hangarSpace.onVehicleChanged += self._freeCamera
         self.__hangarSpace.onSpaceDestroy += self._onSpaceDestroy
         self._freeCamera()
 
     def fini(self):
-        _logger.info('hangar camera: screen closes, moved %s, pitch limits to put back %s', self.moved, self._pitch)
         self.__hangarSpace.onSpaceDestroy -= self._onSpaceDestroy
-        self.__hangarSpace.onVehicleChanged -= self._onVehicleChanged
+        self.__hangarSpace.onVehicleChanged -= self._freeCamera
         cameraManager = self.__cameraManager
         if cameraManager is not None:
             if self.moved:
@@ -98,8 +96,6 @@ class HangarCamera(object):
     def lookAlong(self, position, direction):
         # The shooter view: the camera behind the shell, looking along it at the point.
         cameraManager = self._getCameraManager()
-        _logger.info('hangar camera: look along the shell at (%.2f, %.2f, %.2f), camera manager %s', position.x,
-                     position.y, position.z, cameraManager is not None)
         if cameraManager is None:
             return
         cameraManager.moveCamera(targetPos=position, yaw=direction.yaw, pitch=-direction.pitch,
@@ -110,8 +106,6 @@ class HangarCamera(object):
         # The camera back to its place.
         self.moved = False
         cameraManager = self._getCameraManager()
-        _logger.info('hangar camera: back to its place in %.1f s, camera manager %s', duration,
-                     cameraManager is not None)
         if cameraManager is not None:
             cameraManager.resetCameraTarget(duration=duration)
 
@@ -131,32 +125,21 @@ class HangarCamera(object):
         if self.__cameraManager is None:
             spaceID = self.__hangarSpace.spaceID
             cameraManager = CGF.getSystem(spaceID, HangarCameraSystem) if spaceID is not None else None
-            _logger.info('hangar camera: camera manager taken: %s', cameraManager is not None)
             if cameraManager is not None:
-                cameraManager.onCameraSwitched += self._onCameraSwitched
+                cameraManager.onCameraSwitched += self._freeCamera
                 self.__cameraManager = cameraManager
         return self.__cameraManager
 
     def _forget(self):
         cameraManager, self.__cameraManager = self.__cameraManager, None
         if cameraManager is not None:
-            _logger.info('hangar camera: camera manager forgotten')
-            cameraManager.onCameraSwitched -= self._onCameraSwitched
+            cameraManager.onCameraSwitched -= self._freeCamera
 
     def _onSpaceDestroy(self, *args):
         # The camera manager goes with the space: not used after that.
-        _logger.info('hangar camera: hangar space destroyed')
         self._forget()
 
-    def _onCameraSwitched(self, cameraName):
-        _logger.info('hangar camera: switched to %s', cameraName)
-        self._freeCamera()
-
-    def _onVehicleChanged(self, *args):
-        _logger.info('hangar camera: vehicle changed')
-        self._freeCamera()
-
-    def _freeCamera(self):
+    def _freeCamera(self, *args):
         cameraManager = self._getCameraManager()
         if cameraManager is None:
             return
@@ -170,9 +153,6 @@ class HangarCamera(object):
         # The camera's collisions on or off, its pitch limits (None: as they are).
         camera = None if cameraManager.isCameraSwitching() else BigWorld.camera()
         params = getattr(cameraManager, '_HangarCameraSystem__mouseMoveParams', None)
-        _logger.info('hangar camera: collisions %s on %s, pitch limits %s -> %s', collisions,
-                     type(camera).__name__ if camera is not None else 'none: flying',
-                     params.pitchConstraints if params is not None else None, pitch)
         try:
             if camera is not None:
                 camera.setDynamicCollisions(collisions)
