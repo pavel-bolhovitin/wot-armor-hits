@@ -8,7 +8,8 @@ The 3D scene is set like on the armor page (VehicleHubState and ArmorState of th
 to the customization place (HangarCustomizationEvent.CHANGE_VEHICLE_MODEL_TRANSFORM), and the state, a subhangar
 state group config provider, gives the client's SubhangarObserver the groups that switch the camera to the armor page
 camera (hangar_camera.armorCameraConfig). The view puts the vehicle of the shown hits into the hangar
-(hangar_vehicle.py).
+(hangar_vehicle.py). When the state is left, it stops the view's presenters (SCREEN_LEFT_EVENT) and then puts the
+vehicle back.
 """
 import logging
 import math
@@ -23,7 +24,7 @@ from skeletons.gui.shared.utils import IHangarSpace
 
 from gui.mods.sagtary_armor_hits.lang import text
 from gui.mods.sagtary_armor_hits.views.hits.hangar_camera import armorCameraConfig
-from gui.mods.sagtary_armor_hits.views.hits.hits_view import VIEW_ALIAS
+from gui.mods.sagtary_armor_hits.views.hits.hits_view import SCREEN_LEFT_EVENT, VIEW_ALIAS
 
 _logger = logging.getLogger('sagtary.armor_hits')
 
@@ -61,6 +62,8 @@ class HitsState(SFViewLobbyState, SubhangarStateGroupConfigProvider):
             _logger.exception('hits screen: cannot move the vehicle')
 
     def _onExited(self):
+        # The screen stops first (its view closes later), then the vehicle goes back.
+        g_eventBus.handleEvent(events.HasCtxEvent(SCREEN_LEFT_EVENT), scope=EVENT_BUS_SCOPE.LOBBY)
         try:
             g_eventBus.handleEvent(events.HangarCustomizationEvent(
                 events.HangarCustomizationEvent.RESET_VEHICLE_MODEL_TRANSFORM), scope=EVENT_BUS_SCOPE.LOBBY)

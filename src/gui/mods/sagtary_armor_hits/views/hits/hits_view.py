@@ -15,12 +15,17 @@ The page passes mouse drags and the wheel over the 3D scene (onMoveSpace, onMous
 lines in the scene have presenters of their own, made here with the data they show. The file buttons (save the
 chosen battle to its file, load the battle files) are there when the view is given the battle files, the settings
 menu when it is given the mod's settings.
+
+The presenters stop when the screen's lobby state is left (SCREEN_LEFT_EVENT), before the state puts the hangar
+back; the view itself closes later. Else the hit lines, which follow the vehicle on every frame, would see the
+vehicle on its way back to the garage and fly the garage camera after the hit.
 """
 from frameworks.wulf import WindowFlags
 from gui.impl.gen import R
 from gui.impl.lobby.common.view_wrappers import createBackportTooltipDecorator
 from gui.impl.pub import WindowImpl
 from gui.impl.pub.view_component import ViewComponent
+from gui.shared import EVENT_BUS_SCOPE, g_eventBus
 
 from gui.mods.sagtary_armor_hits.lang import text
 from gui.mods.sagtary_armor_hits.views.hits.armor_tooltip import ArmorTooltipPresenter
@@ -38,6 +43,8 @@ from gui.mods.sagtary_armor_hits.views.models.hits_view_model import HitsViewMod
 
 # Alias of the Scaleform view setting of the screen.
 VIEW_ALIAS = 'sagtaryArmorHitsView'
+# The event the screen's lobby state sends when it is left, before it puts the hangar back.
+SCREEN_LEFT_EVENT = 'sagtaryArmorHitsScreenLeft'
 
 
 # The shot panel's texts.
@@ -115,17 +122,26 @@ class HitsView(ViewComponent):
                 (key.split('/')[1], text(key)) for key in _SETTINGS_TEXTS)))
         for presenter in self._presenters:
             presenter.init()
+        g_eventBus.addListener(SCREEN_LEFT_EVENT, self.__onScreenLeft, EVENT_BUS_SCOPE.LOBBY)
 
     def _finalize(self):
+        g_eventBus.removeListener(SCREEN_LEFT_EVENT, self.__onScreenLeft, EVENT_BUS_SCOPE.LOBBY)
+        self._finiPresenters()
+        self._battleStore = None
+        self._battleFiles = None
+        self._settings = None
+        super(HitsView, self)._finalize()
+
+    def _finiPresenters(self):
+        # Once: when the screen is left, or when the view closes without that.
         for presenter in reversed(self._presenters):
             presenter.fini()
         self._presenters = []
         self._shotPanel = None
         self._camera = None
-        self._battleStore = None
-        self._battleFiles = None
-        self._settings = None
-        super(HitsView, self)._finalize()
+
+    def __onScreenLeft(self, event):
+        self._finiPresenters()
 
     def __onMoveSpace(self, args=None):
         if not args or self._camera is None:

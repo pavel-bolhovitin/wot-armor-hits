@@ -137,6 +137,9 @@ The screen is built like the client's vehicle armor page (Vehicle Hub, `VehicleH
   moves the hangar vehicle to the customization place (`HangarCustomizationEvent.CHANGE_VEHICLE_MODEL_TRANSFORM`, the
   place and angles of `customizationHangarCFG()`), and leaving it puts the vehicle back
   (`RESET_VEHICLE_MODEL_TRANSFORM`, `turretAndGunAngles.reset()`);
+- leaving the state first stops the view's presenters (`hits_view.SCREEN_LEFT_EVENT` on the event bus), then puts the
+  vehicle back: the view closes about 0.5 s later, and its hit lines, which follow the vehicle on every frame, would
+  see the vehicle on its way back and fly the garage camera after the hit (the shooter view);
 - the state is a `SubhangarStateGroupConfigProvider` (`hangar_camera.armorCameraConfig`): the client's
   `SubhangarObserver` activates the subhangar groups
   `VehicleHub` and `VehicleHubArmor{Small,Medium,Large}Tank` (by the vehicle size, `selectItemByTankSize`), which
