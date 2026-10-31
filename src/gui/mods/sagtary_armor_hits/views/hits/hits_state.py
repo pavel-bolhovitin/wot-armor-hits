@@ -6,10 +6,9 @@ the wallet) and not the full hangar header. The header's hangar button closes th
 
 The 3D scene is set like on the armor page (VehicleHubState and ArmorState of the client): the hangar vehicle moves
 to the customization place (HangarCustomizationEvent.CHANGE_VEHICLE_MODEL_TRANSFORM), and the state, a subhangar
-state group config provider, makes the client's SubhangarObserver activate the armor subhangar group for the size of
-the vehicle, which switches the camera to the armor page camera. The view puts the vehicle of the shown hits into the
-hangar (hangar_vehicle.py); the armor group is chosen for the vehicle in the hangar when the screen opens and stays
-when the vehicle changes.
+state group config provider, gives the client's SubhangarObserver the groups that switch the camera to the armor page
+camera (hangar_camera.armorCameraConfig). The view puts the vehicle of the shown hits into the hangar
+(hangar_vehicle.py).
 """
 import logging
 import math
@@ -18,22 +17,15 @@ import BigWorld
 from gui.Scaleform.framework.entities.View import ViewKey
 from gui.lobby_state_machine.states import LobbyStateDescription, SFViewLobbyState, SubScopeSubLayerState
 from gui.shared import EVENT_BUS_SCOPE, events, g_eventBus
-from gui.subhangar.subhangar_observer import selectItemByTankSize
-from gui.subhangar.subhangar_state_groups import CameraMover, SubhangarStateGroupConfig, \
-    SubhangarStateGroupConfigProvider, SubhangarStateGroups
+from gui.subhangar.subhangar_state_groups import SubhangarStateGroupConfigProvider
 from helpers import dependency
 from skeletons.gui.shared.utils import IHangarSpace
 
 from gui.mods.sagtary_armor_hits.lang import text
+from gui.mods.sagtary_armor_hits.views.hits.hangar_camera import armorCameraConfig
 from gui.mods.sagtary_armor_hits.views.hits.hits_view import VIEW_ALIAS
 
 _logger = logging.getLogger('sagtary.armor_hits')
-
-# The armor page's subhangar groups by the vehicle size (the client's ArmorState), and the size bounds in metres.
-_TANK_SIZE_LOWER_BOUNDS = (float('-inf'), 5.0, 8.0)
-_ARMOR_GROUPS_BY_TANK_SIZE = (SubhangarStateGroups.VehicleHubArmorSmallTank,
-                              SubhangarStateGroups.VehicleHubArmorMediumTank,
-                              SubhangarStateGroups.VehicleHubArmorLargeTank)
 
 
 def _moveVehicleToCustomizationPlace():
@@ -59,11 +51,7 @@ class HitsState(SFViewLobbyState, SubhangarStateGroupConfigProvider):
         return LobbyStateDescription(title=text('lobbyButton/name'))
 
     def getSubhangarStateGroupConfig(self):
-        armorGroup = selectItemByTankSize(_TANK_SIZE_LOWER_BOUNDS, _ARMOR_GROUPS_BY_TANK_SIZE,
-                                          SubhangarStateGroups.VehicleHubArmorMediumTank)
-        # The camera goes to the armor camera at once, like the first move of the client's VehicleHubCameraMover;
-        # a smooth move would fly it from the hangar up to the customization place.
-        return SubhangarStateGroupConfig((SubhangarStateGroups.VehicleHub, armorGroup), CameraMover())
+        return armorCameraConfig()
 
     def _onEntered(self, event):
         super(HitsState, self)._onEntered(event)

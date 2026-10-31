@@ -10,25 +10,23 @@ frame when it supports the full screen mode: the page tells it with viewEnv.setF
 HitsView.js, like the client's armor page, and places its content by the external paddings the lobby gives for the
 header and the footer.
 
-The page passes mouse drags and the wheel over the 3D scene to the hangar camera (onMoveSpace, onMouseOver3dScene),
-like the client's SceneWrapper, so the camera turns around the vehicle. The panels, the hangar vehicle and the hit
+The page passes mouse drags and the wheel over the 3D scene (onMoveSpace, onMouseOver3dScene) to the hangar camera
+(hangar_camera.py), so the camera turns around the vehicle. The panels, the hangar camera and vehicle and the hit
 lines in the scene have presenters of their own, made here with the data they show. The file buttons (save the
 chosen battle to its file, load the battle files) are there when the view is given the battle files, the settings
 menu when it is given the mod's settings.
 """
 from frameworks.wulf import WindowFlags
-from gui.hangar_cameras.hangar_camera_common import CameraRelatedEvents
 from gui.impl.gen import R
 from gui.impl.lobby.common.view_wrappers import createBackportTooltipDecorator
 from gui.impl.pub import WindowImpl
 from gui.impl.pub.view_component import ViewComponent
-from gui.shared import EVENT_BUS_SCOPE, events, g_eventBus
 
 from gui.mods.sagtary_armor_hits.lang import text
 from gui.mods.sagtary_armor_hits.views.hits.armor_tooltip import ArmorTooltipPresenter
 from gui.mods.sagtary_armor_hits.views.hits.battle_selector import BattleSelectorPresenter
 from gui.mods.sagtary_armor_hits.views.hits.file_buttons import FileButtonsPresenter
-from gui.mods.sagtary_armor_hits.views.hits.hangar_scene import HangarScenePresenter
+from gui.mods.sagtary_armor_hits.views.hits.hangar_camera import HangarCamera
 from gui.mods.sagtary_armor_hits.views.hits.hangar_vehicle import HangarVehiclePresenter
 from gui.mods.sagtary_armor_hits.views.hits.hit_lines import HitLinesPresenter
 from gui.mods.sagtary_armor_hits.views.hits.hits_panel import HitsPanelPresenter
@@ -61,6 +59,7 @@ class HitsView(ViewComponent):
         self._settings = modSettings
         self._presenters = []
         self._shotPanel = None
+        self._camera = None
 
     @createBackportTooltipDecorator()
     def createToolTip(self, event):
@@ -89,14 +88,15 @@ class HitsView(ViewComponent):
         self._presenters.append(hitsPanel)
         # The hangar shows the vehicle the hits panel shows the hits on.
         self._presenters.append(HangarVehiclePresenter(hitsPanel))
-        # The hangar around it hidden, the camera free to look from under it.
-        self._presenters.append(HangarScenePresenter())
+        # The hangar camera, free to look from under the vehicle; the hit lines move it for the shooter view.
+        self._camera = HangarCamera()
+        self._presenters.append(self._camera)
         # The scene panel's choices: which lines are drawn over that vehicle, the shooter view.
         scenePanel = ScenePanelPresenter(model.scenePanel, {
             'lines': text('lines/title'), 'allHits': text('lines/all'), 'shooter': text('camera/shooter'),
             'reset': text('camera/reset')}, hitsPanel)
         self._presenters.append(scenePanel)
-        hitLines = HitLinesPresenter(hitsPanel, scenePanel)
+        hitLines = HitLinesPresenter(hitsPanel, scenePanel, self._camera)
         self._presenters.append(hitLines)
         overlayPanel = OverlayPanelPresenter(model.overlayPanel, hitsPanel)
         self._presenters.append(overlayPanel)
@@ -121,24 +121,20 @@ class HitsView(ViewComponent):
             presenter.fini()
         self._presenters = []
         self._shotPanel = None
+        self._camera = None
         self._battleStore = None
         self._battleFiles = None
         self._settings = None
         super(HitsView, self)._finalize()
 
-    @staticmethod
-    def __onMoveSpace(args=None):
-        # Same as the client's Vehicle Hub view: the hangar camera turns and zooms by these deltas.
-        if not args:
+    def __onMoveSpace(self, args=None):
+        if not args or self._camera is None:
             return
-        g_eventBus.handleEvent(CameraRelatedEvents(CameraRelatedEvents.LOBBY_VIEW_MOUSE_MOVE, ctx={
-            'dx': args.get('dx'), 'dy': args.get('dy'), 'dz': args.get('dz')}), EVENT_BUS_SCOPE.GLOBAL)
+        self._camera.moveByMouse(args.get('dx'), args.get('dy'), args.get('dz'))
 
-    @staticmethod
-    def __onMouseOver3dScene(args=None):
-        isOver = bool(args.get('isOver3dScene')) if args else False
-        g_eventBus.handleEvent(events.LobbySimpleEvent(events.LobbySimpleEvent.NOTIFY_CURSOR_OVER_3DSCENE, ctx={
-            'isOver3dScene': isOver}))
+    def __onMouseOver3dScene(self, args=None):
+        if self._camera is not None:
+            self._camera.setMouseOverScene(bool(args.get('isOver3dScene')) if args else False)
 
 
 class HitsWindow(WindowImpl):

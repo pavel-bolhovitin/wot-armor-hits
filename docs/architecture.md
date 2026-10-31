@@ -62,7 +62,7 @@ UI (`views/`), a package per screen or button. The view models, the data the Gam
 | `views/hits/battle_selector.py`           | presenter of the battle selector: fills its model from the `BattleStore`, keeps the selected battle (`onBattleSelected`) |
 | `views/hits/hits_panel.py`                | presenter of the hits panel: the received or dealt hits of the selected battle, the result filters, the chosen hit (`onChanged`, `selection`) |
 | `views/hits/hangar_vehicle.py`            | presenter of the hangar vehicle: the vehicle the panel shows the hits on, as the client's preview vehicle |
-| `views/hits/hangar_scene.py`              | presenter of the hangar camera while the screen is open: its collisions off and its pitch limits widened, so it goes under the floor and looks from below; put back when the screen closes |
+| `views/hits/hangar_camera.py`             | the hangar camera of the screen, the one place that works with it: the subhangar groups that switch to the armor camera (`armorCameraConfig`); `HangarCamera` keeps the client's camera system, turns the camera's collisions off and widens its pitch limits while the screen is open (so it goes under the floor and looks from below; put back when the screen closes), moves it for the shooter view and back, and passes it the page's mouse |
 | `views/hits/settings_menu.py`             | presenter of the settings menu: the mod's settings (hits on allies, the lobby button's place, the debug record), how the battles of each group of modes are kept (off, session, file), and the file buttons, opened by the gear right of the battle selector; a click writes the settings file (`settings.ModSettings`) |
 | `views/hits/hit_lines.py`                 | presenter of the hit lines: the chosen hit's way (`Way`: lead, pieces on, ricochet's way out, splash) in the 3D scene over the hangar vehicle, turned to the hit's pose (turret yaw, gun pitch) first |
 | `views/hits/hit_way.py`                   | the look of a hit's way: a solid white line to the first point, white dashes after a ricochet or spaced armor, at the line's start a white dot and rings as a cone back towards the shooter |
@@ -137,7 +137,8 @@ The screen is built like the client's vehicle armor page (Vehicle Hub, `VehicleH
   moves the hangar vehicle to the customization place (`HangarCustomizationEvent.CHANGE_VEHICLE_MODEL_TRANSFORM`, the
   place and angles of `customizationHangarCFG()`), and leaving it puts the vehicle back
   (`RESET_VEHICLE_MODEL_TRANSFORM`, `turretAndGunAngles.reset()`);
-- the state is a `SubhangarStateGroupConfigProvider`: the client's `SubhangarObserver` activates the subhangar groups
+- the state is a `SubhangarStateGroupConfigProvider` (`hangar_camera.armorCameraConfig`): the client's
+  `SubhangarObserver` activates the subhangar groups
   `VehicleHub` and `VehicleHubArmor{Small,Medium,Large}Tank` (by the vehicle size, `selectItemByTankSize`), which
   switches to the armor camera (`Armor_Inspector_Camera`); the camera moves there at once (`CameraMover`), as a smooth
   move would fly it from the hangar up to the customization place; the group is chosen for the vehicle in the hangar
@@ -178,8 +179,9 @@ The screen is built like the client's vehicle armor page (Vehicle Hub, `VehicleH
   over the vehicle), the client's cube `objects/misc/bbox/unit_cube_1m_proxy.model` (lit, of one bluish color) and
   the mod's own tube models with the glow shader (under the armor overlay);
 - the page passes the mouse over the scene to the hangar camera like the client's `SceneWrapper`: a layer under the
-  panels sends drags (`dx`, `dy` in pixels) and wheel steps (`dz` of 600) to `onMoveSpace`, which fires
-  `CameraRelatedEvents.LOBBY_VIEW_MOUSE_MOVE`, and `onMouseOver3dScene` fires `NOTIFY_CURSOR_OVER_3DSCENE`; the
+  panels sends drags (`dx`, `dy` in pixels) and wheel steps (`dz` of 600) to `onMoveSpace`, and the hangar camera
+  (`HangarCamera`) fires `CameraRelatedEvents.LOBBY_VIEW_MOUSE_MOVE`; for `onMouseOver3dScene` it fires
+  `NOTIFY_CURSOR_OVER_3DSCENE`; the
   panels' container lets the mouse through (`pointer-events: none`), the panels do not.
 
 The battle selector shows the selected battle (map preview `gui/maps/icons/map/small/<map>.png`, map, result,
