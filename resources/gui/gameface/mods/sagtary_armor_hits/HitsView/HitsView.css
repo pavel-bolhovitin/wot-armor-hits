@@ -1340,17 +1340,137 @@ body {
     color: var(--color-general-tertiary);
 }
 
-/* The modules and crew grid: the module rows, the crew row under a line, each in the middle, 4 between the cells; a
-   cell the battle damage panel's icon (37 x 32, its color tells the state), framed when damaged (critical solid,
-   destroyed dashed and brighter), dim when not (a crew member a bit less). The note under it, in the middle. */
+/* The modules and crew, like the battle damage panel: the module columns with the tank between them, the crew row under
+   a line, in the middle, 4 between the cells; a cell the panel's icon (37 x 32, its color tells the state), framed when
+   damaged (critical orange, destroyed red and brighter; Gameface draws no dashed frame), dim when not (a crew member a
+   bit less). The note under it, in the middle. */
 .shotPanel__devices {
     padding: 8rem 12rem 6rem 12rem;
 }
 
-.shotPanel__deviceRow {
+.shotPanel__deviceVehicle {
+    display: flex;
+    justify-content: center;
+}
+
+.shotPanel__deviceColumn {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.shotPanel__deviceColumn .shotPanel__deviceCell {
+    margin-bottom: 4rem;
+}
+
+.shotPanel__deviceCrew {
     display: flex;
     justify-content: center;
     margin-bottom: 4rem;
+}
+
+/* The abstract tank from above, the gun up: its parts by their places in it. A track or a wheel at the state the shot
+   left it in: the colors of the cells. */
+.shotPanel__tank {
+    position: relative;
+    width: 150rem;
+    height: 172rem;
+    flex-shrink: 0;
+}
+
+.shotPanel__tankPart {
+    position: absolute;
+    box-sizing: border-box;
+    border: 1rem solid rgba(230, 225, 214, 0.38);
+    border-radius: 2rem;
+    background-color: rgba(230, 225, 214, 0.05);
+}
+
+.shotPanel__tankPart__critical {
+    border-color: #f2a93b;
+    background-color: rgba(242, 169, 59, 0.3);
+}
+
+.shotPanel__tankPart__destroyed {
+    border-color: #f0503c;
+    background-color: rgba(240, 80, 60, 0.38);
+}
+
+.shotPanel__tankHull {
+    left: 44rem;
+    top: 38rem;
+    width: 62rem;
+    height: 112rem;
+    border-radius: 3rem;
+}
+
+.shotPanel__tankGun {
+    left: 73rem;
+    top: 4rem;
+    width: 4rem;
+    height: 63rem;
+    border-radius: 1rem;
+}
+
+.shotPanel__tankTurret {
+    left: 56rem;
+    top: 66rem;
+    width: 38rem;
+    height: 38rem;
+    border-radius: 19rem;
+    background-color: #17191b;
+}
+
+.shotPanel__tankPart__trackLeft,
+.shotPanel__tankPart__trackRight,
+.shotPanel__tankPart__trackLeftMain,
+.shotPanel__tankPart__trackLeftReserve,
+.shotPanel__tankPart__trackRightReserve,
+.shotPanel__tankPart__trackRightMain {
+    top: 32rem;
+    height: 124rem;
+    width: 11rem;
+}
+
+.shotPanel__tankPart__trackLeft {
+    left: 27rem;
+    width: 16rem;
+}
+
+.shotPanel__tankPart__trackRight {
+    left: 107rem;
+    width: 16rem;
+}
+
+.shotPanel__tankPart__trackLeftMain {
+    left: 19rem;
+}
+
+.shotPanel__tankPart__trackLeftReserve {
+    left: 32rem;
+}
+
+.shotPanel__tankPart__trackRightReserve {
+    left: 107rem;
+}
+
+.shotPanel__tankPart__trackRightMain {
+    left: 120rem;
+}
+
+.shotPanel__tankPart__wheelLeft,
+.shotPanel__tankPart__wheelRight {
+    width: 15rem;
+    height: 26rem;
+    border-radius: 4rem;
+}
+
+.shotPanel__tankPart__wheelLeft {
+    left: 28rem;
+}
+
+.shotPanel__tankPart__wheelRight {
+    left: 107rem;
 }
 
 .shotPanel__deviceLine {
@@ -1377,7 +1497,7 @@ body {
 }
 
 .shotPanel__deviceCell__destroyed {
-    border: 1rem dashed #d04c37;
+    border-color: #d04c37;
 }
 
 .shotPanel__deviceIcon {
@@ -1393,7 +1513,7 @@ body {
     opacity: 0.22;
 }
 
-.shotPanel__deviceRow__crew .shotPanel__deviceCell__normal .shotPanel__deviceIcon {
+.shotPanel__deviceCrew .shotPanel__deviceCell__normal .shotPanel__deviceIcon {
     opacity: 0.3;
 }
 

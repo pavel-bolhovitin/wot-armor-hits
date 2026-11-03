@@ -180,9 +180,9 @@ class ShotSectionModel(ViewModel):
 
 
 class ShotDeviceModel(ViewModel):
-    # A cell of the modules and crew grid: the icon of the battle damage panel (gui/maps/sagtary_armor_hits/modules/
-    # <icon>.png: the module kind or crew role and its state), its row (0 and 1 the modules, 2 the crew) and the state
-    # the shot left it in (normal, critical, destroyed).
+    # A cell of the modules and crew: the icon of the battle damage panel (gui/maps/sagtary_armor_hits/modules/
+    # <icon>.png: the module kind or crew role and its state), its group (0 the modules left of the tank, 1 those right
+    # of it, 2 the crew) and the state the shot left it in (normal, critical, destroyed).
     __slots__ = ()
 
     def __init__(self, properties=3, commands=0):
@@ -194,10 +194,10 @@ class ShotDeviceModel(ViewModel):
     def setIcon(self, value):
         self._setString(0, value)
 
-    def getRow(self):
+    def getGroup(self):
         return self._getNumber(1)
 
-    def setRow(self, value):
+    def setGroup(self, value):
         self._setNumber(1, value)
 
     def getState(self):
@@ -209,14 +209,55 @@ class ShotDeviceModel(ViewModel):
     def _initialize(self):
         super(ShotDeviceModel, self)._initialize()
         self._addStringProperty('icon', '')
+        self._addNumberProperty('group', 0)
+        self._addStringProperty('state', '')
+
+
+class ShotTankPartModel(ViewModel):
+    # A track or a wheel on the abstract tank: its name (trackLeft, trackRight, trackLeftMain, trackLeftReserve,
+    # trackRightReserve, trackRightMain, wheelLeft, wheelRight: where it is on the tank), a wheel's row from the front
+    # of the row count (a track is the only one of its row), and the state the shot left it in.
+    __slots__ = ()
+
+    def __init__(self, properties=4, commands=0):
+        super(ShotTankPartModel, self).__init__(properties=properties, commands=commands)
+
+    def getName(self):
+        return self._getString(0)
+
+    def setName(self, value):
+        self._setString(0, value)
+
+    def getRow(self):
+        return self._getNumber(1)
+
+    def setRow(self, value):
+        self._setNumber(1, value)
+
+    def getRowCount(self):
+        return self._getNumber(2)
+
+    def setRowCount(self, value):
+        self._setNumber(2, value)
+
+    def getState(self):
+        return self._getString(3)
+
+    def setState(self, value):
+        self._setString(3, value)
+
+    def _initialize(self):
+        super(ShotTankPartModel, self)._initialize()
+        self._addStringProperty('name', '')
         self._addNumberProperty('row', 0)
+        self._addNumberProperty('rowCount', 1)
         self._addStringProperty('state', '')
 
 
 class ShotPanelModel(ViewModel):
     __slots__ = ()
 
-    def __init__(self, properties=10, commands=0):
+    def __init__(self, properties=11, commands=0):
         super(ShotPanelModel, self).__init__(properties=properties, commands=commands)
 
     def getIsVisible(self):
@@ -279,7 +320,7 @@ class ShotPanelModel(ViewModel):
         self._setBool(7, value)
 
     def getDevices(self):
-        # The modules and crew section's grid: the module kinds, then the crew roles; none when not known.
+        # The modules and crew section's cells: the module kinds, then the crew members; none when not known.
         return self._getArray(8)
 
     def setDevices(self, value):
@@ -290,11 +331,22 @@ class ShotPanelModel(ViewModel):
         return ShotDeviceModel
 
     def getDevicesNote(self):
-        # The note under the grid: it shows what this shot did, not the damage of earlier hits.
+        # The note under the cells: they show what this shot did, not the damage of earlier hits.
         return self._getString(9)
 
     def setDevicesNote(self, value):
         self._setString(9, value)
+
+    def getTankParts(self):
+        # The tracks or wheels of the abstract tank between the cells of the modules.
+        return self._getArray(10)
+
+    def setTankParts(self, value):
+        self._setArray(10, value)
+
+    @staticmethod
+    def getTankPartsType():
+        return ShotTankPartModel
 
     def _initialize(self):
         super(ShotPanelModel, self)._initialize()
@@ -308,3 +360,4 @@ class ShotPanelModel(ViewModel):
         self._addBoolProperty('isGoldShell', False)
         self._addArrayProperty('devices', Array())
         self._addStringProperty('devicesNote', '')
+        self._addArrayProperty('tankParts', Array())

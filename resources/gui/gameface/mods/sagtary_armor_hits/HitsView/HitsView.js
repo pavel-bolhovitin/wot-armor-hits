@@ -721,11 +721,43 @@ function drawShotPanel() {
     });
 }
 
-// The modules and crew grid of the crits section, like the battle damage panel: the module kinds in two rows, the
-// crew roles in one under a line, each row in the middle; a cell the panel's icon at its state (its color), framed
-// when the shot damaged it (a dashed frame destroyed), dim when not. The note under it: only this shot's damage.
-const DEVICE_ROWS = [0, 1, 2];
-const CREW_ROW = 2;
+// The modules and crew of the crits section, like the battle damage panel: the module kinds in two columns with an
+// abstract tank between them, the crew members in a row under a line, in the middle; a cell the panel's icon at its
+// state (its color), framed when the shot damaged it, dim when not. The note under it: only this shot's damage.
+const DEVICE_LEFT = 0;
+const DEVICE_RIGHT = 1;
+const DEVICE_CREW = 2;
+// In rem: the top of the tank's front wheels, how far below them the rear ones are.
+const WHEEL_TOP = 32;
+const WHEEL_WAY = 98;
+
+function deviceCells(devices, group, className) {
+    const box = element("div", className);
+    devices.filter((device) => device.group === group).forEach((device) => {
+        const cell = element("div", `shotPanel__deviceCell shotPanel__deviceCell__${device.state}`);
+        const icon = element("div", "shotPanel__deviceIcon");
+        icon.style.backgroundImage = `url(img://gui/maps/sagtary_armor_hits/modules/${device.icon}.png)`;
+        cell.appendChild(icon);
+        box.appendChild(cell);
+    });
+    return box;
+}
+
+// The tank from above, the gun forward: its tracks or wheels at the state the shot left them in.
+function drawTank(parts) {
+    const tank = element("div", "shotPanel__tank");
+    parts.forEach((part) => {
+        const item = element("div", `shotPanel__tankPart shotPanel__tankPart__${part.name} shotPanel__tankPart__${part.state}`);
+        if (part.rowCount > 1) {
+            item.style.top = `${WHEEL_TOP + WHEEL_WAY * part.row / (part.rowCount - 1)}rem`;
+        }
+        tank.appendChild(item);
+    });
+    tank.appendChild(element("div", "shotPanel__tankPart shotPanel__tankHull"));
+    tank.appendChild(element("div", "shotPanel__tankPart shotPanel__tankGun"));
+    tank.appendChild(element("div", "shotPanel__tankPart shotPanel__tankTurret"));
+    return tank;
+}
 
 function drawDevices(model) {
     const devices = arrayItems(model.devices);
@@ -733,25 +765,13 @@ function drawDevices(model) {
         return;
     }
     const box = element("div", "shotPanel__devices");
-    DEVICE_ROWS.forEach((rowIndex) => {
-        const cells = devices.filter((device) => device.row === rowIndex);
-        if (!cells.length) {
-            return;
-        }
-        if (rowIndex === CREW_ROW) {
-            box.appendChild(element("div", "shotPanel__deviceLine"));
-        }
-        const row = element("div", "shotPanel__deviceRow");
-        row.classList.toggle("shotPanel__deviceRow__crew", rowIndex === CREW_ROW);
-        cells.forEach((device) => {
-            const cell = element("div", `shotPanel__deviceCell shotPanel__deviceCell__${device.state}`);
-            const icon = element("div", "shotPanel__deviceIcon");
-            icon.style.backgroundImage = `url(img://gui/maps/sagtary_armor_hits/modules/${device.icon}.png)`;
-            cell.appendChild(icon);
-            row.appendChild(cell);
-        });
-        box.appendChild(row);
-    });
+    const vehicle = element("div", "shotPanel__deviceVehicle");
+    vehicle.appendChild(deviceCells(devices, DEVICE_LEFT, "shotPanel__deviceColumn"));
+    vehicle.appendChild(drawTank(arrayItems(model.tankParts)));
+    vehicle.appendChild(deviceCells(devices, DEVICE_RIGHT, "shotPanel__deviceColumn"));
+    box.appendChild(vehicle);
+    box.appendChild(element("div", "shotPanel__deviceLine"));
+    box.appendChild(deviceCells(devices, DEVICE_CREW, "shotPanel__deviceCrew"));
     box.appendChild(element("div", "shotPanel__deviceNote", model.devicesNote));
     shotSections.appendChild(box);
 }
@@ -772,6 +792,7 @@ engine.whenReady.then(() => {
     const paths = ["model", "model.battleSelector", "model.hitsPanel", "model.fileButtons", "model.overlayPanel",
         "model.scenePanel", "model.shotPanel", "model.settingsMenu", "model.settingsMenu.items", "model.settingsMenu.modes",
         "model.shotPanel.shooter", "model.shotPanel.target", "model.shotPanel.sections", "model.shotPanel.devices",
+        "model.shotPanel.tankParts",
         "model.shotPanel.shooter.modules", "model.shotPanel.target.modules"];
     const callbackIDs = paths.map((path) =>
         viewEnv.addDataChangedCallback(path, 0, true),
