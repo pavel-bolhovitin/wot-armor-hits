@@ -14,12 +14,13 @@ ShotPanelPresenter fills the view model (views/models/shot_panel_model.py) for t
   known), armor and impact angle (the vehicle's armor where the hit line meets it, counted in the garage like the
   client's armor tooltip does: getMaterialsAtCursor along the line, the shell's penetration chance there,
   calculatePenetrationInfo), distance (recorded in battle) and modules and crew. On a hit on the player's vehicle
-  that damaged some, modules and crew are the battle damage panel's icons (gui/maps/sagtary_armor_hits/modules/) of
-  what this shot damaged (not what was damaged before it), in the grid's order: a tile per module kind, its icon at
-  the worst state of its damaged parts (a track of two, a wheel of eight), then a tile per crew role; under a tile's
-  icon the client's name of each damaged part or crew member (two loaders under one icon), in its state's color; a
-  fire it started is a line of the section. The client tells nothing of the kind on a hit of another vehicle: there
-  the section has its count only.
+  that damaged some, modules and crew are a grid of the battle damage panel's icons (gui/maps/sagtary_armor_hits/
+  modules/): the vehicle's module kinds in the panel's order in two rows, then its crew roles in one row, each at
+  the state this shot left it in by the hit's crits mask (not what was damaged before it): a kind at the worst state
+  the mask tells (two tracks are one kind), a role hurt when the mask tells it (it does not tell which of two
+  loaders); a received hit of format 1 has no mask, its damage info tells the kinds instead. A fire the shot started
+  is a line of the section. The client tells nothing of the kind on a hit of another vehicle: there the section has
+  its count only.
 
 The shell is the overlay panel's (overlay_panel.py: the shooter's gun and shot with the hit's shell kind); the hit
 line is the hit lines presenter's (hit_lines.py: its first point and direction when drawn). The armor needs the
@@ -35,6 +36,7 @@ import BigWorld
 import nations
 from helpers import dependency, int2roman
 from helpers_common import computePiercingPowerAtDist
+from gui.battle_control.vehicle_getter import getCrewMainRolesWoIndexes, hasTurretRotator
 from gui.impl.backport import createTooltipData
 from gui.impl.gen import R
 from gui.Scaleform.genConsts.TOOLTIPS_CONSTANTS import TOOLTIPS_CONSTANTS
@@ -65,30 +67,24 @@ _NONE = u'—'
 _SHELL_TEXT_KEY = '#ingame_gui:damageLog/shellType/%s'
 # The armor tooltip's name of an armor layer's part, by VehicleArmorTags.
 _PART_TEXT_KEY = '#armor_inspector:tooltip/armor/part/%s'
-# The modules section's tiles: the battle damage panel's module kinds, in its order; the chassis is a track's or, on
-# a wheeled vehicle, a wheel's.
-_MODULE_KINDS = ('engine', 'ammoBay', 'fuelTank', 'chassis', 'gun', 'turretRotator', 'surveyingDevice', 'radio')
-# The state a shot leaves a part in, by its damage info code (data/hits.py DamagedDevice); the states, the worst last;
-# the panel icon's suffix of a state (a crew member has only the orange one).
+# The modules and crew grid: the battle damage panel's module kinds (VEHICLE_GUI_ITEMS) in its order, in two rows;
+# the chassis is a track's or, on a wheeled vehicle, a wheel's; the crew roles' row.
+_MODULE_ROWS = (('engine', 'ammoBay', 'gun', 'turretRotator'), ('chassis', 'surveyingDevice', 'radio', 'fuelTank'))
+_CREW_ROW = 2
+# The state a shot leaves a kind in, by its crits mask's kind (data/hits.py HitCrit) or, in a file of format 1, by its
+# damage info code (DamagedDevice); the states, the worst last; the panel icon's suffix of a state (a crew member has
+# only the orange one: a hurt one is critical).
+_CRIT_STATES = {'criticalDevices': 'critical', 'destroyedDevices': 'destroyed', 'destroyedTankmen': 'critical'}
 _CODE_STATES = {
     'DEVICE_CRITICAL_AT_SHOT': 'critical',
     'DEVICE_DESTROYED_AT_SHOT': 'destroyed',
-    'TANKMAN_HIT_AT_SHOT': 'destroyed',
+    'TANKMAN_HIT_AT_SHOT': 'critical',
     'DEATH_FROM_DEVICE_EXPLOSION_AT_SHOT': 'destroyed',
 }
 _STATES = ('normal', 'critical', 'destroyed')
 _ICON_SUFFIXES = {'normal': '', 'critical': '_orange', 'destroyed': '_red'}
 _FIRE_CODE = 'DEVICE_STARTED_FIRE_AT_SHOT'
-# The client's texts: a module's name (by its devices key), a part's name, a crew member's name (the damage panel's,
-# 'Loader 2'), a role's name, a fire started.
-_DEVICE_NAME_KEY = '#ingame_gui:devices/%s'
-_DEVICE_KEYS = {'engine': 'engine', 'ammoBay': 'ammo_bay', 'fuelTank': 'fuel_tank', 'radio': 'radio', 'gun': 'gun',
-                'turretRotator': 'turret_rotator', 'surveyingDevice': 'surveing_device', 'track': 'chassis',
-                'wheel': 'wheel'}
-_PART_NAME_KEYS = {'leftTrack': '#ingame_gui:devices/left_track', 'rightTrack': '#ingame_gui:devices/right_track',
-                   'wheel': '#ingame_gui:devices/wheel'}
-_CREW_STATE_KEY = '#ingame_gui:damage_panel/crew/%s/%s'
-_CREW_NAME_KEY = '#ingame_gui:tankmen/%s'
+# The client's text of a fire started.
 _FIRE_KEY = '#ingame_gui:efficiencyRibbons/burn'
 _HEALTH_SUFFIX = 'Health'
 # Metres of the hit line looked along for the armor: before and after its first point.
@@ -138,59 +134,52 @@ def _shownGun(descriptor, gun):
     return descriptor.gun
 
 
-def _part(extraName):
-    # (kind, name, number) of a device's extra: 'leftTrack0Health' -> ('track', 'leftTrack', 0).
+def _kind(extraName):
+    # The module kind or crew role of a device's extra: 'leftTrack0Health' -> 'track', 'loader2Health' -> 'loader'.
     name = extraName[:-len(_HEALTH_SUFFIX)] if extraName.endswith(_HEALTH_SUFFIX) else extraName
     base = name.rstrip('0123456789')
-    return ('track' if base in ('leftTrack', 'rightTrack') else base), base, int(name[len(base):] or 0)
+    return 'track' if base in ('leftTrack', 'rightTrack') else base
 
 
 def _worst(states):
     return max(states or ['normal'], key=_STATES.index)
 
 
-def _sentence(text):
-    # The first letter capital, the rest small: the client's names come in either case ('engine', 'Fuel Tank').
-    return text[:1].upper() + text[1:].lower()
+def _damagedKinds(hit):
+    # {module kind or crew role: state} of what the hit's shot damaged, by its crits mask; a received hit of format 1
+    # has none: by its damage info, its parts' extras by their kinds. A track and a wheel are the chassis.
+    if hit.crits:
+        found = [(crit.device, _CRIT_STATES.get(crit.kind)) for crit in hit.crits]
+    else:
+        found = [(_kind(device.extra), _CODE_STATES.get(device.code)) for device in hit.damagedDevices if device.extra]
+    states = {}
+    for kind, state in found:
+        if state is not None:
+            kind = 'chassis' if kind in ('track', 'wheel') else kind
+            states[kind] = _worst([states.get(kind, 'normal'), state])
+    return states
 
 
 def _devices(descriptor, hit):
-    # [(icon, is crew, text)] of the module parts and crew members the hit's shot damaged, in the battle damage panel's
-    # order: a part's icon at its state and its client name; a crew member's role icon and its roles, '\n' between.
-    states = {}
-    for device in hit.damagedDevices:
-        state = _CODE_STATES.get(device.code)
-        if state is not None and device.extra:
-            states[device.extra] = _worst([states.get(device.extra, 'normal'), state])
+    # [(icon, row, state)] of the grid's cells: the vehicle's module kinds (the turret traverse when the damage panel
+    # has it), then its crew roles in the client's order of roles, each with its icon at the state the hit's shot left
+    # it in; none when the shot damaged nothing.
+    states = _damagedKinds(hit)
+    if not states:
+        return []
     vehicleType = descriptor.type
-    parts = {}
-    for extra in vehicleType.devices:
-        parts.setdefault(_part(extra.name)[0], []).append(extra.name)
     tiles = []
-    for kind in _MODULE_KINDS:
-        if kind == 'chassis':
-            kind = 'wheel' if vehicleType.isWheeledVehicle else 'track'
-        names = sorted(parts.get(kind, ()), key=lambda name: _part(name)[1:])
-        damaged = [(name, states[name]) for name in names if states.get(name, 'normal') != 'normal']
-        if not damaged:
-            continue
-        for name, state in damaged:
-            _, base, number = _part(name)
-            label = clientText(_PART_NAME_KEYS.get(base) or _DEVICE_NAME_KEY % _DEVICE_KEYS.get(base, base)) or base
-            if base == 'wheel':
-                label = u'%s %d' % (label, number + 1)
-            icon = ('chassis' if kind == 'track' else kind) + _ICON_SUFFIXES[state]
-            tiles.append((icon, False, _sentence(label)))
-    # The crew in the vehicle's order, a member a tile.
-    for memberRoles, extra in zip(vehicleType.crewRoles, vehicleType.tankmen):
-        if states.get(extra.name, 'normal') == 'normal':
-            continue
-        name = extra.name[:-len(_HEALTH_SUFFIX)]
-        label = clientText(_CREW_STATE_KEY % (name, 'normal')) or clientText(_CREW_NAME_KEY % memberRoles[0]) or name
-        # A member in several roles (a commander who is the radio operator too): all of them.
-        others = [clientText(_CREW_NAME_KEY % role) for role in memberRoles[1:]]
-        roles = [_sentence(text) for text in [label] + others if text]
-        tiles.append((memberRoles[0] + '_orange', True, u'\n'.join(roles)))
+    for row, kinds in enumerate(_MODULE_ROWS):
+        for kind in kinds:
+            if kind == 'turretRotator' and not hasTurretRotator(descriptor):
+                continue
+            state = states.get(kind, 'normal')
+            icon = 'wheel' if kind == 'chassis' and vehicleType.isWheeledVehicle else kind
+            tiles.append((icon + _ICON_SUFFIXES[state], row, state))
+    roles = getCrewMainRolesWoIndexes(vehicleType.crewRoles)
+    for role in sorted(set(roles), key=roles.index):
+        state = states.get(role, 'normal')
+        tiles.append((role + _ICON_SUFFIXES[state], _CREW_ROW, state))
     return tiles
 
 
@@ -316,13 +305,14 @@ class ShotPanelPresenter(object):
             model.setIsGoldShell(bool(gunShot[1].shell.isGold) if gunShot is not None else bool(hit.isGoldShell))
             devices = model.getDevices()
             devices.clear()
-            for icon, isCrew, text in self._deviceTiles(battle, side, hit):
+            for icon, row, state in self._deviceTiles(battle, side, hit):
                 device = ShotDeviceModel()
                 device.setIcon(icon)
-                device.setIsCrew(isCrew)
-                device.setText(text)
+                device.setRow(row)
+                device.setState(state)
                 devices.addViewModel(device)
             devices.invalidate()
+            model.setDevicesNote(self._texts['critsNote'])
             sections = model.getSections()
             sections.clear()
             for section in self._sections(hit, gunShot, armor):
@@ -331,8 +321,8 @@ class ShotPanelPresenter(object):
 
     @staticmethod
     def _deviceTiles(battle, side, hit):
-        # The modules and crew tiles of a hit on the player's vehicle that damaged some; none on another vehicle.
-        if side == DEALT or not any(device.extra and device.code in _CODE_STATES for device in hit.damagedDevices):
+        # The modules and crew grid of a hit on the player's vehicle that damaged some; none on another vehicle.
+        if side == DEALT:
             return []
         descriptor = _descriptor(battle.vehicleId, battle.vehicleDescriptor)
         if descriptor is None:
@@ -473,7 +463,7 @@ class ShotPanelPresenter(object):
         # The modules and crew themselves are the page's tiles (model devices); a fire the shot started is a line.
         rows = [('', clientText(_FIRE_KEY), False)] if any(device.code == _FIRE_CODE
                                                           for device in hit.damagedDevices) else []
-        sections.append(self._section('crits', texts['crits'], str(hit.critsCount), False, rows))
+        sections.append(self._section('crits', texts['crits'], str(hit.critsTotal), False, rows))
         return sections
 
     @staticmethod

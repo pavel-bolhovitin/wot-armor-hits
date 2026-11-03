@@ -6,7 +6,7 @@ BattleFiles keeps one file per battle in its folder, named by the battle id (FIL
 writes over its own file. Loading reads every file of the folder that has the name pattern (FILE_PATTERN): the files
 other players sent, put into the folder; deleting removes them all. A file:
     {
-      "formatVersion": 1,         # version of this layout; a file of a newer layout is not read
+      "formatVersion": 2,         # version of this layout; a file of a newer layout is not read
       "appVersion": "0.1.0",      # version of the mod that wrote the file
       "exportTime": 1760781180.0, # when it was written, Unix time
       "battles": [{...}, ...]     # Battle fields, newest first; one battle in a file of BattleFiles
@@ -14,6 +14,9 @@ other players sent, put into the folder; deleting removes them all. A file:
 A battle is read with the fields Battle knows: a field the file does not have gets its default, a field Battle does
 not know is skipped. So a file written by an older or a newer version of the mod is read as long as the layout is the
 same.
+
+Format 2: a received hit has its crits mask (Hit.crits), not the count of its battle event (Hit.critsCount, 0); a
+received hit of format 1 has only the count.
 """
 import glob
 import io
@@ -24,7 +27,7 @@ from collections import OrderedDict
 
 from gui.mods.sagtary_armor_hits.data.battles import Battle
 
-FORMAT_VERSION = 1
+FORMAT_VERSION = 2
 # The file of a battle by its id, and the names of the files loaded.
 FILE_NAME = 'hits_%s.json'
 FILE_PATTERN = 'hits_*.json'

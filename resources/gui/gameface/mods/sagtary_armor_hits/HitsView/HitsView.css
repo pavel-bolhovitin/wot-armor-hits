@@ -1316,26 +1316,44 @@ body {
     color: var(--color-general-tertiary);
 }
 
-/* The modules and crew the shot damaged: the modules, the crew under a line; two cells a row, the battle damage
-   panel's icon (37 x 32, its color tells the state) and the names right of it, at the top. */
+/* The modules and crew grid: the module rows, the crew row under a line, each in the middle, 4 between the cells; a
+   cell the battle damage panel's icon (37 x 32, its color tells the state), framed when damaged (critical solid,
+   destroyed dashed and brighter), dim when not (a crew member a bit less). The note under it, in the middle. */
 .shotPanel__devices {
+    padding: 8rem 12rem 6rem 12rem;
+}
+
+.shotPanel__deviceRow {
     display: flex;
-    flex-wrap: wrap;
-    padding: 6rem 0 4rem 12rem;
+    justify-content: center;
+    margin-bottom: 4rem;
 }
 
 .shotPanel__deviceLine {
     height: 1rem;
-    margin: 4rem 12rem 0 12rem;
+    margin: 6rem 0 10rem 0;
     background-color: rgba(255, 255, 255, 0.08);
 }
 
 .shotPanel__deviceCell {
     display: flex;
-    align-items: flex-start;
-    width: 50%;
-    padding: 2rem 12rem 2rem 0;
+    align-items: center;
+    justify-content: center;
+    width: 45rem;
+    height: 40rem;
+    flex-shrink: 0;
+    margin: 0 2rem;
     box-sizing: border-box;
+    border: 1rem solid transparent;
+    border-radius: 2rem;
+}
+
+.shotPanel__deviceCell__critical {
+    border-color: #8f5a22;
+}
+
+.shotPanel__deviceCell__destroyed {
+    border: 1rem dashed #d04c37;
 }
 
 .shotPanel__deviceIcon {
@@ -1347,17 +1365,20 @@ body {
     background-size: 37rem 32rem;
 }
 
-.shotPanel__deviceNames {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    padding: 7rem 0 0 8rem;
+.shotPanel__deviceCell__normal .shotPanel__deviceIcon {
+    opacity: 0.22;
 }
 
-.shotPanel__deviceName {
-    font-size: 14rem;
-    line-height: 17rem;
-    color: var(--color-general-primary);
+.shotPanel__deviceRow__crew .shotPanel__deviceCell__normal .shotPanel__deviceIcon {
+    opacity: 0.3;
+}
+
+.shotPanel__deviceNote {
+    margin-top: 6rem;
+    font-size: 13rem;
+    line-height: 16rem;
+    text-align: center;
+    color: var(--color-general-tertiary);
 }
 
 /* A value counted in the garage, not told by the battle. */

@@ -8,9 +8,10 @@ and gives it here, so the same rules can make the hits from any source of the sa
   one), none for the other vehicles' hits.
 - shotHit, splashHit: a shell's hit from its hit points as the client decodes them (DamageFromShotDecoder.
   parseHitPoint), a high explosive splash from where it burst.
-- eventInfo, shotDevice, withInfo: what more the client's battle events (PlayerAvatar.onBattleEvents, the source of its
-  damage log) and its damage info of the player's vehicle (PlayerAvatar.showVehicleDamageInfo) tell about a hit:
-  crits, a premium shell, the modules and crew the shell damaged.
+- eventInfo, shotDevice, hitCrits, withInfo: what more the client's battle events (PlayerAvatar.onBattleEvents, the
+  source of its damage log), its damage info of the player's vehicle (PlayerAvatar.showVehicleDamageInfo) and the
+  crits mask of a hit on it (PlayerAvatar.showOwnVehicleHitDirection) tell about a hit: crits, a premium shell, the
+  modules and crew the shell damaged.
 - HitPairing: the events and the hit of the same vehicle within _PAIRING_TIME before or after it are one hit.
 - vehiclePose: the hit vehicle's pose from what the client shows of it.
 - Tracers, shotDirection: the shooter's tracer (PlayerAvatar.showTracer: where the shell starts, its velocity and
@@ -22,9 +23,10 @@ import math
 import Math
 from BattleFeedbackCommon import BATTLE_EVENT_TYPE, NONE_SHELL_TYPE
 from constants import SHELL_TYPES, SHELL_TYPES_LIST
+from gui.shared.crits_mask_parser import critsParserGenerator
 from items.vehicles import DEVICE_TANKMAN_NAMES_TO_VEHICLE_EXTRA_NAMES
 
-from gui.mods.sagtary_armor_hits.data.hits import DamagedDevice, Hit, HitPoint, VehiclePose, effectName
+from gui.mods.sagtary_armor_hits.data.hits import DamagedDevice, Hit, HitCrit, HitPoint, VehiclePose, effectName
 
 # Decimals of the hit point coordinates in metres: the server sends them to about 1 cm; of a direction's; of a caliber
 # in millimetres: the server sends it to 0.1 mm; of an angle in radians.
@@ -107,10 +109,11 @@ def eventSide(eventType):
 
 def eventInfo(eventType, details):
     # {Hit field: value} of a battle event: crits, a premium shell. The events of the player's own hits do not tell
-    # the shell (NONE_SHELL_TYPE): no premium flag from them.
+    # the shell (NONE_SHELL_TYPE): no premium flag from them. A hit on the player's vehicle has its crits from its
+    # own crits mask (hitCrits): the event comes later, with the events of a few hits at once.
     if eventType in _CRIT_EVENTS:
         critsCount, _, shellTypeID, isGold = BATTLE_EVENT_TYPE.unpackCrits(details)[:4]
-        info = {'critsCount': critsCount}
+        info = {'critsCount': critsCount} if eventType == BATTLE_EVENT_TYPE.CRIT else {}
     else:
         shellTypeID, isGold = BATTLE_EVENT_TYPE.unpackDamage(details)[3:5]
         info = {}
@@ -127,6 +130,11 @@ def isShotCode(code):
 def shotDevice(code, extra):
     # The module or crew member of the vehicle's extra (its name, '' for none) the code tells about.
     return DamagedDevice(code=code, extra=extra, device=_EXTRA_DEVICES.get(extra, ''))
+
+
+def hitCrits(mask):
+    # The kinds of modules and crew a hit's crits mask tells, by the client's names, in a fixed order.
+    return tuple(HitCrit(kind=kind, device=device) for kind, device in sorted(critsParserGenerator(mask or 0)))
 
 
 def withInfo(hit, info):

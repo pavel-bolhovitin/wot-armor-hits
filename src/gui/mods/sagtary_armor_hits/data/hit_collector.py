@@ -14,8 +14,8 @@ without damage).
   gun, hull on its chassis and steered wheels, as the client shows them). A splash keeps where the shell burst, in
   the hit vehicle's chassis space (like the points), even when it burst on the ground nearby. The premium flag of the
   player's own shell is the player's current shell's.
-- PlayerAvatar.onBattleEvents, showVehicleDamageInfo: more about the hit of the same vehicle (hit_parser.HitPairing).
-  The client tells which modules it damaged only on the player's own vehicle.
+- PlayerAvatar.onBattleEvents, showVehicleDamageInfo, showOwnVehicleHitDirection: more about the hit of the same
+  vehicle (hit_parser.HitPairing). The client tells which modules it damaged only on the player's own vehicle.
 - PlayerAvatar.showTracer: the shells in flight, for the shell's direction at the first point.
 """
 import logging
@@ -23,7 +23,7 @@ import logging
 import BigWorld
 import Math
 from Avatar import PlayerAvatar
-from constants import ARENA_PERIOD, DAMAGE_INFO_CODES
+from constants import ARENA_PERIOD, ATTACK_REASON, ATTACK_REASON_INDICES, DAMAGE_INFO_CODES
 from PlayerEvents import g_playerEvents
 from Vehicle import Vehicle
 from VehicleEffects import DamageFromShotDecoder
@@ -33,6 +33,9 @@ from gui.mods.sagtary_armor_hits.data import hit_parser
 from gui.mods.sagtary_armor_hits.data.hits import compactDescriptor, ownShellIsGold
 
 _logger = logging.getLogger('sagtary.armor_hits')
+
+# The attack reason of a shell (the client's index).
+_SHOT_REASON = ATTACK_REASON_INDICES[ATTACK_REASON.SHOT]
 
 
 def _chassisPoint(vehicle, point):
@@ -122,6 +125,7 @@ class HitCollector(object):
             (Vehicle, 'showDamageFromExplosion', self._onVehicleHit),
             (PlayerAvatar, 'onBattleEvents', self._onBattleEvents),
             (PlayerAvatar, 'showVehicleDamageInfo', self._onDamageInfo),
+            (PlayerAvatar, 'showOwnVehicleHitDirection', self._onHitDirection),
             (PlayerAvatar, 'showTracer', self._onTracer),
         )
 
@@ -206,6 +210,17 @@ class HitCollector(object):
             return
         extra = avatar.vehicleTypeDescriptor.extras[extraIndex].name if extraIndex else ''
         self._addInfo(('receivedHits', attackerID), {'damagedDevices': (hit_parser.shotDevice(code, extra),)})
+
+    def _onHitDirection(self, call):
+        # The crits mask of a shell's hit on the player's vehicle (not a ramming, a fire, ...): the kinds of modules
+        # and crew it damaged. It comes right after the hit, every hit has it.
+        if call.get('damagedID') != getattr(call.entity, 'playerVehicleID', None):
+            return
+        if call.get('attackReasonID') != _SHOT_REASON:
+            return
+        crits = hit_parser.hitCrits(call.get('crits'))
+        if crits:
+            self._addInfo(('receivedHits', call.get('attackerID')), {'crits': crits})
 
     def _addInfo(self, key, info):
         # Adds the info to the last hit of the key within the pairing time, or keeps it for the hit to come.

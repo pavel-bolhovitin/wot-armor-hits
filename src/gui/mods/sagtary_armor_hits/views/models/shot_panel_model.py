@@ -180,9 +180,9 @@ class ShotSectionModel(ViewModel):
 
 
 class ShotDeviceModel(ViewModel):
-    # A tile of the modules and crew section: the icon of the battle damage panel (gui/maps/sagtary_armor_hits/modules/
-    # <icon>.png: the kind and its state), a crew member or a module part, and its names (a crew member's roles, '\n'
-    # between).
+    # A cell of the modules and crew grid: the icon of the battle damage panel (gui/maps/sagtary_armor_hits/modules/
+    # <icon>.png: the module kind or crew role and its state), its row (0 and 1 the modules, 2 the crew) and the state
+    # the shot left it in (normal, critical, destroyed).
     __slots__ = ()
 
     def __init__(self, properties=3, commands=0):
@@ -194,29 +194,29 @@ class ShotDeviceModel(ViewModel):
     def setIcon(self, value):
         self._setString(0, value)
 
-    def getIsCrew(self):
-        return self._getBool(1)
+    def getRow(self):
+        return self._getNumber(1)
 
-    def setIsCrew(self, value):
-        self._setBool(1, value)
+    def setRow(self, value):
+        self._setNumber(1, value)
 
-    def getText(self):
+    def getState(self):
         return self._getString(2)
 
-    def setText(self, value):
+    def setState(self, value):
         self._setString(2, value)
 
     def _initialize(self):
         super(ShotDeviceModel, self)._initialize()
         self._addStringProperty('icon', '')
-        self._addBoolProperty('isCrew', False)
-        self._addStringProperty('text', '')
+        self._addNumberProperty('row', 0)
+        self._addStringProperty('state', '')
 
 
 class ShotPanelModel(ViewModel):
     __slots__ = ()
 
-    def __init__(self, properties=9, commands=0):
+    def __init__(self, properties=10, commands=0):
         super(ShotPanelModel, self).__init__(properties=properties, commands=commands)
 
     def getIsVisible(self):
@@ -279,7 +279,7 @@ class ShotPanelModel(ViewModel):
         self._setBool(7, value)
 
     def getDevices(self):
-        # The modules and crew section's tiles: the module kinds, then the crew; none when not known.
+        # The modules and crew section's grid: the module kinds, then the crew roles; none when not known.
         return self._getArray(8)
 
     def setDevices(self, value):
@@ -288,6 +288,13 @@ class ShotPanelModel(ViewModel):
     @staticmethod
     def getDevicesType():
         return ShotDeviceModel
+
+    def getDevicesNote(self):
+        # The note under the grid: it shows what this shot did, not the damage of earlier hits.
+        return self._getString(9)
+
+    def setDevicesNote(self, value):
+        self._setString(9, value)
 
     def _initialize(self):
         super(ShotPanelModel, self)._initialize()
@@ -300,3 +307,4 @@ class ShotPanelModel(ViewModel):
         self._addStringProperty('shellText', '')
         self._addBoolProperty('isGoldShell', False)
         self._addArrayProperty('devices', Array())
+        self._addStringProperty('devicesNote', '')

@@ -49,7 +49,7 @@ SCREEN_LEFT_EVENT = 'sagtaryArmorHitsScreenLeft'
 
 # The shot panel's texts.
 _SHOT_TEXTS = ('shot/shooter', 'shot/target', 'shot/damage', 'shot/penetration', 'shot/armor', 'shot/angle',
-               'shot/distance', 'shot/crits', 'shot/avgDamage', 'shot/avgPenetration',
+               'shot/distance', 'shot/crits', 'shot/critsNote', 'shot/avgDamage', 'shot/avgPenetration',
                'shot/chance', 'shot/nominal', 'shot/angleArmor', 'shot/ricochet', 'shot/distanceLoss', 'shot/deviation')
 # The settings menu's texts.
 _SETTINGS_TEXTS = ('settings/showFriendlyFire', 'settings/showButtonInModsMenu', 'settings/debug', 'settings/restart',
