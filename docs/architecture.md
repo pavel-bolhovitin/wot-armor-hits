@@ -228,6 +228,6 @@ ray meets armor (a collision with a material), fills it, then loads it.
 ## Logging
 
 All modules log to the `sagtary.armor_hits` logger. The lines go to `game.log` in the game folder. The mod logs one
-line when it starts, `[INFO] [Main] [SCRIPT] [sagtary.armor_hits] init v1.2.0` (`, debug on` with the `debug`
+line when it starts, `[INFO] [Main] [SCRIPT] [sagtary.armor_hits] init v1.3.0` (`, debug on` with the `debug`
 setting), and then only what fails: warnings and errors with their tracebacks. The `debug` setting turns on the debug
 record only (`data/debug_recorder.py`): raw server calls in files, nothing more in the log.
