@@ -8,7 +8,7 @@ from frameworks.wulf import Array, ViewModel
 class BattleItemModel(ViewModel):
     __slots__ = ()
 
-    def __init__(self, properties=8, commands=0):
+    def __init__(self, properties=9, commands=0):
         super(BattleItemModel, self).__init__(properties=properties, commands=commands)
 
     def getId(self):
@@ -61,6 +61,13 @@ class BattleItemModel(ViewModel):
     def setResultText(self, value):
         self._setString(7, value)
 
+    def getIsOldFormat(self):
+        # From a file of an old format: the page shows its note.
+        return self._getBool(8)
+
+    def setIsOldFormat(self, value):
+        self._setBool(8, value)
+
     def _initialize(self):
         super(BattleItemModel, self)._initialize()
         self._addStringProperty('id', '')
@@ -71,12 +78,13 @@ class BattleItemModel(ViewModel):
         self._addStringProperty('time', '')
         self._addStringProperty('result', '')
         self._addStringProperty('resultText', '')
+        self._addBoolProperty('isOldFormat', False)
 
 
 class BattleSelectorModel(ViewModel):
     __slots__ = ('onSelect',)
 
-    def __init__(self, properties=3, commands=1):
+    def __init__(self, properties=4, commands=1):
         super(BattleSelectorModel, self).__init__(properties=properties, commands=commands)
 
     def getBattles(self):
@@ -101,10 +109,17 @@ class BattleSelectorModel(ViewModel):
     def setEmptyTitle(self, value):
         self._setString(2, value)
 
+    def getOldFormatText(self):
+        return self._getString(3)
+
+    def setOldFormatText(self, value):
+        self._setString(3, value)
+
     def _initialize(self):
         super(BattleSelectorModel, self)._initialize()
         self._addArrayProperty('battles', Array())
         self._addStringProperty('selectedId', '')
         self._addStringProperty('emptyTitle', '')
+        self._addStringProperty('oldFormatText', '')
         # {id}: the battle the player picked in the list.
         self.onSelect = self._addCommand('onSelect')

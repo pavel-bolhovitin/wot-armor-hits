@@ -87,7 +87,7 @@ class HitsView(ViewComponent):
         super(HitsView, self)._onLoading(*args, **kwargs)
         model = self.getViewModel()
         battleSelector = BattleSelectorPresenter(model.battleSelector, self._battleStore, {
-            'empty': text('battles/empty')})
+            'empty': text('battles/empty'), 'oldFormat': text('battles/oldFormat')})
         self._presenters.append(battleSelector)
         # The hits panel shows the battle the selector shows, so it is made and set up after the selector.
         hitsPanel = HitsPanelPresenter(model.hitsPanel, self._battleStore, battleSelector, {

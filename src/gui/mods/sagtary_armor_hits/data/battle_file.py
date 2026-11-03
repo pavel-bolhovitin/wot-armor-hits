@@ -1,22 +1,21 @@
 # -*- coding: utf-8 -*-
-"""Battles saved to JSON files and read back: a player sends a battle's file with a report, and the hits screen shows
+"""A battle saved to a JSON file and read back: a player sends a battle's file with a report, and the hits screen shows
 the battle on another client.
 
 BattleFiles keeps one file per battle in its folder, named by the battle id (FILE_NAME), so a battle saved again
 writes over its own file. Loading reads every file of the folder that has the name pattern (FILE_PATTERN): the files
-other players sent, put into the folder; deleting removes them all. A file:
+other players sent, put into the folder; deleting removes them all. A file is the fields of one Battle:
     {
       "formatVersion": 2,         # version of this layout; a file of a newer layout is not read
       "appVersion": "0.1.0",      # version of the mod that wrote the file
       "exportTime": 1760781180.0, # when it was written, Unix time
-      "battles": [{...}, ...]     # Battle fields, newest first; one battle in a file of BattleFiles
+      "battleId": 49612174051990431,
+      ...                         # the other Battle fields
     }
-A battle is read with the fields Battle knows: a field the file does not have gets its default, a field Battle does
-not know is skipped. So a file written by an older or a newer version of the mod is read as long as the layout is the
-same.
-
-Format 2: a received hit has its crits mask (Hit.crits), not the count of its battle event (Hit.critsCount, 0); a
-received hit of format 1 has only the count.
+A file of an old format is converted to the latest one when it is read (migrations/), in memory only: the file stays
+as it is, also when its battle is saved again, and the battle keeps the format its file has (Battle.isOldFormat). A
+battle is read with the fields Battle knows: a field the file does not have gets its default, a field Battle does not
+know is skipped.
 """
 import glob
 import io
@@ -25,9 +24,9 @@ import os
 import time
 from collections import OrderedDict
 
-from gui.mods.sagtary_armor_hits.data.battles import Battle
+from gui.mods.sagtary_armor_hits.data import migrations
+from gui.mods.sagtary_armor_hits.data.battles import FORMAT_VERSION, Battle
 
-FORMAT_VERSION = 2
 # The file of a battle by its id, and the names of the files loaded.
 FILE_NAME = 'hits_%s.json'
 FILE_PATTERN = 'hits_*.json'
@@ -48,17 +47,8 @@ def _text(value):
     return value
 
 
-def _battleData(battle):
-    return _text(battle.toDict())
-
-
-def writeBattles(path, battles, appVersion):
-    data = OrderedDict((
-        ('formatVersion', FORMAT_VERSION),
-        ('appVersion', appVersion),
-        ('exportTime', time.time()),
-        ('battles', [_battleData(battle) for battle in battles]),
-    ))
+def writeBattle(path, battle, appVersion):
+    data = _text(battle.replace(formatVersion=FORMAT_VERSION, appVersion=appVersion, exportTime=time.time()).toDict())
     try:
         folder = os.path.dirname(path)
         if folder and not os.path.isdir(folder):
@@ -74,8 +64,8 @@ def writeBattles(path, battles, appVersion):
         raise BattleFileError('cannot write %s: %s' % (path, error))
 
 
-def readBattles(path):
-    # The battles of the file, newest first.
+def readBattle(path):
+    # The battle of the file, in the latest format; it keeps the format its file has.
     if not os.path.isfile(path):
         raise BattleFileError('no file %s' % path)
     try:
@@ -83,14 +73,16 @@ def readBattles(path):
             data = json.load(f)
     except (IOError, OSError, ValueError) as error:
         raise BattleFileError('cannot read %s: %s' % (path, error))
-    if not isinstance(data, dict) or not isinstance(data.get('battles'), list):
-        raise BattleFileError('%s is not a battles file' % path)
+    if not isinstance(data, dict):
+        raise BattleFileError('%s is not a battle file' % path)
     formatVersion = data.get('formatVersion')
     if not isinstance(formatVersion, int) or formatVersion > FORMAT_VERSION:
         raise BattleFileError('%s has format version %r, this mod reads up to %d' % (
             path, formatVersion, FORMAT_VERSION))
-    battles = [Battle.fromDict(item) for item in data['battles'] if isinstance(item, dict)]
-    return battles
+    battle = Battle.fromDict(migrations.toLatest(data))
+    if not battle.battleId:
+        raise BattleFileError('%s is not a battle file' % path)
+    return battle.replace(formatVersion=formatVersion)
 
 
 class BattleFiles(object):
@@ -107,20 +99,22 @@ class BattleFiles(object):
         return os.path.join(self._folder, FILE_NAME % battle.battleId)
 
     def save(self, battle):
-        # Writes the battle to its file, over the one saved before; the file's path.
+        # Writes the battle to its file, over the one saved before, but for a battle of a file of an old format: the
+        # file stays as it is. The file's path.
         path = self.pathOf(battle)
-        writeBattles(path, [battle], self._appVersion)
+        if not battle.isOldFormat:
+            writeBattle(path, battle, self._appVersion)
         return path
 
     def loadAll(self):
-        # ([battle] of all the folder's files, [(path, error)] of the files not read); an error without any file.
+        # ([battle] of the folder's files, [(path, error)] of the files not read); an error without any file.
         paths = sorted(glob.glob(os.path.join(self._folder, FILE_PATTERN)))
         if not paths:
             raise BattleFileError('no files %s in %s' % (FILE_PATTERN, os.path.abspath(self._folder)))
         battles, errors = [], []
         for path in paths:
             try:
-                battles.extend(readBattles(path))
+                battles.append(readBattle(path))
             except BattleFileError as error:
                 errors.append((path, error))
         return battles, errors

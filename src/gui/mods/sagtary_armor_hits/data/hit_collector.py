@@ -158,14 +158,15 @@ class HitCollector(object):
         if battle is None:
             return
         if call.name == 'showDamageFromShot':
-            hit = hit_parser.shotHit(call.get('damage'), _decodedPoints(vehicle, call.get('hitPoints')))
+            hit = hit_parser.shotHit(field, call.get('damage'), _decodedPoints(vehicle, call.get('hitPoints')))
             if hit.vehiclePoints:
                 hit = hit.replace(shotDirection=self._shotDirection(vehicle, attackerID, hit.vehiclePoints[0]))
             if field == 'dealtHits':
                 hit = hit.replace(isGoldShell=_ownShellIsGold(player, hit.shellType))
         else:
             center = call.get('center')
-            hit = hit_parser.splashHit(call.get('damage'), _chassisPoint(vehicle, center) if center is not None else ())
+            hit = hit_parser.splashHit(field, call.get('damage'),
+                                      _chassisPoint(vehicle, center) if center is not None else ())
         arenaVehicle = player.arena.vehicles.get(otherID) or {}
         descriptor = arenaVehicle.get('vehicleType')
         hit = hit.replace(time=_battleTime(player.arena), playerName=arenaVehicle.get('name') or '',

@@ -8,7 +8,8 @@ property of BattleItemModel and a line in _fillItem.
 The card and the items show the map, the result when it is known, the vehicle and the time; the list is grouped by
 the date. All these texts are the client's, in the client language: the map and the vehicle by their ids
 (data/client_names.py), the result from the client's strings, the date and the time in the client format. The battle
-id goes to the page as a string, as it does not fit a JavaScript number.
+id goes to the page as a string, as it does not fit a JavaScript number. A selected battle from a file of an old
+format has a note at the top of the screen.
 """
 import logging
 
@@ -57,12 +58,13 @@ def _fillItem(item, battle):
     item.setTime(backport.getShortTimeFormat(battle.startedAt))
     item.setResult(battle.result)
     item.setResultText(_resultText(battle.result))
+    item.setIsOldFormat(battle.isOldFormat)
 
 
 class BattleSelectorPresenter(object):
 
     def __init__(self, model, store, texts):
-        # texts: {'empty'} in the client language.
+        # texts: {'empty', 'oldFormat'} in the client language.
         self._model = model
         self._store = store
         self._texts = texts
@@ -75,6 +77,7 @@ class BattleSelectorPresenter(object):
 
     def init(self):
         self._model.setEmptyTitle(self._texts['empty'])
+        self._model.setOldFormatText(self._texts['oldFormat'])
         self._model.onSelect += self._onSelect
         self._store.onChanged += self._onStoreChanged
         self._update()

@@ -209,6 +209,7 @@ sceneInput.addEventListener("mouseout", () => {
 // a battle selects it (onSelect in the model), a click elsewhere or Escape closes the list. The data is in
 // window.model.battleSelector and the page draws it again on every model change.
 const selector = document.querySelector(".battleSelector");
+const oldFormatAlert = document.querySelector(".oldFormatAlert");
 const selectorCard = selector.querySelector(".battleSelector__card");
 const selectorItems = selector.querySelector(".battleSelector__items");
 new ScrollView(selector.querySelector(".battleSelector__list"));
@@ -269,6 +270,8 @@ function drawBattleSelector() {
     const battles = arrayItems(model.battles);
     const selected = battles.find((battle) => battle.id === model.selectedId) || battles[0];
     selector.classList.toggle("battleSelector__empty", !selected);
+    oldFormatAlert.classList.toggle("oldFormatAlert__visible", Boolean(selected && selected.isOldFormat));
+    oldFormatAlert.querySelector(".oldFormatAlert__text").textContent = model.oldFormatText;
     if (!selected) {
         // No battles yet: the card shows the empty title only.
         setSelectorOpen(false);

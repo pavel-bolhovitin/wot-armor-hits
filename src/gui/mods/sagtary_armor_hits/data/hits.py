@@ -4,9 +4,12 @@
 The hits' data, as the battle files keep it (Record); hit_parser.py makes them from the server's calls,
 hit_collector.py in battle.
 
-- Hit: one hit, read from the client when the server tells about it (Vehicle.showDamageFromShot for a shell that hit,
-  Vehicle.showDamageFromExplosion for a high explosive splash). It keeps what the server sent; its result is worked
-  out from that, like the client's armor tooltip tells a shot: damage, not pierced, a ricochet, or no damage.
+- Hit: what a hit of either side has, read from the client when the server tells about it (Vehicle.showDamageFromShot
+  for a shell that hit, Vehicle.showDamageFromExplosion for a high explosive splash). It keeps what the server sent;
+  its result is worked out from that, like the client's armor tooltip tells a shot: damage, not pierced, a ricochet,
+  or no damage.
+- ReceivedHit: a hit on the player's vehicle: the modules and crew the shell damaged (DamagedDevice, HitCrit).
+- DealtHit: a hit of the player on another vehicle: the client tells only how many modules and crew it damaged.
 - DamagedDevice: a module or a crew member of the player's vehicle a shell damaged, by the client's own names (its
   damage info code, the vehicle's extra and the device kind), so it can be shown in any way later. The client's
   numbers for them are not kept: the extra's index depends on the vehicle type, the code's on the client version.
@@ -128,14 +131,9 @@ class Hit(Record):
         ('caliber', 0.0),       # the shell's caliber in millimetres, as the hit points tell it; 0 when not known
         ('damage', 0),          # hit points the hit took
         ('isSplash', False),    # a high explosive splash nearby, not a hit on the armor
-        ('critsCount', 0),      # modules and crew a dealt hit damaged, as the client's damage log counts them; 0 on
-                                # a received hit (crits), but in a file of format 1
         ('isGoldShell', False), # a premium shell
         ('points', ()),         # the points the shell hit, in order (HitPoint); none for a splash
         ('distance', 0.0),      # metres between the shooter and the target at the hit; 0 when not known
-        ('damagedDevices', ()), # what the shell did to the player's vehicle (received hits), in order (DamagedDevice)
-        ('crits', ()),          # the kinds of modules and crew of the player's vehicle the shell damaged (received
-                                # hits), as its crits mask tells them (HitCrit)
         ('splashCenter', ()),   # (x, y, z) where a splash's shell burst, in metres in the hit vehicle's chassis space
                                 # (part 0 of the points); () when not known
         ('shotDirection', ()),  # (x, y, z) unit direction of the shell at the first point of vehiclePoints, in its part
@@ -143,14 +141,8 @@ class Hit(Record):
                                 # from the shell's tracer (exact, unlike the points); () when not known
         ('vehiclePose', None),  # how the hit vehicle stood at the hit (VehiclePose); None when not known
     )
-    NESTED = {'points': HitPoint, 'damagedDevices': DamagedDevice, 'crits': HitCrit, 'vehiclePose': VehiclePose}
+    NESTED = {'points': HitPoint, 'vehiclePose': VehiclePose}
     __slots__ = tuple(name for name, _ in FIELDS)
-
-    @property
-    def critsTotal(self):
-        # The modules and crew the hit damaged, as the client counts them in battle: a received hit's crits; the
-        # battle event's count of a dealt hit (and of a received one in a file of format 1).
-        return len(self.crits) or self.critsCount
 
     @property
     def vehicleId(self):
@@ -183,6 +175,33 @@ class Hit(Record):
         if last in VEHICLE_HIT_EFFECT.PIERCED_HITS:
             return HitResult.NO_DAMAGE
         return HitResult.BLOCKED
+
+
+class ReceivedHit(Hit):
+    FIELDS = Hit.FIELDS + (
+        ('damagedDevices', ()), # what the shell did to the player's vehicle, in order (DamagedDevice)
+        ('crits', ()),          # the kinds of modules and crew of the player's vehicle the shell damaged, as its crits
+                                # mask tells them (HitCrit)
+    )
+    NESTED = dict(Hit.NESTED, damagedDevices=DamagedDevice, crits=HitCrit)
+    __slots__ = ('damagedDevices', 'crits')
+
+    @property
+    def critsTotal(self):
+        # The modules and crew the shell damaged, as the client counts them in battle.
+        return len(self.crits)
+
+
+class DealtHit(Hit):
+    FIELDS = Hit.FIELDS + (
+        ('critsCount', 0),      # modules and crew the hit damaged, as the client's damage log counts them
+    )
+    __slots__ = ('critsCount',)
+
+    @property
+    def critsTotal(self):
+        # The modules and crew the hit damaged, as the client counts them in battle.
+        return self.critsCount
 
 
 def effectName(code):

@@ -6,7 +6,7 @@ and gives it here, so the same rules can make the hits from any source of the sa
 
 - hitSide: whose hit it is: receivedHits (the player's vehicle was hit), dealtHits (the player's vehicle hit another
   one), none for the other vehicles' hits.
-- shotHit, splashHit: a shell's hit from its hit points as the client decodes them (DamageFromShotDecoder.
+- shotHit, splashHit: a shell's hit of a side from its hit points as the client decodes them (DamageFromShotDecoder.
   parseHitPoint), a high explosive splash from where it burst.
 - eventInfo, shotDevice, hitCrits, withInfo: what more the client's battle events (PlayerAvatar.onBattleEvents, the
   source of its damage log), its damage info of the player's vehicle (PlayerAvatar.showVehicleDamageInfo) and the
@@ -26,7 +26,8 @@ from constants import SHELL_TYPES, SHELL_TYPES_LIST
 from gui.shared.crits_mask_parser import critsParserGenerator
 from items.vehicles import DEVICE_TANKMAN_NAMES_TO_VEHICLE_EXTRA_NAMES
 
-from gui.mods.sagtary_armor_hits.data.hits import DamagedDevice, Hit, HitCrit, HitPoint, VehiclePose, effectName
+from gui.mods.sagtary_armor_hits.data.hits import (DamagedDevice, DealtHit, HitCrit, HitPoint, ReceivedHit, VehiclePose,
+                                                    effectName)
 
 # Decimals of the hit point coordinates in metres: the server sends them to about 1 cm; of a direction's; of a caliber
 # in millimetres: the server sends it to 0.1 mm; of an angle in radians.
@@ -34,6 +35,8 @@ _POINT_DECIMALS = 3
 _DIRECTION_DECIMALS = 4
 _CALIBER_DECIMALS = 1
 _ANGLE_DECIMALS = 4
+# The record of a hit by the Battle field of its side.
+_HIT_RECORDS = {'receivedHits': ReceivedHit, 'dealtHits': DealtHit}
 # The client's battle events (BattleFeedbackCommon.BATTLE_EVENT_TYPE) that tell more about a hit: the side of the
 # hit; the event's targetID is the other vehicle (the target of the player's hit, the attacker of a received one).
 _EVENT_SIDES = {
@@ -78,22 +81,23 @@ def hitSide(vehicleID, attackerID, playerVehicleID):
     return None
 
 
-def shotHit(damage, decodedPoints):
-    # A shell's hit from its points as DamageFromShotDecoder.parseHitPoint gives them: (part index, hit effect,
-    # start, end, hit type, shell type index, caliber). All of them, on any part; the shell type and the caliber are
-    # the same at all the points of a shell, but for those without them.
+def shotHit(side, damage, decodedPoints):
+    # A shell's hit of the side (hitSide's Battle field) from its points as DamageFromShotDecoder.parseHitPoint gives
+    # them: (part index, hit effect, start, end, hit type, shell type index, caliber). All of them, on any part; the
+    # shell type and the caliber are the same at all the points of a shell, but for those without them.
     points, shellType, caliber = [], '', 0.0
     for part, effect, start, end, hitType, shellTypeIndex, pointCaliber in decodedPoints:
         shellType = shellType or _shellType(shellTypeIndex)
         caliber = caliber or round(pointCaliber, _CALIBER_DECIMALS)
         points.append(HitPoint(tankPartIndex=part, start=vector(start), end=vector(end), effect=effectName(effect),
                                hitType=effectName(hitType)))
-    return Hit(damage=damage or 0, shellType=shellType, caliber=caliber, points=tuple(points))
+    return _HIT_RECORDS[side](damage=damage or 0, shellType=shellType, caliber=caliber, points=tuple(points))
 
 
-def splashHit(damage, center):
-    # A high explosive splash; center: where it burst in the hit vehicle's chassis space, () when not known.
-    return Hit(shellType=SHELL_TYPES.HIGH_EXPLOSIVE, damage=damage or 0, isSplash=True, splashCenter=center)
+def splashHit(side, damage, center):
+    # A high explosive splash of the side; center: where it burst in the hit vehicle's chassis space, () when not known.
+    return _HIT_RECORDS[side](shellType=SHELL_TYPES.HIGH_EXPLOSIVE, damage=damage or 0, isSplash=True,
+                              splashCenter=center)
 
 
 def vehiclePose(aimParams):

@@ -18,9 +18,8 @@ ShotPanelPresenter fills the view model (views/models/shot_panel_model.py) for t
   modules/): the vehicle's module kinds in the panel's order in two rows, then its crew roles in one row, each at
   the state this shot left it in by the hit's crits mask (not what was damaged before it): a kind at the worst state
   the mask tells (two tracks are one kind), a role hurt when the mask tells it (it does not tell which of two
-  loaders); a received hit of format 1 has no mask, its damage info tells the kinds instead. A fire the shot started
-  is a line of the section. The client tells nothing of the kind on a hit of another vehicle: there the section has
-  its count only.
+  loaders). A fire the shot started is a line of the section. The client tells nothing of the kind on a hit of another
+  vehicle: there the section has its count only.
 
 The shell is the overlay panel's (overlay_panel.py: the shooter's gun and shot with the hit's shell kind); the hit
 line is the hit lines presenter's (hit_lines.py: its first point and direction when drawn). The armor needs the
@@ -71,22 +70,14 @@ _PART_TEXT_KEY = '#armor_inspector:tooltip/armor/part/%s'
 # the chassis is a track's or, on a wheeled vehicle, a wheel's; the crew roles' row.
 _MODULE_ROWS = (('engine', 'ammoBay', 'gun', 'turretRotator'), ('chassis', 'surveyingDevice', 'radio', 'fuelTank'))
 _CREW_ROW = 2
-# The state a shot leaves a kind in, by its crits mask's kind (data/hits.py HitCrit) or, in a file of format 1, by its
-# damage info code (DamagedDevice); the states, the worst last; the panel icon's suffix of a state (a crew member has
-# only the orange one: a hurt one is critical).
+# The state a shot leaves a kind in, by its crits mask's kind (data/hits.py HitCrit); the states, the worst last; the
+# panel icon's suffix of a state (a crew member has only the orange one: a hurt one is critical).
 _CRIT_STATES = {'criticalDevices': 'critical', 'destroyedDevices': 'destroyed', 'destroyedTankmen': 'critical'}
-_CODE_STATES = {
-    'DEVICE_CRITICAL_AT_SHOT': 'critical',
-    'DEVICE_DESTROYED_AT_SHOT': 'destroyed',
-    'TANKMAN_HIT_AT_SHOT': 'critical',
-    'DEATH_FROM_DEVICE_EXPLOSION_AT_SHOT': 'destroyed',
-}
 _STATES = ('normal', 'critical', 'destroyed')
 _ICON_SUFFIXES = {'normal': '', 'critical': '_orange', 'destroyed': '_red'}
 _FIRE_CODE = 'DEVICE_STARTED_FIRE_AT_SHOT'
 # The client's text of a fire started.
 _FIRE_KEY = '#ingame_gui:efficiencyRibbons/burn'
-_HEALTH_SUFFIX = 'Health'
 # Metres of the hit line looked along for the armor: before and after its first point.
 _RAY = 2.5
 # The armor is counted again while the collision model has not come: seconds between, how many times.
@@ -134,28 +125,18 @@ def _shownGun(descriptor, gun):
     return descriptor.gun
 
 
-def _kind(extraName):
-    # The module kind or crew role of a device's extra: 'leftTrack0Health' -> 'track', 'loader2Health' -> 'loader'.
-    name = extraName[:-len(_HEALTH_SUFFIX)] if extraName.endswith(_HEALTH_SUFFIX) else extraName
-    base = name.rstrip('0123456789')
-    return 'track' if base in ('leftTrack', 'rightTrack') else base
-
-
 def _worst(states):
     return max(states or ['normal'], key=_STATES.index)
 
 
 def _damagedKinds(hit):
-    # {module kind or crew role: state} of what the hit's shot damaged, by its crits mask; a received hit of format 1
-    # has none: by its damage info, its parts' extras by their kinds. A track and a wheel are the chassis.
-    if hit.crits:
-        found = [(crit.device, _CRIT_STATES.get(crit.kind)) for crit in hit.crits]
-    else:
-        found = [(_kind(device.extra), _CODE_STATES.get(device.code)) for device in hit.damagedDevices if device.extra]
+    # {module kind or crew role: state} of what the hit's shot damaged, by its crits mask. A track and a wheel are the
+    # chassis.
     states = {}
-    for kind, state in found:
+    for crit in hit.crits:
+        state = _CRIT_STATES.get(crit.kind)
         if state is not None:
-            kind = 'chassis' if kind in ('track', 'wheel') else kind
+            kind = 'chassis' if crit.device in ('track', 'wheel') else crit.device
             states[kind] = _worst([states.get(kind, 'normal'), state])
     return states
 
@@ -315,7 +296,7 @@ class ShotPanelPresenter(object):
             model.setDevicesNote(self._texts['critsNote'])
             sections = model.getSections()
             sections.clear()
-            for section in self._sections(hit, gunShot, armor):
+            for section in self._sections(side, hit, gunShot, armor):
                 sections.addViewModel(section)
             sections.invalidate()
 
@@ -400,7 +381,7 @@ class ShotPanelPresenter(object):
         return _materials(entity, position - direction * _RAY, position + direction * _RAY,
                           self._overlayPanel.shellParams)
 
-    def _sections(self, hit, gunShot, armor):
+    def _sections(self, side, hit, gunShot, armor):
         texts = self._texts
         shell = gunShot[1].shell if gunShot is not None else None
         isHighExplosive = hit.shellType == 'HIGH_EXPLOSIVE'
@@ -460,9 +441,10 @@ class ShotPanelPresenter(object):
         sections.append(self._section('angle', texts['angle'], angle, bool(layers), rows))
         distance = str(int(round(hit.distance))) if hit.distance else _NONE
         sections.append(self._section('distance', texts['distance'], distance, False, []))
-        # The modules and crew themselves are the page's tiles (model devices); a fire the shot started is a line.
-        rows = [('', clientText(_FIRE_KEY), False)] if any(device.code == _FIRE_CODE
-                                                          for device in hit.damagedDevices) else []
+        # The modules and crew themselves are the page's grid (model devices); a fire the shot started on the player's
+        # vehicle is a line.
+        rows = [('', clientText(_FIRE_KEY), False)] if side != DEALT and any(device.code == _FIRE_CODE
+                                                                             for device in hit.damagedDevices) else []
         sections.append(self._section('crits', texts['crits'], str(hit.critsTotal), False, rows))
         return sections
 

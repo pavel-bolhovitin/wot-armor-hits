@@ -2,7 +2,8 @@
 """Battles of the current game session: the data of the hits screen's battle selector.
 
 - Battle: what is known about one battle, read from the client when the battle starts, and its hits (hits.py).
-  A record (record.py): a new field is a line in FIELDS with a default.
+  A record (record.py): a new field is a line in FIELDS with a default. It is also all that its file has
+  (battle_file.py): a file is the fields of one Battle.
 - BattleStore: the battles of this session in memory, newest first, up to BATTLES_LIMIT. It tells its listeners
   when the list changes (onChanged). The store is not saved by itself; battle_file.py writes and reads it on demand.
 - BattleCollector: adds a Battle to the store when the player enters a battle or starts a replay, and writes the
@@ -23,7 +24,7 @@ from chat_shared import SYS_MESSAGE_TYPE
 from messenger.proto.events import g_messengerEvents
 
 from gui.mods.sagtary_armor_hits.config import BATTLES_LIMIT
-from gui.mods.sagtary_armor_hits.data.hits import Hit, compactDescriptor, vehicleTypeId
+from gui.mods.sagtary_armor_hits.data.hits import DealtHit, ReceivedHit, compactDescriptor, vehicleTypeId
 from gui.mods.sagtary_armor_hits.data.record import Record
 
 _logger = logging.getLogger('sagtary.armor_hits')
@@ -47,10 +48,19 @@ _GAMEPLAY_ID_SHIFT = 16
 _MAP_ID_MASK = (1 << _GAMEPLAY_ID_SHIFT) - 1
 
 
+# The latest format of the battle files (battle_file.py, migrations/).
+FORMAT_VERSION = 2
+
+
 class Battle(Record):
     # A battle keeps ids only: the names and images of the map and the vehicle are found by the ids in the client
     # (client_names.py).
     FIELDS = (
+        ('formatVersion', FORMAT_VERSION),
+                                # the format its file has, as the file tells it (an old one is converted in memory:
+                                # migrations/); the latest for a battle of this session
+        ('appVersion', ''),     # the version of the mod that wrote its file; '' when not saved yet
+        ('exportTime', 0.0),    # when its file was written, Unix time; 0 when not saved yet
         ('battleId', 0),        # id of the battle on the server (the client's arenaUniqueID); the key of the battle
         ('mapId', 0),           # the map (the client's geometryID: the low 16 bits of arenaTypeID)
         ('gameplayId', 0),      # the gameplay on the map: standard, encounter, assault, ... (the high bits)
@@ -63,11 +73,16 @@ class Battle(Record):
         ('playerTeam', None),   # the player's team, 1 or 2; None when not known
         ('winnerTeam', None),   # the team that won, 1 or 2, DRAW_TEAM for a draw; None when not known
         ('endReason', None),    # how the battle ended (constants.FINISH_REASON); None when not known
-        ('receivedHits', ()),   # hits on the player's vehicle, in battle order (hits.Hit)
-        ('dealtHits', ()),      # the player's hits on other vehicles, in battle order (hits.Hit)
+        ('receivedHits', ()),   # hits on the player's vehicle, in battle order (hits.ReceivedHit)
+        ('dealtHits', ()),      # the player's hits on other vehicles, in battle order (hits.DealtHit)
     )
-    NESTED = {'receivedHits': Hit, 'dealtHits': Hit}
+    NESTED = {'receivedHits': ReceivedHit, 'dealtHits': DealtHit}
     __slots__ = tuple(name for name, _ in FIELDS)
+
+    @property
+    def isOldFormat(self):
+        # Read from a file of an old format: its file is never written over.
+        return self.formatVersion < FORMAT_VERSION
 
     @property
     def vehicleId(self):
