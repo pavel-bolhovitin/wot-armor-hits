@@ -3,7 +3,8 @@
 the shooter view.
 
 HitLinesPresenter draws on the vehicle the hangar shows (hangar_vehicle.py) the way of the hit the hits panel has
-chosen and, when the scene panel asks for all lines, the ways of the other hits the panel shows. A way (Way) is drawn
+chosen and, when the scene panel asks for all lines, the ways of the other hits the panel shows on the same vehicle
+(a player's vehicle can change within a battle). A way (Way) is drawn
 as hit_way.py tells, the chosen hit's more marked than the others'. The shapes are drawn with the client's debug
 drawer (scene_lines.py): over the client's armor overlay, hidden behind the vehicle.
 
@@ -17,7 +18,7 @@ vehicle presenter has asked for the vehicle, and the lines are drawn when the ha
 hangar starts to change the vehicle (onVehicleChangeStarted) and drawn again when the hits or the choices change.
 
 Before the lines are drawn, the hangar vehicle turns its turret and gun as the chosen hit's vehicle had them at the hit
-(Hit.vehiclePose), the way the client's armor screen turns them (armor_sub_presenter: the turret rotator, the gun's
+(Hit.targetPose), the way the client's armor screen turns them (armor_sub_presenter: the turret rotator, the gun's
 angle); without a chosen hit or its pose they go back to the hangar's own pose. A fixed turret or gun stays. A point
 and the shell's direction are in their part's space and are drawn by the part's node: they turn with it. The parts'
 nodes take the new pose when a next frame is drawn, sometimes after the lines are first put, so the lines are put
@@ -270,7 +271,8 @@ class HitLinesPresenter(object):
         others = ()
         if self._scenePanel.showsAllLines:
             selected = self._hitsPanel.selectedNumber
-            others = tuple(other for number, other in self._hitsPanel.shownHits if number != selected and _drawn(other))
+            others = tuple(other for number, other in self._hitsPanel.shownHits
+                           if number != selected and _drawn(other) and hitsVehicle(battle, side, other) == vehicle)
         chosen = hit if hit is not None and _drawn(hit) else None
         target = (vehicle, chosen, others) if isinstance(vehicle, tuple) and (chosen or others) else None
         if target == self._target:
@@ -336,7 +338,7 @@ class HitLinesPresenter(object):
 
     def _drawOn(self, compoundModel, collisions):
         _, chosen, others = self._target
-        pose = chosen.vehiclePose if chosen is not None else None
+        pose = chosen.targetPose if chosen is not None else None
         _setPose(self.__hangarSpace.getVehicleEntity(), pose)
         normals, waitsNormal = _ricochetNormals(list(others) + ([chosen] if chosen is not None else []), collisions)
         self._told = False

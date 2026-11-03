@@ -36,9 +36,10 @@ def _fillHit(item, number, hit):
     item.setNumber(number)
     item.setTime(_time(hit.time))
     item.setResult(hit.result)
-    item.setVehicleName(vehicleShortName(hit.vehicleId) or '#%s' % hit.vehicleId)
-    item.setVehicleClass(_CLASS_ICONS.get(vehicleClass(hit.vehicleId), ''))
-    item.setPlayerName(hit.playerName)
+    other = hit.other
+    item.setVehicleName(vehicleShortName(other.vehicleId) or '#%s' % other.vehicleId)
+    item.setVehicleClass(_CLASS_ICONS.get(vehicleClass(other.vehicleId), ''))
+    item.setPlayerName(other.playerName)
     if hit.shellType:
         item.setShellText(clientText(_SHELL_TEXT_KEY % hit.shellType) or '')
         item.setShellName(clientText(_SHELL_NAME_KEY % hit.shellType) or '')

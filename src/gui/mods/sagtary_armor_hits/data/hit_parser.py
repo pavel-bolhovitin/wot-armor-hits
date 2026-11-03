@@ -13,7 +13,7 @@ and gives it here, so the same rules can make the hits from any source of the sa
   crits mask of a hit on it (PlayerAvatar.showOwnVehicleHitDirection) tell about a hit: crits, a premium shell, the
   modules and crew the shell damaged.
 - HitPairing: the events and the hit of the same vehicle within _PAIRING_TIME before or after it are one hit.
-- vehiclePose: the hit vehicle's pose from what the client shows of it.
+- vehiclePose: the target's pose from what the client shows of it.
 - Tracers, shotDirection: the shooter's tracer (PlayerAvatar.showTracer: where the shell starts, its velocity and
   gravity, as floats) gives the shell's direction at the first point: the tracer whose way passes the point nearest,
   within _TRACER_MISS metres; none when there was no such tracer.
@@ -24,7 +24,6 @@ import Math
 from BattleFeedbackCommon import BATTLE_EVENT_TYPE, NONE_SHELL_TYPE
 from constants import SHELL_TYPES, SHELL_TYPES_LIST
 from gui.shared.crits_mask_parser import critsParserGenerator
-from items.vehicles import DEVICE_TANKMAN_NAMES_TO_VEHICLE_EXTRA_NAMES
 
 from gui.mods.sagtary_armor_hits.data.hits import (DamagedDevice, DealtHit, HitCrit, HitPoint, ReceivedHit, VehiclePose,
                                                     effectName)
@@ -49,9 +48,6 @@ _EVENT_SIDES = {
 _CRIT_EVENTS = (BATTLE_EVENT_TYPE.CRIT, BATTLE_EVENT_TYPE.RECEIVED_CRIT)
 # The client's damage info codes of a shell have this in their names (DEVICE_CRITICAL_AT_SHOT, DEATH_FROM_SHOT, ...).
 _SHOT_CODE = 'SHOT'
-# {vehicle extra name: device or crew kind}
-_EXTRA_DEVICES = dict((extra, device) for device, extras in DEVICE_TANKMAN_NAMES_TO_VEHICLE_EXTRA_NAMES.items()
-                      for extra in extras)
 # The server tells the event and the client shows the shell hit at about the same time, either one first (the hit
 # waits for the shell's flight): an event and a hit of the same vehicle within this many seconds are one hit.
 _PAIRING_TIME = 1.5
@@ -101,7 +97,7 @@ def splashHit(side, damage, center):
 
 
 def vehiclePose(aimParams):
-    # The hit vehicle's pose. aimParams: (turret yaw, gun pitch) as Vehicle.getAimParams gives them.
+    # The target's pose. aimParams: (turret yaw, gun pitch) as Vehicle.getAimParams gives them.
     turretYaw, gunPitch = aimParams
     return VehiclePose(turretYaw=round(turretYaw, _ANGLE_DECIMALS), gunPitch=round(gunPitch, _ANGLE_DECIMALS))
 
@@ -133,7 +129,7 @@ def isShotCode(code):
 
 def shotDevice(code, extra):
     # The module or crew member of the vehicle's extra (its name, '' for none) the code tells about.
-    return DamagedDevice(code=code, extra=extra, device=_EXTRA_DEVICES.get(extra, ''))
+    return DamagedDevice(code=code, extra=extra)
 
 
 def hitCrits(mask):

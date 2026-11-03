@@ -8,10 +8,10 @@ player's vehicle; not those on a vehicle already destroyed (a wreck takes no dam
 without damage).
 
 - Vehicle.showDamageFromShot, showDamageFromExplosion: a hit. The client decodes its points
-  (DamageFromShotDecoder.parseHitPoint, by the parts of the vehicle's collision model); the hit gets the other
-  vehicle (player, compact descriptor) from the arena, the distance between the two vehicles when the client sees
-  the shooter, the battle time, the teams of the shooter and the hit vehicle, the hit vehicle's pose (its turret,
-  gun, hull on its chassis and steered wheels, as the client shows them). A splash keeps where the shell burst, in
+  (DamageFromShotDecoder.parseHitPoint, by the parts of the vehicle's collision model); the hit gets its two
+  vehicles as they are then (player, team, compact descriptor), the distance between them when the client sees the
+  shooter, the battle time, the target's pose (its turret, gun, hull on its chassis and steered wheels, as the client
+  shows them). A splash keeps where the shell burst, in
   the hit vehicle's chassis space (like the points), even when it burst on the ground nearby. The premium flag of the
   player's own shell is the player's current shell's.
 - PlayerAvatar.onBattleEvents, showVehicleDamageInfo, showOwnVehicleHitDirection: more about the hit of the same
@@ -30,7 +30,7 @@ from VehicleEffects import DamageFromShotDecoder
 from vehicle_systems.tankStructure import TankPartIndexes, TankPartNames
 
 from gui.mods.sagtary_armor_hits.data import hit_parser
-from gui.mods.sagtary_armor_hits.data.hits import compactDescriptor, ownShellIsGold
+from gui.mods.sagtary_armor_hits.data.hits import HitVehicle, compactDescriptor, ownShellIsGold
 
 _logger = logging.getLogger('sagtary.armor_hits')
 
@@ -80,9 +80,15 @@ def _vehiclePose(vehicle):
         return None
 
 
-def _team(arena, vehicleID):
-    # The vehicle's team in the arena, None when the arena does not have the vehicle.
-    return (arena.vehicles.get(vehicleID) or {}).get('team')
+def _hitVehicle(arena, vehicleID):
+    # The shooter or the target of a hit as it is now: the type of the vehicle the client sees, its points are on it,
+    # else of the arena's.
+    arenaVehicle = arena.vehicles.get(vehicleID) or {}
+    descriptor = getattr(BigWorld.entities.get(vehicleID), 'typeDescriptor', None)
+    if descriptor is None:
+        descriptor = arenaVehicle.get('vehicleType')
+    return HitVehicle(vehicleDescriptor=compactDescriptor(descriptor), playerName=arenaVehicle.get('name') or '',
+                      team=arenaVehicle.get('team'))
 
 
 def _distance(vehicleID, otherID):
@@ -167,12 +173,9 @@ class HitCollector(object):
             center = call.get('center')
             hit = hit_parser.splashHit(field, call.get('damage'),
                                       _chassisPoint(vehicle, center) if center is not None else ())
-        arenaVehicle = player.arena.vehicles.get(otherID) or {}
-        descriptor = arenaVehicle.get('vehicleType')
-        hit = hit.replace(time=_battleTime(player.arena), playerName=arenaVehicle.get('name') or '',
-                          attackerTeam=_team(player.arena, attackerID), targetTeam=_team(player.arena, vehicle.id),
-                          vehicleDescriptor=compactDescriptor(descriptor),
-                          distance=_distance(vehicle.id, attackerID), vehiclePose=_vehiclePose(vehicle))
+        hit = hit.replace(time=_battleTime(player.arena), shooter=_hitVehicle(player.arena, attackerID),
+                          target=_hitVehicle(player.arena, vehicle.id), distance=_distance(vehicle.id, attackerID),
+                          targetPose=_vehiclePose(vehicle))
         key, now = (field, otherID), BigWorld.serverTime()
         hit = self._pairing.withPending(key, hit, now)
         hits = getattr(battle, field) + (hit,)

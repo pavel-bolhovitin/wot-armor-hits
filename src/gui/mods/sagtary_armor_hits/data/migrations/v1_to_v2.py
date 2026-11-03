@@ -5,7 +5,12 @@ Format 1 keeps a list of battles (battles); format 2 is one battle a file: the f
 together. Of the list only the first battle is read, no battle gives a file without one.
 
 Format 2 keeps a hit on the player's vehicle with its crits mask (crits) and without the count of its battle event
-(critsCount); a hit of the player keeps that count and no damaged devices (damagedDevices).
+(critsCount); a hit of the player keeps that count and no damaged devices (damagedDevices). A damaged device has no
+device kind (device): it comes from its extra.
+
+A hit of format 2 has both its vehicles (shooter, target: vehicleDescriptor, playerName, team), not only the other one
+(vehicleDescriptor, playerName) and the teams (attackerTeam, targetTeam). Format 1 knows one vehicle of the player in
+a battle: all its hits get that one. The pose of the hit vehicle (vehiclePose) is targetPose.
 
 A hit of format 1 has no mask: its crits come from its damaged devices. The server tells a device only when its state
 changes, so a hit that has only the count gets no crits. Format 1 may also not know that a player's shell was a premium
@@ -37,6 +42,20 @@ def _crits(hit):
     return [{'kind': kind, 'device': name} for kind, name in sorted(found)]
 
 
+def _hitVehicle(descriptor, name, team):
+    return {'vehicleDescriptor': descriptor or '', 'playerName': name or '', 'team': team}
+
+
+def _setVehicles(hit, playerVehicle, shooterIsPlayer):
+    # The hit's two vehicles from the other one's and the player's fields, the fields of format 1 out of the hit.
+    other = (hit.pop('vehicleDescriptor', ''), hit.pop('playerName', ''))
+    shooter, target = (playerVehicle, other) if shooterIsPlayer else (other, playerVehicle)
+    hit['shooter'] = _hitVehicle(shooter[0], shooter[1], hit.pop('attackerTeam', None))
+    hit['target'] = _hitVehicle(target[0], target[1], hit.pop('targetTeam', None))
+    if 'vehiclePose' in hit:
+        hit['targetPose'] = hit.pop('vehiclePose')
+
+
 def _premiumKinds(vehicleDescriptor):
     # The shell kinds of the player's gun (a compact descriptor, hex) that are only a premium shell; none if not known.
     try:
@@ -50,16 +69,21 @@ def _premiumKinds(vehicleDescriptor):
 def convert(data):
     battles = _records(data.get('battles'))
     battle = battles[0] if battles else {}
+    playerVehicle = (battle.get('vehicleDescriptor'), battle.get('playerName'))
     receivedHits = _records(battle.get('receivedHits'))
     for hit in receivedHits:
         hit['crits'] = _crits(hit)
         hit.pop('critsCount', None)
+        for device in _records(hit.get('damagedDevices')):
+            device.pop('device', None)
+        _setVehicles(hit, playerVehicle, False)
     dealtHits = _records(battle.get('dealtHits'))
     premiumKinds = _premiumKinds(battle.get('vehicleDescriptor'))
     for hit in dealtHits:
         hit.pop('damagedDevices', None)
         if hit.get('shellType') in premiumKinds:
             hit['isGoldShell'] = True
+        _setVehicles(hit, playerVehicle, True)
     converted = dict(battle, receivedHits=receivedHits, dealtHits=dealtHits)
     for name in ('appVersion', 'exportTime'):
         if name in data:

@@ -6,7 +6,8 @@
   (battle_file.py): a file is the fields of one Battle.
 - BattleStore: the battles of this session in memory, newest first, up to BATTLES_LIMIT. It tells its listeners
   when the list changes (onChanged). The store is not saved by itself; battle_file.py writes and reads it on demand.
-- BattleCollector: adds a Battle to the store when the player enters a battle or starts a replay, and writes the
+- BattleCollector: adds a Battle to the store when the player enters a battle or starts a replay, follows the player's
+  vehicle while it changes in the battle (a respawn, another one chosen before the battle starts), and writes the
   winner to it when the round finishes. A battle the player left before its end gets its winner later, from the
   battle results the server puts into the service channel when the battle ends (onResultReceived); until then it
   has none (result UNKNOWN). It tells its listeners when the player leaves the battle (onBattleLeft, with the battle
@@ -66,7 +67,8 @@ class Battle(Record):
         ('gameplayId', 0),      # the gameplay on the map: standard, encounter, assault, ... (the high bits)
         ('battleType', 0),      # kind of battle: random, training, ... (constants.ARENA_GUI_TYPE)
         ('vehicleDescriptor', ''),
-                                # the player's vehicle compact descriptor (type and modules), hex; '' when not known
+                                # the player's last vehicle of the battle: its compact descriptor (type and modules),
+                                # hex; '' when not known. The hits have the vehicles they were on (hits.HitVehicle)
         ('startedAt', 0.0),     # when the player entered the battle, Unix time in seconds
         ('isReplay', False),    # a replay watched, not a battle played
         ('playerName', ''),     # the name of the player who played the battle (in a replay, the recorded one)
@@ -86,8 +88,20 @@ class Battle(Record):
 
     @property
     def vehicleId(self):
-        # The player's vehicle type (intCD), from its compact descriptor; 0 when not known.
+        # The type (intCD) of the player's last vehicle, from its compact descriptor; 0 when not known.
         return vehicleTypeId(self.vehicleDescriptor)
+
+    @property
+    def vehicleIds(self):
+        # The types (intCD) of the player's vehicles of the battle, in the order of their first hits; without hits, the
+        # last vehicle's.
+        hits = [(hit.time, hit.target.vehicleId) for hit in self.receivedHits]
+        hits.extend((hit.time, hit.shooter.vehicleId) for hit in self.dealtHits)
+        vehicleIds = []
+        for _, vehicleId in sorted(hits):
+            if vehicleId and vehicleId not in vehicleIds:
+                vehicleIds.append(vehicleId)
+        return vehicleIds or [self.vehicleId]
 
     @property
     def result(self):
@@ -183,8 +197,9 @@ class BattleCollector(object):
         # isKept(battle): whether a battle is added to the store; None: every battle.
         self._store = store
         self._isKept = isKept
-        # Id of the battle the player is in, None out of battle or in a battle not kept.
+        # Id of the battle the player is in, None out of battle or in a battle not kept; the arena of that battle.
         self._battleId = None
+        self._arena = None
         self.onBattleLeft = Event()
         self.onResultReceived = Event()
 
@@ -195,6 +210,7 @@ class BattleCollector(object):
         g_messengerEvents.serviceChannel.onChatMessageReceived += self._onServiceMessage
 
     def uninstall(self):
+        self._stopFollowing()
         g_messengerEvents.serviceChannel.onChatMessageReceived -= self._onServiceMessage
         g_playerEvents.onAvatarBecomeNonPlayer -= self._onAvatarBecomeNonPlayer
         g_playerEvents.onRoundFinished -= self._onRoundFinished
@@ -231,6 +247,23 @@ class BattleCollector(object):
             return
         self._battleId = battle.battleId
         self._store.add(battle)
+        self._arena = BigWorld.player().arena
+        if self._arena is not None:
+            self._arena.onVehicleUpdated += self._onVehicleUpdated
+
+    def _onVehicleUpdated(self, vehicleID):
+        # The arena tells the vehicle's new type before the client shows it.
+        battle = self._store.getBattle(self._battleId) if self._battleId is not None else None
+        if battle is None or vehicleID != getattr(BigWorld.player(), 'playerVehicleID', None):
+            return
+        descriptor = compactDescriptor((self._arena.vehicles.get(vehicleID) or {}).get('vehicleType'))
+        if descriptor and vehicleTypeId(descriptor) != battle.vehicleId:
+            self._store.update(battle.replace(vehicleDescriptor=descriptor))
+
+    def _stopFollowing(self):
+        if self._arena is not None:
+            self._arena.onVehicleUpdated -= self._onVehicleUpdated
+            self._arena = None
 
     def _onRoundFinished(self, winnerTeam, reason, *args):
         battle = self._store.getBattle(self._battleId) if self._battleId is not None else None
@@ -240,6 +273,7 @@ class BattleCollector(object):
         self._store.update(battle)
 
     def _onAvatarBecomeNonPlayer(self, *args):
+        self._stopFollowing()
         battle = self._store.getBattle(self._battleId) if self._battleId is not None else None
         self._battleId = None
         if battle is not None:

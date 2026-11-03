@@ -5,8 +5,8 @@ BattleSelectorPresenter fills the view model (views/models/battle_selector_model
 selected battle and tells its listeners when the selection changes (onBattleSelected). A new field of a battle is a
 property of BattleItemModel and a line in _fillItem.
 
-The card and the items show the map, the result when it is known, the vehicle and the time; the list is grouped by
-the date. All these texts are the client's, in the client language: the map and the vehicle by their ids
+The card and the items show the map, the result when it is known, the vehicle (the first of the player's vehicles of
+the battle and how many more it had) and the time; the list is grouped by the date. All these texts are the client's, in the client language: the map and the vehicle by their ids
 (data/client_names.py), the result from the client's strings, the date and the time in the client format. The battle
 id goes to the page as a string, as it does not fit a JavaScript number. A selected battle from a file of an old
 format has a note at the top of the screen.
@@ -53,7 +53,9 @@ def _fillItem(item, battle):
     item.setId(str(battle.battleId))
     item.setMapName(mapName)
     item.setMapImage(_MAP_IMAGE % mapFolder if mapFolder else '')
-    item.setVehicleName(vehicleShortName(battle.vehicleId) or '#%s' % battle.vehicleId)
+    vehicleIds = battle.vehicleIds
+    vehicleName = vehicleShortName(vehicleIds[0]) or '#%s' % vehicleIds[0]
+    item.setVehicleName('%s (+%d)' % (vehicleName, len(vehicleIds) - 1) if len(vehicleIds) > 1 else vehicleName)
     item.setDay(backport.getShortDateFormat(battle.startedAt))
     item.setTime(backport.getShortTimeFormat(battle.startedAt))
     item.setResult(battle.result)

@@ -8,10 +8,12 @@ hit_collector.py in battle.
   for a shell that hit, Vehicle.showDamageFromExplosion for a high explosive splash). It keeps what the server sent;
   its result is worked out from that, like the client's armor tooltip tells a shot: damage, not pierced, a ricochet,
   or no damage.
+- HitVehicle: the shooter or the target of a hit, as it was at the hit: a player's vehicle can change within a battle
+  (a respawn, another one chosen before the battle starts), so each hit keeps both.
 - ReceivedHit: a hit on the player's vehicle: the modules and crew the shell damaged (DamagedDevice, HitCrit).
 - DealtHit: a hit of the player on another vehicle: the client tells only how many modules and crew it damaged.
 - DamagedDevice: a module or a crew member of the player's vehicle a shell damaged, by the client's own names (its
-  damage info code, the vehicle's extra and the device kind), so it can be shown in any way later. The client's
+  damage info code and the vehicle's extra), so it can be shown in any way later. The client's
   numbers for them are not kept: the extra's index depends on the vehicle type, the code's on the client version.
   The server tells a module only when its state changes: not when the shell hits one damaged before, not on the
   shot that destroys the vehicle.
@@ -23,10 +25,10 @@ hit_collector.py in battle.
   A hit keeps all its points, also those on parts other than the chassis, hull, turret and gun (the wheels of a
   wheeled vehicle); the drawing takes only those (Hit.vehiclePoints). The points are in the part's own space, so
   they are drawn on the same vehicle with the same modules, whatever the turret and the gun angles: the hit keeps
-  the other vehicle's compact descriptor for that. The server packs a point to 1/255 of the part's size on each
+  the target's compact descriptor for that. The server packs a point to 1/255 of the part's size on each
   axis, so the direction along a short way is off by a degree or so: the hit keeps the shell's exact direction at
   its first point too (Hit.shotDirection), from the shell's tracer.
-- The teams of the attacker and the target tell a hit on an ally (Hit.isAllyHit): the server sends it with no
+- The teams of the shooter and the target tell a hit on an ally (Hit.isAllyHit): the server sends it with no
   damage (team damage is off), its points as not pierced.
 - VehiclePose: how the hit vehicle stood at the hit, as the client showed it: its turret and gun, its hull on its
   chassis when the hull moves on it, its steered wheels. Each point is in its own part's space, so it is on the same
@@ -94,8 +96,6 @@ class DamagedDevice(Record):
                                 # TANKMAN_HIT_AT_SHOT, DEATH_FROM_SHOT, ...
         ('extra', ''),          # the vehicle's extra (its slot) the code is about: engineHealth, leftTrack0Health,
                                 # gunner2Health, ...; '' for none
-        ('device', ''),         # the extra's kind, an items.vehicles VEHICLE_DEVICE_TYPE_NAMES or VEHICLE_TANKMAN_TYPE_NAMES
-                                # name: engine, track, gunner, ...; '' when it is not one
     )
     __slots__ = tuple(name for name, _ in FIELDS)
 
@@ -118,15 +118,28 @@ class VehiclePose(Record):
     __slots__ = tuple(name for name, _ in FIELDS)
 
 
+class HitVehicle(Record):
+    FIELDS = (
+        ('vehicleDescriptor', ''),
+                                # its compact descriptor (type and modules), hex; '' when not known
+        ('playerName', ''),     # its player
+        ('team', None),         # its team (the arena's), None when not known
+    )
+    __slots__ = tuple(name for name, _ in FIELDS)
+
+    @property
+    def vehicleId(self):
+        # The vehicle's type (intCD), from its compact descriptor; 0 when not known.
+        return vehicleTypeId(self.vehicleDescriptor)
+
+
 class Hit(Record):
     FIELDS = (
         ('time', 0.0),          # seconds since the battle started (the arena's battle period)
-        ('vehicleDescriptor', ''),
-                                # the other vehicle (the shooter of a received hit, the target of a dealt one): its
-                                # compact descriptor (type and modules), hex; '' when not known
-        ('playerName', ''),     # the other vehicle's player
-        ('attackerTeam', None), # the team of the vehicle that shot (the arena's), None when not known
-        ('targetTeam', None),   # the team of the vehicle that was hit, None when not known
+        ('shooter', HitVehicle()),
+                                # the vehicle that shot
+        ('target', HitVehicle()),
+                                # the vehicle that was hit
         ('shellType', ''),      # the shell kind, a constants.SHELL_TYPES name: ARMOR_PIERCING, HIGH_EXPLOSIVE, ...
         ('caliber', 0.0),       # the shell's caliber in millimetres, as the hit points tell it; 0 when not known
         ('damage', 0),          # hit points the hit took
@@ -139,20 +152,15 @@ class Hit(Record):
         ('shotDirection', ()),  # (x, y, z) unit direction of the shell at the first point of vehiclePoints, in its part
                                 # space,
                                 # from the shell's tracer (exact, unlike the points); () when not known
-        ('vehiclePose', None),  # how the hit vehicle stood at the hit (VehiclePose); None when not known
+        ('targetPose', None),   # how the target stood at the hit (VehiclePose); None when not known
     )
-    NESTED = {'points': HitPoint, 'vehiclePose': VehiclePose}
+    NESTED = {'shooter': HitVehicle, 'target': HitVehicle, 'points': HitPoint, 'targetPose': VehiclePose}
     __slots__ = tuple(name for name, _ in FIELDS)
-
-    @property
-    def vehicleId(self):
-        # The other vehicle's type (intCD), from its compact descriptor; 0 when not known.
-        return vehicleTypeId(self.vehicleDescriptor)
 
     @property
     def isAllyHit(self):
         # A hit on a vehicle of the shooter's own team that took no damage (the client's team damage is off).
-        return self.attackerTeam is not None and self.attackerTeam == self.targetTeam and self.damage == 0
+        return self.shooter.team is not None and self.shooter.team == self.target.team and self.damage == 0
 
     @property
     def hitEffects(self):
@@ -187,6 +195,11 @@ class ReceivedHit(Hit):
     __slots__ = ('damagedDevices', 'crits')
 
     @property
+    def other(self):
+        # The vehicle that is not the player's.
+        return self.shooter
+
+    @property
     def critsTotal(self):
         # The modules and crew the shell damaged, as the client counts them in battle.
         return len(self.crits)
@@ -197,6 +210,11 @@ class DealtHit(Hit):
         ('critsCount', 0),      # modules and crew the hit damaged, as the client's damage log counts them
     )
     __slots__ = ('critsCount',)
+
+    @property
+    def other(self):
+        # The vehicle that is not the player's.
+        return self.target
 
     @property
     def critsTotal(self):

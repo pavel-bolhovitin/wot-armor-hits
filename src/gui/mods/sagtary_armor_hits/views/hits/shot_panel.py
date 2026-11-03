@@ -304,8 +304,8 @@ class ShotPanelPresenter(object):
     def _onFrame(self):
         # The fill of the frame after a change, or the next try of the armor.
         self._callbackID = None
-        battle, side, hit = self._hitsPanel.selection
-        if battle is None or hit is None:
+        _, side, hit = self._hitsPanel.selection
+        if hit is None:
             self._model.setIsVisible(False)
             return
         try:
@@ -317,24 +317,16 @@ class ShotPanelPresenter(object):
             self._tries += 1
             self._callbackID = BigWorld.callback(_RETRY, self._onFrame)
         gunShot = self._overlayPanel.gunShot
-        # The name of the player who played the battle, not of the one who watches it.
-        myName = battle.playerName
-        if side == DEALT:
-            shooter = (battle.vehicleId, battle.vehicleDescriptor, myName)
-            target = (hit.vehicleId, hit.vehicleDescriptor, hit.playerName)
-        else:
-            shooter = (hit.vehicleId, hit.vehicleDescriptor, hit.playerName)
-            target = (battle.vehicleId, battle.vehicleDescriptor, myName)
-        shooterModules = self._shooterModules(shooter, gunShot)
-        targetModules = self._targetModules(target)
+        shooterModules = self._shooterModules(hit.shooter, gunShot)
+        targetModules = self._targetModules(hit.target)
         with self._model.transaction() as model:
             model.setIsVisible(True)
-            self._fillVehicle(model.shooter, self._texts['shooter'], shooter, shooterModules)
-            self._fillVehicle(model.target, self._texts['target'], target, targetModules)
+            self._fillVehicle(model.shooter, self._texts['shooter'], hit.shooter, shooterModules)
+            self._fillVehicle(model.target, self._texts['target'], hit.target, targetModules)
             model.setShellText(clientText(_SHELL_TEXT_KEY % hit.shellType) or '' if hit.shellType else '')
             # The shell shown on the shooter's card, else the hit's premium flag.
             model.setIsGoldShell(bool(gunShot[1].shell.isGold) if gunShot is not None else bool(hit.isGoldShell))
-            tiles, parts = self._deviceTiles(battle, side, hit)
+            tiles, parts = self._deviceTiles(side, hit)
             devices = model.getDevices()
             devices.clear()
             for icon, group, state in tiles:
@@ -362,12 +354,12 @@ class ShotPanelPresenter(object):
             sections.invalidate()
 
     @staticmethod
-    def _deviceTiles(battle, side, hit):
+    def _deviceTiles(side, hit):
         # The modules and crew cells and the tank's parts of a hit on the player's vehicle that damaged some; none on
         # another vehicle.
         if side == DEALT:
             return [], []
-        descriptor = _descriptor(battle.vehicleId, battle.vehicleDescriptor)
+        descriptor = _descriptor(hit.target.vehicleId, hit.target.vehicleDescriptor)
         if descriptor is None:
             return [], []
         try:
@@ -378,14 +370,14 @@ class ShotPanelPresenter(object):
 
     @staticmethod
     def _fillVehicle(model, role, vehicle, modules):
-        vehicleId, _, player = vehicle
+        vehicleId = vehicle.vehicleId
         icon, flag = _vehicleImages(vehicleId)
         try:
             tier = int2roman(vehicles.getVehicleType(vehicleId).level)
         except Exception:
             tier = ''
         model.setRole(role)
-        model.setPlayer(player or '')
+        model.setPlayer(vehicle.playerName)
         model.setVehicleName(vehicleShortName(vehicleId) or '')
         model.setTier(tier)
         model.setIcon(icon)
@@ -405,7 +397,7 @@ class ShotPanelPresenter(object):
         if gunShot is None:
             return []
         gun, shot = gunShot
-        vehicle = _shownVehicle(*shooter[:2])
+        vehicle = _shownVehicle(shooter.vehicleId, shooter.vehicleDescriptor)
         if vehicle is not None:
             shownGun = _shownGun(vehicle.descriptor, gun)
             shots = [item for item in shownGun.shots if item.shell.name == copiedName(shot.shell.name)] or [
@@ -419,7 +411,7 @@ class ShotPanelPresenter(object):
         # [(icon, tier)] of the target's turret (when it has one) and gun, like the armor page's modules; their
         # tooltips for the shown vehicle.
         self._tooltips[_TARGET] = (None, [])
-        vehicle = _shownVehicle(*target[:2])
+        vehicle = _shownVehicle(target.vehicleId, target.vehicleDescriptor)
         if vehicle is None:
             return []
         descriptor = vehicle.descriptor

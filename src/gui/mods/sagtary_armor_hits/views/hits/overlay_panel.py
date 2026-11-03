@@ -8,7 +8,7 @@ The overlay is the client's own, as the armor page shows it: the armor inspector
 game object (ArmorInspectorComponent; its system colors the armor). It is put on the vehicle when the hangar has
 loaded it (HangarSpace.onVehicleChanged) and taken off when the hangar starts to change it, when the overlay is
 turned off and when the screen closes. Another type is put on _SHOW_DELAY seconds after the old one is taken off.
-The penetration chance is the chance of the chosen hit's shell: the gun's shot of the shooter (the other vehicle of a received hit, the player's vehicle of a dealt one) with the hit's shell kind,
+The penetration chance is the chance of the chosen hit's shell: the gun's shot of its shooter with the hit's shell kind,
 set as the armor page sets its attacker's shell (setShellParamsFromVehicle) whenever the hits panel changes; the
 armor tooltip (armor_tooltip.py) reads it and the chosen type.
 """
@@ -21,7 +21,6 @@ from items.vehicles import VehicleDescr
 from skeletons.gui.shared.utils import IHangarSpace
 
 from gui.mods.sagtary_armor_hits.data.client_names import clientText
-from gui.mods.sagtary_armor_hits.views.hits.hits_panel import DEALT
 from gui.mods.sagtary_armor_hits.views.models.overlay_panel_model import OverlayItemModel
 
 _logger = logging.getLogger('sagtary.armor_hits')
@@ -53,15 +52,12 @@ def _vehicleDescriptor(vehicleId, descr):
         return None
 
 
-def _hitShot(battle, side, hit):
+def _hitShot(hit):
     # (gun, shot) the hit was fired with: the shooter's gun and its shot with the hit's shell kind (and premium or not),
     # else another gun of the shooter's type with it; None when not known.
-    if battle is None or hit is None or not hit.shellType:
+    if hit is None or not hit.shellType:
         return None
-    if side == DEALT:
-        descriptor = _vehicleDescriptor(battle.vehicleId, battle.vehicleDescriptor)
-    else:
-        descriptor = _vehicleDescriptor(hit.vehicleId, hit.vehicleDescriptor)
+    descriptor = _vehicleDescriptor(hit.shooter.vehicleId, hit.shooter.vehicleDescriptor)
     if descriptor is None:
         return None
     guns = [descriptor.gun]
@@ -187,8 +183,7 @@ class OverlayPanelPresenter(object):
 
     def _setShell(self):
         # The penetration chance overlay and the armor tooltip count the chance of the chosen hit's shell.
-        battle, side, hit = self._hitsPanel.selection
-        self.gunShot = _hitShot(battle, side, hit)
+        self.gunShot = _hitShot(self._hitsPanel.selection[2])
         self.shellParams = None
         if self.gunShot is None:
             return
