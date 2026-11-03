@@ -18,8 +18,7 @@ ShotPanelPresenter fills the view model (views/models/shot_panel_model.py) for t
   modules/): the vehicle's module kinds in the panel's order in two rows, then its crew roles in one row, each at
   the state this shot left it in by the hit's crits mask (not what was damaged before it): a kind at the worst state
   the mask tells (two tracks are one kind), a role hurt when the mask tells it (it does not tell which of two
-  loaders). A fire the shot started is a line of the section. The client tells nothing of the kind on a hit of another
-  vehicle: there the section has its count only.
+  loaders). The client tells nothing of the kind on a hit of another vehicle: there the section has its count only.
 
 The shell is the overlay panel's (overlay_panel.py: the shooter's gun and shot with the hit's shell kind); the hit
 line is the hit lines presenter's (hit_lines.py: its first point and direction when drawn). The armor needs the
@@ -75,9 +74,6 @@ _CREW_ROW = 2
 _CRIT_STATES = {'criticalDevices': 'critical', 'destroyedDevices': 'destroyed', 'destroyedTankmen': 'critical'}
 _STATES = ('normal', 'critical', 'destroyed')
 _ICON_SUFFIXES = {'normal': '', 'critical': '_orange', 'destroyed': '_red'}
-_FIRE_CODE = 'DEVICE_STARTED_FIRE_AT_SHOT'
-# The client's text of a fire started.
-_FIRE_KEY = '#ingame_gui:efficiencyRibbons/burn'
 # Metres of the hit line looked along for the armor: before and after its first point.
 _RAY = 2.5
 # The armor is counted again while the collision model has not come: seconds between, how many times.
@@ -296,7 +292,7 @@ class ShotPanelPresenter(object):
             model.setDevicesNote(self._texts['critsNote'])
             sections = model.getSections()
             sections.clear()
-            for section in self._sections(side, hit, gunShot, armor):
+            for section in self._sections(hit, gunShot, armor):
                 sections.addViewModel(section)
             sections.invalidate()
 
@@ -381,7 +377,7 @@ class ShotPanelPresenter(object):
         return _materials(entity, position - direction * _RAY, position + direction * _RAY,
                           self._overlayPanel.shellParams)
 
-    def _sections(self, side, hit, gunShot, armor):
+    def _sections(self, hit, gunShot, armor):
         texts = self._texts
         shell = gunShot[1].shell if gunShot is not None else None
         isHighExplosive = hit.shellType == 'HIGH_EXPLOSIVE'
@@ -441,11 +437,8 @@ class ShotPanelPresenter(object):
         sections.append(self._section('angle', texts['angle'], angle, bool(layers), rows))
         distance = str(int(round(hit.distance))) if hit.distance else _NONE
         sections.append(self._section('distance', texts['distance'], distance, False, []))
-        # The modules and crew themselves are the page's grid (model devices); a fire the shot started on the player's
-        # vehicle is a line.
-        rows = [('', clientText(_FIRE_KEY), False)] if side != DEALT and any(device.code == _FIRE_CODE
-                                                                             for device in hit.damagedDevices) else []
-        sections.append(self._section('crits', texts['crits'], str(hit.critsTotal), False, rows))
+        # The modules and crew themselves are the page's grid (model devices).
+        sections.append(self._section('crits', texts['crits'], str(hit.critsTotal), False, []))
         return sections
 
     @staticmethod

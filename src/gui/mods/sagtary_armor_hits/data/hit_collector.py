@@ -199,8 +199,8 @@ class HitCollector(object):
                 self._addInfo((field, event['targetID']), hit_parser.eventInfo(event['eventType'], event['details']))
 
     def _onDamageInfo(self, call):
-        # What a shell of the attacker (entityID) did to the player's vehicle: a module or a crew member damaged, a
-        # fire, the vehicle destroyed. The extra index 0 is none.
+        # What a shell of the attacker (entityID) did to the player's vehicle: a module or a crew member damaged, the
+        # vehicle destroyed. The extra index 0 is none.
         avatar = call.entity
         vehicleID, damageIndex = call.get('vehicleID'), call.get('damageIndex')
         extraIndex, attackerID = call.get('extraIndex'), call.get('entityID')

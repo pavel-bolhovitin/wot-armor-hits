@@ -91,7 +91,7 @@ class HitPoint(Record):
 class DamagedDevice(Record):
     FIELDS = (
         ('code', ''),           # constants.DAMAGE_INFO_CODES name: DEVICE_CRITICAL_AT_SHOT, DEVICE_DESTROYED_AT_SHOT,
-                                # TANKMAN_HIT_AT_SHOT, DEVICE_STARTED_FIRE_AT_SHOT, DEATH_FROM_SHOT, ...
+                                # TANKMAN_HIT_AT_SHOT, DEATH_FROM_SHOT, ...
         ('extra', ''),          # the vehicle's extra (its slot) the code is about: engineHealth, leftTrack0Health,
                                 # gunner2Health, ...; '' for none
         ('device', ''),         # the extra's kind, an items.vehicles VEHICLE_DEVICE_TYPE_NAMES or VEHICLE_TANKMAN_TYPE_NAMES
