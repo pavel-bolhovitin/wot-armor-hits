@@ -18,7 +18,7 @@ from gui.mods.sagtary_armor_hits.data.hooks import ClientHooks
 from gui.mods.sagtary_armor_hits.views.hits.hits_screen import HitsScreen
 from gui.mods.sagtary_armor_hits.views.lobby_button.lobby_button import LobbyButton
 
-__version__ = '1.3.0'
+__version__ = '1.3.1'
 
 # The mod logs failures only, and one line when it starts: its version, whatever level the client gives the loggers.
 _logger = logging.getLogger('sagtary.armor_hits')

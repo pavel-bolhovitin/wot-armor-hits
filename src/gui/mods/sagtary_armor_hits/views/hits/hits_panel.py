@@ -8,11 +8,15 @@ selection). The hits on allies (Hit.isAllyHit) are left out, numbered without th
 them (showFriendlyFire; the panel follows the setting at once). The icons are the client's damage log icons; the shell
 kinds, the vehicle names and the "All" label are the client's texts.
 """
+import logging
+
 from Event import Event
 
 from gui.mods.sagtary_armor_hits.data.client_names import clientText, vehicleClass, vehicleShortName
 from gui.mods.sagtary_armor_hits.data.hits import HitResult
 from gui.mods.sagtary_armor_hits.views.models.hits_panel_model import HitFilterModel, HitItemModel
+
+_logger = logging.getLogger('sagtary.armor_hits')
 
 RECEIVED = 'received'
 DEALT = 'dealt'
@@ -191,7 +195,12 @@ class HitsPanelPresenter(object):
             hitModels.clear()
             for number, hit in shown:
                 item = HitItemModel()
-                _fillHit(item, number, hit)
+                # A file can come from another player: a hit the client cannot show stays a row without its data, so
+                # the rows keep their numbers and the screen stays open.
+                try:
+                    _fillHit(item, number, hit)
+                except Exception:
+                    _logger.exception('hits panel: cannot show hit %s', number)
                 hitModels.addViewModel(item)
             hitModels.invalidate()
             model.setSelectedHit(numbers.index(self._hitNumber) if self._hitNumber in numbers else -1)

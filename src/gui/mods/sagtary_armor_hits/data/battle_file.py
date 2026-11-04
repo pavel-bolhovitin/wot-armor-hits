@@ -18,7 +18,9 @@ battle is read with the fields Battle knows: a field the file does not have gets
 know is skipped.
 
 A file can come from another player and its battle id names the battle's file, so a text there could be a path out of
-the folder: a file whose id is not a number is not read, and a battle's file is written only inside the folder.
+the folder: a file whose id is not a number is not read, and a battle's file is written only inside the folder. A file
+that cannot be read, is too big or has no sane start time is only that file's error: the others are read. Its values
+of a wrong kind get their defaults (battle_file_check.py).
 """
 import glob
 import io
@@ -28,6 +30,7 @@ import time
 from collections import OrderedDict
 
 from gui.mods.sagtary_armor_hits.data import migrations
+from gui.mods.sagtary_armor_hits.data.battle_file_check import FILE_SIZE_LIMIT, isBattleId, isStartTime, validFields
 from gui.mods.sagtary_armor_hits.data.battles import FORMAT_VERSION, Battle
 
 # The file of a battle by its id, and the names of the files loaded.
@@ -50,11 +53,6 @@ def _text(value):
     return value
 
 
-def _isBattleId(value):
-    # The server's id of a battle: a positive whole number.
-    return isinstance(value, (int, long)) and not isinstance(value, bool) and value > 0
-
-
 def writeBattle(path, battle, appVersion):
     data = _text(battle.replace(formatVersion=FORMAT_VERSION, appVersion=appVersion, exportTime=time.time()).toDict())
     try:
@@ -73,22 +71,27 @@ def writeBattle(path, battle, appVersion):
 
 
 def readBattle(path):
-    # The battle of the file, in the latest format; it keeps the format its file has.
+    # The battle of the file, in the latest format; it keeps the format its file has. Whatever is wrong with the file
+    # is a BattleFileError (very deep JSON, say, stops the reader with a RuntimeError), so the other files are read.
     if not os.path.isfile(path):
         raise BattleFileError('no file %s' % path)
     try:
+        if os.path.getsize(path) > FILE_SIZE_LIMIT:
+            raise BattleFileError('%s is too big' % path)
         with io.open(path, encoding='utf-8') as f:
             data = json.load(f)
-    except (IOError, OSError, ValueError) as error:
-        raise BattleFileError('cannot read %s: %s' % (path, error))
-    if not isinstance(data, dict):
-        raise BattleFileError('%s is not a battle file' % path)
-    formatVersion = data.get('formatVersion')
-    if not isinstance(formatVersion, int) or formatVersion > FORMAT_VERSION:
-        raise BattleFileError('%s has format version %r, this mod reads up to %d' % (
-            path, formatVersion, FORMAT_VERSION))
-    battle = Battle.fromDict(migrations.toLatest(data))
-    if not _isBattleId(battle.battleId):
+        if not isinstance(data, dict):
+            raise BattleFileError('%s is not a battle file' % path)
+        formatVersion = data.get('formatVersion')
+        if not isinstance(formatVersion, int) or formatVersion > FORMAT_VERSION:
+            raise BattleFileError('%s has format version %r, this mod reads up to %d' % (
+                path, formatVersion, FORMAT_VERSION))
+        battle = Battle.fromDict(validFields(migrations.toLatest(data), Battle))
+    except BattleFileError:
+        raise
+    except Exception as error:
+        raise BattleFileError('cannot read %s: %r' % (path, error))
+    if not isBattleId(battle.battleId) or not isStartTime(battle.startedAt):
         raise BattleFileError('%s is not a battle file' % path)
     return battle.replace(formatVersion=formatVersion)
 
@@ -105,7 +108,7 @@ class BattleFiles(object):
 
     def pathOf(self, battle):
         # The battle's file, right in the folder; an error for anything else.
-        if not _isBattleId(battle.battleId):
+        if not isBattleId(battle.battleId):
             raise BattleFileError('not a battle id: %r' % (battle.battleId,))
         path = os.path.join(self._folder, FILE_NAME % battle.battleId)
         if os.path.dirname(os.path.realpath(path)) != os.path.realpath(self._folder):

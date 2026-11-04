@@ -234,7 +234,10 @@ def effectCode(name):
     # The constants.VEHICLE_HIT_EFFECT code of a point's effect name (or of a code kept as text); None when not known.
     if name in _EFFECT_NAMES:
         return getattr(VEHICLE_HIT_EFFECT, name, None)
-    return int(name) if name.isdigit() else None
+    try:
+        return int(name)
+    except ValueError:
+        return None
 
 
 def compactDescriptor(descriptor):

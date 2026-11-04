@@ -32,13 +32,19 @@ def _records(value):
     return [item for item in value if isinstance(item, dict)] if isinstance(value, list) else []
 
 
+def _text(value):
+    # A JSON text, '' of anything else (a list or an object cannot be looked up).
+    return value if isinstance(value, basestring) else ''
+
+
 def _crits(hit):
     # The hit's crits, as the mask's would be: one for each kind of device, in a fixed order.
     found = set()
     for device in _records(hit.get('damagedDevices')):
-        kind = _CRIT_KINDS.get(device.get('code'))
-        if kind is not None and device.get('device'):
-            found.add((kind, device['device']))
+        kind = _CRIT_KINDS.get(_text(device.get('code')))
+        name = _text(device.get('device'))
+        if kind is not None and name:
+            found.add((kind, name))
     return [{'kind': kind, 'device': name} for kind, name in sorted(found)]
 
 
@@ -81,7 +87,7 @@ def convert(data):
     premiumKinds = _premiumKinds(battle.get('vehicleDescriptor'))
     for hit in dealtHits:
         hit.pop('damagedDevices', None)
-        if hit.get('shellType') in premiumKinds:
+        if _text(hit.get('shellType')) in premiumKinds:
             hit['isGoldShell'] = True
         _setVehicles(hit, playerVehicle, True)
     converted = dict(battle, receivedHits=receivedHits, dealtHits=dealtHits)

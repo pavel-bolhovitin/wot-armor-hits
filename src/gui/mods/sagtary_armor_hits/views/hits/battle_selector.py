@@ -49,8 +49,8 @@ def _resultText(result):
 
 def _fillItem(item, battle):
     # Names by the ids, in the client language; the ids themselves when the client does not have them.
-    mapName, mapFolder = mapNames(battle.mapId) or ('#%s' % battle.mapId, '')
     item.setId(str(battle.battleId))
+    mapName, mapFolder = mapNames(battle.mapId) or ('#%s' % battle.mapId, '')
     item.setMapName(mapName)
     item.setMapImage(_MAP_IMAGE % mapFolder if mapFolder else '')
     vehicleIds = battle.vehicleIds
@@ -114,7 +114,12 @@ class BattleSelectorPresenter(object):
             items.clear()
             for battle in battles:
                 item = BattleItemModel()
-                _fillItem(item, battle)
+                # A file can come from another player: a battle the client cannot show does not close the screen,
+                # where its file can be deleted.
+                try:
+                    _fillItem(item, battle)
+                except Exception:
+                    _logger.exception('battle selector: cannot show battle %s', battle.battleId)
                 items.addViewModel(item)
             items.invalidate()
             model.setSelectedId(str(self._selectedID) if self._selectedID is not None else '')
