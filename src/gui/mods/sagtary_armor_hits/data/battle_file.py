@@ -16,6 +16,9 @@ A file of an old format is converted to the latest one when it is read (migratio
 as it is, also when its battle is saved again, and the battle keeps the format its file has (Battle.isOldFormat). A
 battle is read with the fields Battle knows: a field the file does not have gets its default, a field Battle does not
 know is skipped.
+
+A file can come from another player and its battle id names the battle's file, so a text there could be a path out of
+the folder: a file whose id is not a number is not read, and a battle's file is written only inside the folder.
 """
 import glob
 import io
@@ -45,6 +48,11 @@ def _text(value):
     if isinstance(value, list):
         return [_text(item) for item in value]
     return value
+
+
+def _isBattleId(value):
+    # The server's id of a battle: a positive whole number.
+    return isinstance(value, (int, long)) and not isinstance(value, bool) and value > 0
 
 
 def writeBattle(path, battle, appVersion):
@@ -80,7 +88,7 @@ def readBattle(path):
         raise BattleFileError('%s has format version %r, this mod reads up to %d' % (
             path, formatVersion, FORMAT_VERSION))
     battle = Battle.fromDict(migrations.toLatest(data))
-    if not battle.battleId:
+    if not _isBattleId(battle.battleId):
         raise BattleFileError('%s is not a battle file' % path)
     return battle.replace(formatVersion=formatVersion)
 
@@ -96,7 +104,13 @@ class BattleFiles(object):
         return self._folder
 
     def pathOf(self, battle):
-        return os.path.join(self._folder, FILE_NAME % battle.battleId)
+        # The battle's file, right in the folder; an error for anything else.
+        if not _isBattleId(battle.battleId):
+            raise BattleFileError('not a battle id: %r' % (battle.battleId,))
+        path = os.path.join(self._folder, FILE_NAME % battle.battleId)
+        if os.path.dirname(os.path.realpath(path)) != os.path.realpath(self._folder):
+            raise BattleFileError('%s is not in %s' % (path, self._folder))
+        return path
 
     def save(self, battle):
         # Writes the battle to its file, over the one saved before, but for a battle of a file of an old format: the
