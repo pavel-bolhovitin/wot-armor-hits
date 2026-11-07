@@ -50,7 +50,7 @@ _MAP_ID_MASK = (1 << _GAMEPLAY_ID_SHIFT) - 1
 
 
 # The latest format of the battle files (battle_file.py, migrations/).
-FORMAT_VERSION = 2
+FORMAT_VERSION = 3
 
 
 class Battle(Record):

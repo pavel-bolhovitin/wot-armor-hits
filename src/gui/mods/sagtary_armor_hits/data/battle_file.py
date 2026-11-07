@@ -6,7 +6,7 @@ BattleFiles keeps one file per battle in its folder, named by the battle id (FIL
 writes over its own file. Loading reads every file of the folder that has the name pattern (FILE_PATTERN): the files
 other players sent, put into the folder; deleting removes them all. A file is the fields of one Battle:
     {
-      "formatVersion": 2,         # version of this layout; a file of a newer layout is not read
+      "formatVersion": 3,         # version of this layout; a file of a newer layout is not read
       "appVersion": "0.1.0",      # version of the mod that wrote the file
       "exportTime": 1760781180.0, # when it was written, Unix time
       "battleId": 49612174051990431,

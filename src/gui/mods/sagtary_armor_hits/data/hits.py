@@ -33,6 +33,13 @@ hit_collector.py in battle.
 - VehiclePose: how the hit vehicle stood at the hit, as the client showed it: its turret and gun, its hull on its
   chassis when the hull moves on it, its steered wheels. Each point is in its own part's space, so it is on the same
   place of the part in any pose; the way between the points on two parts and the armor along it are as the pose was.
+- The shell's mode, for a gun that changes some of its shell's parameters before the shot (the client's shell params
+  switcher mechanic: standard or calibrated shells), kept two ways, each as the client tells it:
+  - Hit.shotMode: the mode the server puts into the battle event of the hit (the client's damage log shows it), so
+    only for a hit with an event: a hit of the player with damage or crits, a hit on the player's vehicle.
+  - Hit.shooterSwitcher (ShellSwitcherState): the shooter's switcher as the client knows it at the hit, for any
+    shooter the client sees with the mechanic. The hit comes after the shot, so its state may already be the next
+    shot's; the time of the shooter's last calibrated shot tells the hit's shell.
 """
 import logging
 
@@ -118,6 +125,19 @@ class VehiclePose(Record):
     __slots__ = tuple(name for name, _ in FIELDS)
 
 
+class ShellSwitcherState(Record):
+    FIELDS = (
+        ('state', ''),          # the switcher's state: a constants.SHELL_PARAMS_SWITCHER_STATE name (NOT_CHARGED:
+                                # standard shells, CHARGED: calibrated, SWITCHING_ON, SWITCHING_OFF), the code as text
+                                # when the client has no name for it
+        ('isActive', False),    # calibrated shells on, as the other players' clients see it
+        ('lastActiveShotTime', 0.0),
+                                # seconds since the battle started of the shooter's last shot with calibrated shells;
+                                # 0 when there was none
+    )
+    __slots__ = tuple(name for name, _ in FIELDS)
+
+
 class HitVehicle(Record):
     FIELDS = (
         ('vehicleDescriptor', ''),
@@ -153,8 +173,17 @@ class Hit(Record):
                                 # space,
                                 # from the shell's tracer (exact, unlike the points); () when not known
         ('targetPose', None),   # how the target stood at the hit (VehiclePose); None when not known
+        ('shotMode', ''),       # the shell's mode by the hit's battle event: a constants.BATTLE_LOG_MECHANIC_SHOT name
+                                # (NOT_DEFINED: a gun without such a mechanic or a shell it does not change,
+                                # SHELL_SWITCHER_NOT_CHARGED: standard shell, SHELL_SWITCHER_CHARGED: calibrated shell,
+                                # BUSTLE_FEED_ACTIVE), the code as text when the client has no name for it; '' without
+                                # an event
+        ('shooterSwitcher', None),
+                                # the shooter's shell params switcher at the hit (ShellSwitcherState); None when the
+                                # client does not see one
     )
-    NESTED = {'shooter': HitVehicle, 'target': HitVehicle, 'points': HitPoint, 'targetPose': VehiclePose}
+    NESTED = {'shooter': HitVehicle, 'target': HitVehicle, 'points': HitPoint, 'targetPose': VehiclePose,
+              'shooterSwitcher': ShellSwitcherState}
     __slots__ = tuple(name for name, _ in FIELDS)
 
     @property

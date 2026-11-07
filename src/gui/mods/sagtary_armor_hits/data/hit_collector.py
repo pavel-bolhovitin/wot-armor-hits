@@ -13,9 +13,11 @@ without damage).
   shooter, the battle time, the target's pose (its turret, gun, hull on its chassis and steered wheels, as the client
   shows them). A splash keeps where the shell burst, in
   the hit vehicle's chassis space (like the points), even when it burst on the ground nearby. The premium flag of the
-  player's own shell is the player's current shell's.
+  player's own shell is the player's current shell's. The shooter's shell params switcher, when the client sees one
+  (its dynamic component ShellParamsSwitcherController: status, publicStatus).
 - PlayerAvatar.onBattleEvents, showVehicleDamageInfo, showOwnVehicleHitDirection: more about the hit of the same
-  vehicle (hit_parser.HitPairing). The client tells which modules it damaged only on the player's own vehicle.
+  vehicle (hit_parser.HitPairing), the shell's mode among it. The client tells which modules it damaged only on the
+  player's own vehicle.
 - PlayerAvatar.showTracer: the shells in flight, for the shell's direction at the first point.
 """
 import logging
@@ -36,6 +38,8 @@ _logger = logging.getLogger('sagtary.armor_hits')
 
 # The attack reason of a shell (the client's index).
 _SHOT_REASON = ATTACK_REASON_INDICES[ATTACK_REASON.SHOT]
+# The vehicle's dynamic component of the shell params switcher mechanic (its DefaultKeyName).
+_SWITCHER_COMPONENT = 'shellParamsSwitcherController'
 
 
 def _chassisPoint(vehicle, point):
@@ -53,11 +57,31 @@ def _chassisPoint(vehicle, point):
     return hit_parser.vector(matrix.applyPoint(Math.Vector3(point)))
 
 
-def _battleTime(arena):
-    # Seconds since the battle period started; 0 before it.
+def _battleTime(arena, serverTime=None):
+    # Seconds since the battle period started of a server time (now by default); 0 before it.
     if arena is None or arena.period != ARENA_PERIOD.BATTLE:
         return 0.0
-    return max(0.0, BigWorld.serverTime() - (arena.periodEndTime - arena.periodLength))
+    if serverTime is None:
+        serverTime = BigWorld.serverTime()
+    return max(0.0, serverTime - (arena.periodEndTime - arena.periodLength))
+
+
+def _shooterSwitcher(arena, shooterID):
+    # The shell params switcher of the shooter the client sees (its ShellParamsSwitcherController), None without one.
+    vehicle = BigWorld.entities.get(shooterID)
+    controller = (getattr(vehicle, 'dynamicComponents', None) or {}).get(_SWITCHER_COMPONENT)
+    if controller is None:
+        return None
+    try:
+        status, publicStatus = controller.status, controller.publicStatus
+        if status is None or publicStatus is None:
+            return None
+        lastShot = publicStatus.lastActiveShotTimestamp
+        return hit_parser.shellSwitcherState(status.state, publicStatus.isActive,
+                                             _battleTime(arena, lastShot) if lastShot > 0 else 0.0)
+    except Exception:
+        _logger.exception('hits: no shell params switcher of vehicle %s', shooterID)
+        return None
 
 
 def _partMatrix(vehicle, part):
@@ -175,7 +199,7 @@ class HitCollector(object):
                                       _chassisPoint(vehicle, center) if center is not None else ())
         hit = hit.replace(time=_battleTime(player.arena), shooter=_hitVehicle(player.arena, attackerID),
                           target=_hitVehicle(player.arena, vehicle.id), distance=_distance(vehicle.id, attackerID),
-                          targetPose=_vehiclePose(vehicle))
+                          targetPose=_vehiclePose(vehicle), shooterSwitcher=_shooterSwitcher(player.arena, attackerID))
         key, now = (field, otherID), BigWorld.serverTime()
         hit = self._pairing.withPending(key, hit, now)
         hits = getattr(battle, field) + (hit,)
