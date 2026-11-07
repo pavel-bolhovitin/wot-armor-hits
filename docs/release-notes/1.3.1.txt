@@ -1,0 +1,1 @@
+🐞 Fixed: a damaged battle file could stop the other battles from loading or keep the screen from opening.
