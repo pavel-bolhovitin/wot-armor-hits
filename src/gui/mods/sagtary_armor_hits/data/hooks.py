@@ -7,15 +7,15 @@ the order they started to listen, then calls the client's own method with the sa
 returns: the listeners only read the call, before the client handles it. A listener that fails is logged and the
 others and the client's method still get the call. The client's method is put back when its last listener stops.
 
-A call's arguments are known by name: the names of the client's own method, or, when the method in the class is a
-wrapper of another mod (def wrapper(*args, **kwargs)) whose names cannot be read, those of _KNOWN_ARGS.
+A call's arguments are known by the client's own names, each by its place in the call (_KNOWN_ARGS): the function in
+the class can be a hook of another mod, with names of its own or only some of them. A call with another number of
+arguments than _KNOWN_ARGS tells the client has changed them: logged once a method.
 """
-import inspect
 import logging
 
 _logger = logging.getLogger('sagtary.armor_hits')
 
-# Argument names of the client 2.4.1 methods.
+# Argument names of the client 2.4.1 methods, in their order; every method listened to has its names here.
 _KNOWN_ARGS = {
     'showDamageFromShot': ('attackerID', 'hitPoints', 'effectsIndex', 'prefabEffIndex', 'damage', 'damageFactor',
                            'lastMaterialIsShield', 'shellVelocity', 'gunInstallationIndex'),
@@ -67,11 +67,11 @@ class Call(object):
 class ClientHooks(object):
 
     def __init__(self):
-        # {(class, method name): original function}, {(class, method name): [listener]}, {(class, method name):
-        # argument names}
+        # {(class, method name): original function}, {(class, method name): [listener]}
         self._originals = {}
         self._listeners = {}
-        self._argNames = {}
+        # The method names already logged as called with another number of arguments than _KNOWN_ARGS.
+        self._warned = set()
 
     def listen(self, cls, name, listener):
         # The listener gets each call of the method (Call); False when the client has no such method.
@@ -94,16 +94,23 @@ class ClientHooks(object):
         if not listeners:
             setattr(cls, name, self._originals.pop(key))
             del self._listeners[key]
-            del self._argNames[key]
+
+    def _checkArguments(self, call):
+        count = len(call.args) + len(call.kwargs)
+        if count != len(call.argNames) and call.name not in self._warned:
+            self._warned.add(call.name)
+            _logger.warning('hooks: %s.%s has %d arguments, %d expected', call.cls.__name__, call.name, count,
+                            len(call.argNames))
 
     def _wrap(self, cls, name):
         key = (cls, name)
         original = cls.__dict__[name]
-        self._argNames[key] = inspect.getargspec(original).args[1:] or list(_KNOWN_ARGS.get(name, ()))
+        argNames = _KNOWN_ARGS[name]
         hooks = self
 
         def wrapper(entity, *args, **kwargs):
-            call = Call(cls, name, entity, args, kwargs, hooks._argNames.get(key, ()))
+            call = Call(cls, name, entity, args, kwargs, argNames)
+            hooks._checkArguments(call)
             for listener in list(hooks._listeners.get(key, ())):
                 try:
                     listener(call)
