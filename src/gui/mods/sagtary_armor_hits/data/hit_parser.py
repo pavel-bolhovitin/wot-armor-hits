@@ -11,9 +11,9 @@ and gives it here, so the same rules can make the hits from any source of the sa
 - eventInfo, shotDevice, hitCrits, withInfo: what more the client's battle events (PlayerAvatar.onBattleEvents, the
   source of its damage log), its damage info of the player's vehicle (PlayerAvatar.showVehicleDamageInfo) and the
   crits mask of a hit on it (PlayerAvatar.showOwnVehicleHitDirection) tell about a hit: crits, a premium shell, the
-  shell's mode, the modules and crew the shell damaged.
-- shellSwitcherState: the shooter's shell params switcher from its component's status (the client's
-  ShellParamsSwitcherController).
+  mechanic shot mode, the modules and crew the shell damaged.
+- switcherShotMode: the mechanic shot mode of a shell of the player without a battle event, by the gun's shell params
+  switcher (the client's ShellParamsSwitcherController).
 - HitPairing: the events and the hit of the same vehicle within _PAIRING_TIME before or after it are one hit.
 - vehiclePose: the target's pose from what the client shows of it.
 - Tracers, shotDirection: the shooter's tracer (PlayerAvatar.showTracer: where the shell starts, its velocity and
@@ -24,12 +24,11 @@ import math
 
 import Math
 from BattleFeedbackCommon import BATTLE_EVENT_TYPE, NONE_SHELL_TYPE
-from constants import (ATTACK_REASON, ATTACK_REASON_INDICES, BATTLE_LOG_MECHANIC_SHOT, SHELL_PARAMS_SWITCHER_STATE,
-                       SHELL_TYPES, SHELL_TYPES_LIST)
+from constants import ATTACK_REASON, ATTACK_REASON_INDICES, BATTLE_LOG_MECHANIC_SHOT, SHELL_TYPES, SHELL_TYPES_LIST
 from gui.shared.crits_mask_parser import critsParserGenerator
 
 from gui.mods.sagtary_armor_hits.data.hits import (DamagedDevice, DealtHit, HitCrit, HitPoint, ReceivedHit,
-                                                    ShellSwitcherState, VehiclePose, effectName)
+                                                    VehiclePose, effectName)
 
 # Decimals of the hit point coordinates in metres: the server sends them to about 1 cm; of a direction's; of a caliber
 # in millimetres: the server sends it to 0.1 mm; of an angle in radians.
@@ -49,14 +48,14 @@ _EVENT_SIDES = {
     BATTLE_EVENT_TYPE.TANKING: 'receivedHits',
 }
 _CRIT_EVENTS = (BATTLE_EVENT_TYPE.CRIT, BATTLE_EVENT_TYPE.RECEIVED_CRIT)
-# The constants.SHELL_PARAMS_SWITCHER_STATE names a switcher's state is kept by; its status keeps more flags above the
-# state's bits.
-_SWITCHER_STATE_NAMES = ('NOT_CHARGED', 'CHARGED', 'SWITCHING_OFF', 'SWITCHING_ON')
-_SWITCHER_STATE_MASK = 3
-# Decimals of a time in seconds.
-_TIME_DECIMALS = 3
 # The attack reason of a shell (the client's index).
 _SHOT_REASON = ATTACK_REASON_INDICES[ATTACK_REASON.SHOT]
+# The shell kinds the guns with the shell params switcher change (their modifiedShells): their high explosive shell has
+# one mode.
+_SWITCHER_SHELL_KINDS = (SHELL_TYPES.ARMOR_PIERCING, SHELL_TYPES.ARMOR_PIERCING_CR, SHELL_TYPES.HOLLOW_CHARGE)
+# The most seconds between the time the switcher keeps of a calibrated shot and that shell's hit: the hit comes about
+# 0.06 s after it at any distance, the next shot only after the gun's reload.
+_CALIBRATED_SHOT_SECONDS = 1.0
 # The client's damage info codes of a shell have this in their names (DEVICE_CRITICAL_AT_SHOT, DEATH_FROM_SHOT, ...).
 _SHOT_CODE = 'SHOT'
 # The server tells the event and the client shows the shell hit at about the same time, either one first (the hit
@@ -119,8 +118,8 @@ def eventSide(eventType):
 
 
 def eventInfo(eventType, details):
-    # {Hit field: value} of a battle event: crits, a premium shell, the shell's mode. The events of the player's own
-    # hits do not tell the shell (NONE_SHELL_TYPE): no premium flag from them. A hit on the player's vehicle has its
+    # {Hit field: value} of a battle event: crits, a premium shell, the mechanic shot mode. The events of the player's
+    # own hits do not tell the shell (NONE_SHELL_TYPE): no premium flag from them. A hit on the player's vehicle has its
     # crits from its own crits mask (hitCrits): the event comes later, with the events of a few hits at once.
     if eventType in _CRIT_EVENTS:
         unpacked = BATTLE_EVENT_TYPE.unpackCrits(details)
@@ -135,31 +134,27 @@ def eventInfo(eventType, details):
     # The attacker's mechanic shot mode is the last value of both; only a shell's event tells it, a fire or a ramming
     # of the same vehicle soon after the hit is not to change it.
     if unpacked[1] == _SHOT_REASON:
-        info['shotMode'] = shotModeName(unpacked[-1])
+        info['mechanicShotMode'] = _mechanicShotModeName(unpacked[-1])
     return info
 
 
-def shotModeName(code):
-    # The name a hit keeps a constants.BATTLE_LOG_MECHANIC_SHOT code by; the code as text without one.
+def _mechanicShotModeName(code):
+    # The constants.BATTLE_LOG_MECHANIC_SHOT name of a code; NOT_DEFINED for a code the client has no name for.
     try:
         return BATTLE_LOG_MECHANIC_SHOT(code).name
     except ValueError:
-        return str(code)
+        return BATTLE_LOG_MECHANIC_SHOT.NOT_DEFINED.name
 
 
-def _switcherStateName(code):
-    # The constants.SHELL_PARAMS_SWITCHER_STATE name of a switcher's state; the code as text without one.
-    for name in _SWITCHER_STATE_NAMES:
-        if getattr(SHELL_PARAMS_SWITCHER_STATE, name, None) == code:
-            return name
-    return str(code)
-
-
-def shellSwitcherState(state, isActive, lastActiveShotTime):
-    # The shooter's switcher. state: its status' state (flags included); isActive: its public status' one;
-    # lastActiveShotTime: seconds since the battle started of its last calibrated shot, 0 for none.
-    return ShellSwitcherState(state=_switcherStateName(state & _SWITCHER_STATE_MASK), isActive=bool(isActive),
-                              lastActiveShotTime=round(max(0.0, lastActiveShotTime), _TIME_DECIMALS))
+def switcherShotMode(shellType, now, lastCalibratedShot):
+    # The constants.BATTLE_LOG_MECHANIC_SHOT name of a shell of the player without a battle event, by the gun's shell
+    # params switcher. now: the server time of the hit; lastCalibratedShot: the server time of the switcher's last
+    # calibrated shot, 0 for none, None when the gun has no switcher.
+    if lastCalibratedShot is None or shellType not in _SWITCHER_SHELL_KINDS:
+        return BATTLE_LOG_MECHANIC_SHOT.NOT_DEFINED.name
+    if abs(now - lastCalibratedShot) <= _CALIBRATED_SHOT_SECONDS:
+        return BATTLE_LOG_MECHANIC_SHOT.SHELL_SWITCHER_CHARGED.name
+    return BATTLE_LOG_MECHANIC_SHOT.SHELL_SWITCHER_NOT_CHARGED.name
 
 
 def isShotCode(code):

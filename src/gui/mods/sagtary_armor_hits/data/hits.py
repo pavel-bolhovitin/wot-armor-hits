@@ -33,16 +33,11 @@ hit_collector.py in battle.
 - VehiclePose: how the hit vehicle stood at the hit, as the client showed it: its turret and gun, its hull on its
   chassis when the hull moves on it, its steered wheels. Each point is in its own part's space, so it is on the same
   place of the part in any pose; the way between the points on two parts and the armor along it are as the pose was.
-- The shell's mode, for a gun that changes some of its shell's parameters before the shot (the client's shell params
-  switcher mechanic: standard or calibrated shells), kept two ways, each as the client tells it:
-  - Hit.shotMode: the mode the server puts into the battle event of the hit (the client's damage log shows it), so
-    only for a hit with an event: a hit of the player with damage or crits, a hit on the player's vehicle.
-  - Hit.shooterSwitcher (ShellSwitcherState): the shooter's switcher as the client knows it at the hit, for any
-    shooter the client sees with the mechanic. The hit comes after the shot, so its state may already be the next
-    shot's; the time of the shooter's last calibrated shot tells the hit's shell.
-  The hits screen shows the mode by the battle event (Hit.shellMode: ShellMode); a shell of the player without an
-  event by the player's switcher (DealtHit.shellMode). The switcher is not used for the shells of the others: a hit on
-  the player's vehicle has its event.
+- Hit.mechanicShotMode: the state of the gun's mechanic at the shot, by the names of the client's damage log
+  (constants.BATTLE_LOG_MECHANIC_SHOT): NOT_DEFINED (no such mechanic, or not known), SHELL_SWITCHER_NOT_CHARGED and
+  SHELL_SWITCHER_CHARGED (the shell params switcher of a few vehicles: a standard or a calibrated shell),
+  BUSTLE_FEED_ACTIVE. The file keeps only this result; hit_parser.py works it out from what the client tells. The hits
+  screen shows the switcher's two (Hit.shellMode: ShellMode).
 """
 import logging
 
@@ -85,11 +80,6 @@ class ShellMode(object):
 
 # The ShellMode of a constants.BATTLE_LOG_MECHANIC_SHOT name.
 _SHELL_MODES = {'SHELL_SWITCHER_NOT_CHARGED': ShellMode.STANDARD, 'SHELL_SWITCHER_CHARGED': ShellMode.CALIBRATED}
-# The shell kinds the guns with the switcher change (their modifiedShells): their high explosive shell has one mode.
-_SWITCHER_SHELL_KINDS = ('ARMOR_PIERCING', 'ARMOR_PIERCING_CR', 'HOLLOW_CHARGE')
-# The most seconds between the time the switcher keeps of a calibrated shot and that shell's hit: the hit comes about
-# 0.06 s after it at any distance, the next shot only after the gun's reload.
-_CALIBRATED_SHOT_SECONDS = 1.0
 
 
 class HitPoint(Record):
@@ -144,23 +134,6 @@ class VehiclePose(Record):
     __slots__ = tuple(name for name, _ in FIELDS)
 
 
-class ShellSwitcherState(Record):
-    FIELDS = (
-        ('state', ''),          # the switcher's state: a constants.SHELL_PARAMS_SWITCHER_STATE name (NOT_CHARGED:
-                                # standard shells, CHARGED: calibrated, SWITCHING_ON, SWITCHING_OFF), the code as text
-                                # when the client has no name for it
-        ('isActive', False),    # calibrated shells on, as the other players' clients see it
-        ('lastActiveShotTime', 0.0),
-                                # seconds since the battle started of the shooter's last shot with calibrated shells;
-                                # 0 when there was none
-    )
-    __slots__ = tuple(name for name, _ in FIELDS)
-
-    def isCalibratedShotHit(self, time):
-        # Whether the shell of a hit at the time (seconds since the battle started) was a calibrated one.
-        return bool(self.lastActiveShotTime) and abs(time - self.lastActiveShotTime) <= _CALIBRATED_SHOT_SECONDS
-
-
 class HitVehicle(Record):
     FIELDS = (
         ('vehicleDescriptor', ''),
@@ -196,17 +169,12 @@ class Hit(Record):
                                 # space,
                                 # from the shell's tracer (exact, unlike the points); () when not known
         ('targetPose', None),   # how the target stood at the hit (VehiclePose); None when not known
-        ('shotMode', ''),       # the shell's mode by the hit's battle event: a constants.BATTLE_LOG_MECHANIC_SHOT name
-                                # (NOT_DEFINED: a gun without such a mechanic or a shell it does not change,
-                                # SHELL_SWITCHER_NOT_CHARGED: standard shell, SHELL_SWITCHER_CHARGED: calibrated shell,
-                                # BUSTLE_FEED_ACTIVE), the code as text when the client has no name for it; '' without
-                                # an event
-        ('shooterSwitcher', None),
-                                # the shooter's shell params switcher at the hit (ShellSwitcherState); None when the
-                                # client does not see one
+        ('mechanicShotMode', 'NOT_DEFINED'),
+                                # the state of the gun's mechanic at the shot: a constants.BATTLE_LOG_MECHANIC_SHOT name
+                                # (NOT_DEFINED: no such mechanic or not known, SHELL_SWITCHER_NOT_CHARGED: standard
+                                # shell, SHELL_SWITCHER_CHARGED: calibrated shell, BUSTLE_FEED_ACTIVE)
     )
-    NESTED = {'shooter': HitVehicle, 'target': HitVehicle, 'points': HitPoint, 'targetPose': VehiclePose,
-              'shooterSwitcher': ShellSwitcherState}
+    NESTED = {'shooter': HitVehicle, 'target': HitVehicle, 'points': HitPoint, 'targetPose': VehiclePose}
     __slots__ = tuple(name for name, _ in FIELDS)
 
     @property
@@ -217,7 +185,7 @@ class Hit(Record):
     @property
     def shellMode(self):
         # The ShellMode of the hit's shell, '' when not known.
-        return _SHELL_MODES.get(self.shotMode, '')
+        return _SHELL_MODES.get(self.mechanicShotMode, '')
 
     @property
     def hitEffects(self):
@@ -277,16 +245,6 @@ class DealtHit(Hit):
     def critsTotal(self):
         # The modules and crew the hit damaged, as the client counts them in battle.
         return self.critsCount
-
-    @property
-    def shellMode(self):
-        # The server sends no battle event of a shell of the player without damage or crits: the player's switcher
-        # tells that shell's mode.
-        mode = super(DealtHit, self).shellMode
-        switcher = self.shooterSwitcher
-        if mode or self.shotMode or switcher is None or self.shellType not in _SWITCHER_SHELL_KINDS:
-            return mode
-        return ShellMode.CALIBRATED if switcher.isCalibratedShotHit(self.time) else ShellMode.STANDARD
 
 
 def effectName(code):
