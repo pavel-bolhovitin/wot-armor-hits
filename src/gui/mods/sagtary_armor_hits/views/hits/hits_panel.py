@@ -6,7 +6,9 @@ the side (received or dealt hits), the result filters with their counts, and the
 chosen hit and tells its listeners when the panel changes (onChanged, the battle, the side and the chosen hit in
 selection). The hits on allies (Hit.isAllyHit) are left out, numbered without them, unless the mod's settings show
 them (showFriendlyFire; the panel follows the setting at once). The icons are the client's damage log icons; the shell
-kinds, the vehicle names and the "All" label are the client's texts.
+kinds, the vehicle names and the "All" label are the client's texts. A hit with a known shell mode (Hit.shellMode, the
+shell params switcher of a few vehicles) gets the mod's icon of the mode in a column of its own, which the list has
+only on a side with such a hit in the battle (hasShellModes). A row without an icon is a hit of an unknown mode.
 """
 import logging
 
@@ -50,6 +52,7 @@ def _fillHit(item, number, hit):
     item.setDamage(hit.damage)
     item.setHasCrits(hit.critsTotal > 0)
     item.setIsGoldShell(hit.isGoldShell)
+    item.setShellMode(hit.shellMode)
 
 
 class HitsPanelPresenter(object):
@@ -186,6 +189,9 @@ class HitsPanelPresenter(object):
                 filterModels.addViewModel(item)
             filterModels.invalidate()
             model.setSelectedFilter(self._filter)
+            # The column of the shell mode's icon: on a side with a known mode anywhere in the battle, whatever the
+            # filter shows.
+            model.setHasShellModes(any(hit.shellMode for _, hit in hits or ()))
 
             shown = self._shownHits()
             numbers = [number for number, _ in shown]

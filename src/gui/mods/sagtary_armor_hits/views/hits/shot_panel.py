@@ -4,7 +4,9 @@
 ShotPanelPresenter fills the view model (views/models/shot_panel_model.py) for the hit the hits panel has chosen:
 
 - the cards of the shooter and the target: the player, the vehicle (the client's name, tier, icon and nation flag)
-  with its modules of the battle (the compact descriptor); beside the shooter its gun and the shell of the hit,
+  with its modules of the battle (the compact descriptor); beside the shooter its gun and the shell of the hit (the
+  hit's shell mode, standard or calibrated, in the top right corner of the shell's icon, like the client marks a gun's
+  mechanic on a module; only shown, the numbers do not count it),
   beside the target its turret when it has one (not a turretless vehicle) and its gun, as icons like the armor page's. On the
   received side the shooter is the other vehicle and the target the player's, on the dealt side the other way round.
   Over an icon the client's tooltip of the module (CONTEXT_VEHICLE_MODULE) or of the shell (ARMOR_INSPECTOR_SHELL)
@@ -317,7 +319,7 @@ class ShotPanelPresenter(object):
             self._tries += 1
             self._callbackID = BigWorld.callback(_RETRY, self._onFrame)
         gunShot = self._overlayPanel.gunShot
-        shooterModules = self._shooterModules(hit.shooter, gunShot)
+        shooterModules = self._shooterModules(hit.shooter, gunShot, hit.shellMode)
         targetModules = self._targetModules(hit.target)
         with self._model.transaction() as model:
             model.setIsVisible(True)
@@ -384,15 +386,17 @@ class ShotPanelPresenter(object):
         model.setFlag(flag)
         array = model.getModules()
         array.clear()
-        for moduleIcon, moduleTier in modules:
+        for moduleIcon, moduleTier, shellMode in modules:
             item = ShotModuleModel()
             item.setIcon(moduleIcon)
             item.setTier(moduleTier)
+            item.setShellMode(shellMode)
             array.addViewModel(item)
         array.invalidate()
 
-    def _shooterModules(self, shooter, gunShot):
-        # [(icon, tier)] of the shooter's gun and the hit's shell; their tooltips for the shown vehicle.
+    def _shooterModules(self, shooter, gunShot, shellMode):
+        # [(icon, tier, shell mode)] of the shooter's gun and the hit's shell (with the hit's mode); their tooltips for
+        # the shown vehicle.
         self._tooltips[_SHOOTER] = (None, [])
         if gunShot is None:
             return []
@@ -405,10 +409,10 @@ class ShotPanelPresenter(object):
             self._tooltips[_SHOOTER] = (vehicle, [
                 (TOOLTIPS_CONSTANTS.CONTEXT_VEHICLE_MODULE, shownGun.compactDescr),
                 (TOOLTIPS_CONSTANTS.ARMOR_INSPECTOR_SHELL, (shots[0] if shots else shot).shell.compactDescr)])
-        return [(_GUN_ICON, int2roman(gun.level)), (_SHELL_ICON % shot.shell.iconName, '')]
+        return [(_GUN_ICON, int2roman(gun.level), ''), (_SHELL_ICON % shot.shell.iconName, '', shellMode)]
 
     def _targetModules(self, target):
-        # [(icon, tier)] of the target's turret (when it has one) and gun, like the armor page's modules; their
+        # [(icon, tier, '')] of the target's turret (when it has one) and gun, like the armor page's modules; their
         # tooltips for the shown vehicle.
         self._tooltips[_TARGET] = (None, [])
         vehicle = _shownVehicle(target.vehicleId, target.vehicleDescriptor)
@@ -419,7 +423,7 @@ class ShotPanelPresenter(object):
         modules.append(descriptor.gun)
         self._tooltips[_TARGET] = (vehicle, [(TOOLTIPS_CONSTANTS.CONTEXT_VEHICLE_MODULE, module.compactDescr)
                                              for module in modules])
-        return [(_TURRET_ICON if module is descriptor.turret else _GUN_ICON, int2roman(module.level))
+        return [(_TURRET_ICON if module is descriptor.turret else _GUN_ICON, int2roman(module.level), '')
                 for module in modules]
 
     def _armor(self, hit):

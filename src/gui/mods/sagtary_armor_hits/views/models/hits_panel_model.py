@@ -8,7 +8,7 @@ from frameworks.wulf import Array, ViewModel
 class HitItemModel(ViewModel):
     __slots__ = ()
 
-    def __init__(self, properties=11, commands=0):
+    def __init__(self, properties=12, commands=0):
         super(HitItemModel, self).__init__(properties=properties, commands=commands)
 
     def getNumber(self):
@@ -84,6 +84,13 @@ class HitItemModel(ViewModel):
     def setHasCrits(self, value):
         self._setBool(10, value)
 
+    def getShellMode(self):
+        # data.hits.ShellMode of the shell: 'standard', 'calibrated', or '' when not known.
+        return self._getString(11)
+
+    def setShellMode(self, value):
+        self._setString(11, value)
+
     def _initialize(self):
         super(HitItemModel, self)._initialize()
         self._addNumberProperty('number', 0)
@@ -97,6 +104,7 @@ class HitItemModel(ViewModel):
         self._addNumberProperty('damage', 0)
         self._addBoolProperty('isGoldShell', False)
         self._addBoolProperty('hasCrits', False)
+        self._addStringProperty('shellMode', '')
 
 
 class HitFilterModel(ViewModel):
@@ -127,7 +135,7 @@ class HitFilterModel(ViewModel):
 class HitsPanelModel(ViewModel):
     __slots__ = ('onSide', 'onFilter', 'onHit', 'onStep')
 
-    def __init__(self, properties=9, commands=4):
+    def __init__(self, properties=10, commands=4):
         super(HitsPanelModel, self).__init__(properties=properties, commands=commands)
 
     def getIsVisible(self):
@@ -195,6 +203,13 @@ class HitsPanelModel(ViewModel):
     def setSelectedHit(self, value):
         self._setNumber(8, value)
 
+    def getHasShellModes(self):
+        # A hit of the side in the battle has a known shell mode: the list has the column of its icon.
+        return self._getBool(9)
+
+    def setHasShellModes(self, value):
+        self._setBool(9, value)
+
     def _initialize(self):
         super(HitsPanelModel, self)._initialize()
         self._addBoolProperty('isVisible', False)
@@ -206,6 +221,7 @@ class HitsPanelModel(ViewModel):
         self._addStringProperty('selectedFilter', '')
         self._addArrayProperty('hits', Array())
         self._addNumberProperty('selectedHit', -1)
+        self._addBoolProperty('hasShellModes', False)
         # {side}, {id}, {index}, {delta}: the page's tabs, filters, list rows, arrows.
         self.onSide = self._addCommand('onSide')
         self.onFilter = self._addCommand('onFilter')

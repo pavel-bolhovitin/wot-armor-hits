@@ -404,6 +404,12 @@ function drawHitsPanel() {
         shell.classList.toggle("hitsPanel__shellGold", Boolean(hit.isGoldShell));
         shell.title = hit.shellName;
         row.appendChild(shell);
+        // The icon of the shell's mode, in a column of its own on a side with a known mode in the battle; a row of an
+        // unknown mode keeps its place.
+        if (model.hasShellModes) {
+            row.appendChild(element("div", hit.shellMode
+                ? `hitsPanel__shellMode hitsPanel__shellMode__${hit.shellMode}` : "hitsPanel__shellMode"));
+        }
         row.appendChild(element("div", hit.vehicleClass ? `hitIcon hitIcon__class__${hit.vehicleClass}` : "hitIcon"));
         row.appendChild(element("div", "hitsPanel__vehicle", hit.vehicleName));
         row.appendChild(element("div", "hitsPanel__player", hit.playerName));
@@ -659,6 +665,10 @@ function shotVehicle(vehicle, role) {
         setImage(moduleIcon, module.icon);
         if (module.tier) {
             moduleIcon.appendChild(element("div", "shotPanel__moduleTier", module.tier));
+        }
+        // The hit's shell mode on the shooter's shell, in the corner the client marks a gun's mechanic in.
+        if (module.shellMode) {
+            moduleIcon.appendChild(element("div", `shotPanel__shellMode shotPanel__shellMode__${module.shellMode}`));
         }
         moduleIcon.addEventListener("mouseenter", () => moduleTooltip(true, role, index));
         moduleIcon.addEventListener("mouseleave", () => moduleTooltip(false, role, index));

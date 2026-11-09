@@ -6,11 +6,11 @@ from frameworks.wulf import Array, ViewModel
 
 
 class ShotModuleModel(ViewModel):
-    # A module or a shell of a vehicle card: the client's icon and the module's tier ('' for a shell); its tooltip is
-    # the client's, asked for by the card's role and the module's index.
+    # A module or a shell of a vehicle card: the client's icon and the module's tier ('' for a shell), the shell's mode;
+    # its tooltip is the client's, asked for by the card's role and the module's index.
     __slots__ = ()
 
-    def __init__(self, properties=2, commands=0):
+    def __init__(self, properties=3, commands=0):
         super(ShotModuleModel, self).__init__(properties=properties, commands=commands)
 
     def getIcon(self):
@@ -25,10 +25,19 @@ class ShotModuleModel(ViewModel):
     def setTier(self, value):
         self._setString(1, value)
 
+    def getShellMode(self):
+        # The hit's shell mode on the shooter's shell (data.hits.ShellMode: 'standard', 'calibrated'); '' for a module
+        # and a shell of no known mode.
+        return self._getString(2)
+
+    def setShellMode(self, value):
+        self._setString(2, value)
+
     def _initialize(self):
         super(ShotModuleModel, self)._initialize()
         self._addStringProperty('icon', '')
         self._addStringProperty('tier', '')
+        self._addStringProperty('shellMode', '')
 
 
 class ShotVehicleModel(ViewModel):

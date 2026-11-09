@@ -40,6 +40,9 @@ hit_collector.py in battle.
   - Hit.shooterSwitcher (ShellSwitcherState): the shooter's switcher as the client knows it at the hit, for any
     shooter the client sees with the mechanic. The hit comes after the shot, so its state may already be the next
     shot's; the time of the shooter's last calibrated shot tells the hit's shell.
+  The hits screen shows the mode by the battle event (Hit.shellMode: ShellMode); a shell of the player without an
+  event by the player's switcher (DealtHit.shellMode). The switcher is not used for the shells of the others: a hit on
+  the player's vehicle has its event.
 """
 import logging
 
@@ -71,6 +74,22 @@ class HitResult(object):
     RICOCHET = 'ricochet'
     NO_DAMAGE = 'noDamage'
     ALL = (DAMAGE, BLOCKED, RICOCHET, NO_DAMAGE)
+
+
+class ShellMode(object):
+    # The shell's mode (Hit.shellMode), for a gun with the shell params switcher: standard or calibrated shells; '' for
+    # any other gun or when not known.
+    STANDARD = 'standard'
+    CALIBRATED = 'calibrated'
+
+
+# The ShellMode of a constants.BATTLE_LOG_MECHANIC_SHOT name.
+_SHELL_MODES = {'SHELL_SWITCHER_NOT_CHARGED': ShellMode.STANDARD, 'SHELL_SWITCHER_CHARGED': ShellMode.CALIBRATED}
+# The shell kinds the guns with the switcher change (their modifiedShells): their high explosive shell has one mode.
+_SWITCHER_SHELL_KINDS = ('ARMOR_PIERCING', 'ARMOR_PIERCING_CR', 'HOLLOW_CHARGE')
+# The most seconds between the time the switcher keeps of a calibrated shot and that shell's hit: the hit comes about
+# 0.06 s after it at any distance, the next shot only after the gun's reload.
+_CALIBRATED_SHOT_SECONDS = 1.0
 
 
 class HitPoint(Record):
@@ -137,6 +156,10 @@ class ShellSwitcherState(Record):
     )
     __slots__ = tuple(name for name, _ in FIELDS)
 
+    def isCalibratedShotHit(self, time):
+        # Whether the shell of a hit at the time (seconds since the battle started) was a calibrated one.
+        return bool(self.lastActiveShotTime) and abs(time - self.lastActiveShotTime) <= _CALIBRATED_SHOT_SECONDS
+
 
 class HitVehicle(Record):
     FIELDS = (
@@ -190,6 +213,11 @@ class Hit(Record):
     def isAllyHit(self):
         # A hit on a vehicle of the shooter's own team that took no damage (the client's team damage is off).
         return self.shooter.team is not None and self.shooter.team == self.target.team and self.damage == 0
+
+    @property
+    def shellMode(self):
+        # The ShellMode of the hit's shell, '' when not known.
+        return _SHELL_MODES.get(self.shotMode, '')
 
     @property
     def hitEffects(self):
@@ -249,6 +277,16 @@ class DealtHit(Hit):
     def critsTotal(self):
         # The modules and crew the hit damaged, as the client counts them in battle.
         return self.critsCount
+
+    @property
+    def shellMode(self):
+        # The server sends no battle event of a shell of the player without damage or crits: the player's switcher
+        # tells that shell's mode.
+        mode = super(DealtHit, self).shellMode
+        switcher = self.shooterSwitcher
+        if mode or self.shotMode or switcher is None or self.shellType not in _SWITCHER_SHELL_KINDS:
+            return mode
+        return ShellMode.CALIBRATED if switcher.isCalibratedShotHit(self.time) else ShellMode.STANDARD
 
 
 def effectName(code):

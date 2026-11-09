@@ -758,6 +758,25 @@ body {
     visibility: hidden;
 }
 
+/* The shell mode's column after the shell plate (the shell params switcher's mod icons, cut out of the client's
+   damage log atlas); empty on a row of an unknown mode. */
+.hitsPanel__shellMode {
+    width: 16rem;
+    height: 16rem;
+    flex-shrink: 0;
+    margin-right: 6rem;
+    background-repeat: no-repeat;
+    background-size: 16rem 16rem;
+}
+
+.hitsPanel__shellMode__standard {
+    background-image: url(img://gui/maps/sagtary_armor_hits/hits/shell_standard.png);
+}
+
+.hitsPanel__shellMode__calibrated {
+    background-image: url(img://gui/maps/sagtary_armor_hits/hits/shell_calibrated.png);
+}
+
 .hitsPanel__damage {
     width: 34rem;
     flex-shrink: 0;
@@ -1236,6 +1255,26 @@ body {
     font-weight: bold;
     color: #c9ced3;
     text-shadow: 0 1rem 2rem #000000;
+}
+
+/* The hit's shell mode on the shooter's shell: its icon alone in the top right corner, a little in from the edges,
+   like the client's mark of a gun mechanic on a module. */
+.shotPanel__shellMode {
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+    width: 14rem;
+    height: 14rem;
+    background-repeat: no-repeat;
+    background-size: 14rem 14rem;
+}
+
+.shotPanel__shellMode__standard {
+    background-image: url(img://gui/maps/sagtary_armor_hits/hits/shell_standard.png);
+}
+
+.shotPanel__shellMode__calibrated {
+    background-image: url(img://gui/maps/sagtary_armor_hits/hits/shell_calibrated.png);
 }
 
 .shotPanel__sections {
