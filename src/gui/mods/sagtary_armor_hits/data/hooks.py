@@ -107,6 +107,9 @@ class ClientHooks(object):
         original = cls.__dict__[name]
         argNames = _KNOWN_ARGS[name]
         hooks = self
+        # The method is bound to the entity the way Python binds it for the client's own call: the object in the class
+        # can be a hook of another mod that is no function (a staticmethod, a descriptor, a callable object).
+        bind = getattr(type(original), '__get__', None)
 
         def wrapper(entity, *args, **kwargs):
             call = Call(cls, name, entity, args, kwargs, argNames)
@@ -117,7 +120,8 @@ class ClientHooks(object):
                 except Exception:
                     _logger.exception('hooks: %s cannot read %s.%s', getattr(listener, '__name__', listener),
                                       cls.__name__, name)
-            return original(entity, *args, **kwargs)
+            method = bind(original, entity, type(entity)) if bind is not None else original
+            return method(*args, **kwargs)
 
         wrapper.__name__ = name
         self._originals[key] = original
