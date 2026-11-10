@@ -1,0 +1,1 @@
+✨ New: the hits list and the shot panel show the shell's mode, standard or calibration, on vehicles with the shell calibration system. 🐞 Fixed: 1) compatibility with other mods; 2) stability.

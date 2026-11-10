@@ -5,7 +5,7 @@ Entry point loaded by the game; the code is in the gui.mods.sagtary_armor_hits p
 """
 import logging
 
-__version__ = '1.3.1'
+__version__ = '1.4.0'
 
 # The mod logs failures only, and one line when it starts: its version, whatever level the client gives the loggers.
 _logger = logging.getLogger('sagtary.armor_hits')
