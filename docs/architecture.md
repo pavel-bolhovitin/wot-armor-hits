@@ -60,7 +60,7 @@ UI (`views/`), a package per screen or button. The view models, the data the Gam
 |-------------------------------------------|--------------------------------------------------------------|
 | `views/hits/hits_screen.py`               | puts the hits screen into the client: the view setting, the lobby state and its transition; loads the view with the `BattleStore` |
 | `views/hits/hits_state.py`                | lobby state of the screen: a page of the lobby navigation, the armor page scene and camera |
-| `views/hits/hits_view.py`                 | window and Gameface view of the screen: the full screen page, the mouse over the scene, the panel presenters |
+| `views/hits/hits_view.py`                 | window and Gameface view of the screen: the full screen page, the mouse over the scene, the panel presenters; they start whole or not at all (a failure stops the ones started, the failed one too), each stops on its own |
 | `views/hits/battle_selector.py`           | presenter of the battle selector: fills its model from the `BattleStore`, keeps the selected battle (`onBattleSelected`), tells the page when it is from a file of an old format (a note at the top of the screen) |
 | `views/hits/hits_panel.py`                | presenter of the hits panel: the received or dealt hits of the selected battle, the result filters, the chosen hit (`onChanged`, `selection`); the icon of the shell's mode (standard or calibrated) in a column of its own, only on a side with a known mode in the battle |
 | `views/hits/hangar_vehicle.py`            | presenter of the hangar vehicle: the vehicle the panel shows the hits on, as the client's preview vehicle |

@@ -19,7 +19,14 @@ menu when it is given the mod's settings.
 The presenters stop when the screen's lobby state is left (SCREEN_LEFT_EVENT), before the state puts the hangar
 back; the view itself closes later. Else the hit lines, which follow the vehicle on every frame, would see the
 vehicle on its way back to the garage and fly the garage camera after the hit.
+
+The presenters start whole or not at all, like the mod: when one fails to start, the failure is logged and the
+presenters started are stopped again, the failed one too (it may have changed the hangar before it failed); the
+screen's panels then do nothing, as a screen that works in part would hide the failure. Each presenter stops on its
+own: a failure is logged and the others stop still, so the hangar is put back whole.
 """
+import logging
+
 from frameworks.wulf import WindowFlags
 from gui.impl.gen import R
 from gui.impl.lobby.common.view_wrappers import createBackportTooltipDecorator
@@ -40,6 +47,8 @@ from gui.mods.sagtary_armor_hits.views.hits.scene_panel import ScenePanelPresent
 from gui.mods.sagtary_armor_hits.views.hits.settings_menu import SettingsMenuPresenter
 from gui.mods.sagtary_armor_hits.views.hits.shot_panel import ShotPanelPresenter
 from gui.mods.sagtary_armor_hits.views.models.hits_view_model import HitsViewModel
+
+_logger = logging.getLogger('sagtary.armor_hits')
 
 # Alias of the Scaleform view setting of the screen.
 VIEW_ALIAS = 'sagtaryArmorHitsView'
@@ -120,8 +129,7 @@ class HitsView(ViewComponent):
         if self._settings is not None:
             self._presenters.append(SettingsMenuPresenter(model.settingsMenu, self._settings, dict(
                 (key.split('/')[1], text(key)) for key in _SETTINGS_TEXTS)))
-        for presenter in self._presenters:
-            presenter.init()
+        self._initPresenters()
         g_eventBus.addListener(SCREEN_LEFT_EVENT, self.__onScreenLeft, EVENT_BUS_SCOPE.LOBBY)
 
     def _finalize(self):
@@ -132,13 +140,27 @@ class HitsView(ViewComponent):
         self._settings = None
         super(HitsView, self)._finalize()
 
+    def _initPresenters(self):
+        # In their order; on a failure only the presenters up to the failed one are stopped, the others never started.
+        for index, presenter in enumerate(self._presenters):
+            try:
+                presenter.init()
+            except Exception:
+                _logger.exception('hits view: %s cannot start, the screen is off', type(presenter).__name__)
+                del self._presenters[index + 1:]
+                self._finiPresenters()
+                return
+
     def _finiPresenters(self):
-        # Once: when the screen is left, or when the view closes without that.
-        for presenter in reversed(self._presenters):
-            presenter.fini()
-        self._presenters = []
+        # Once: when the screen is left, or when the view closes without that, or when a presenter cannot start.
+        presenters, self._presenters = self._presenters, []
         self._shotPanel = None
         self._camera = None
+        for presenter in reversed(presenters):
+            try:
+                presenter.fini()
+            except Exception:
+                _logger.exception('hits view: %s cannot stop', type(presenter).__name__)
 
     def __onScreenLeft(self, event):
         self._finiPresenters()
