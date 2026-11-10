@@ -89,6 +89,8 @@ class ArmorTooltipPresenter(object):
         # Not handled: the other handlers get it too.
         return False
 
+    # The hangar space's and the window's events pass an error on to the client, and their other listeners miss the
+    # call: their handlers log it, those of the hangar space's in _run.
     def _onCursorOverScene(self, *args):
         self._run(self._update)
 
@@ -96,16 +98,19 @@ class ArmorTooltipPresenter(object):
         self._run(self._destroy)
 
     def _onMouseEnter(self, entity):
-        if entity != self.__hangarSpace.getVehicleEntity():
-            return
-        self._isMouseOver = True
-        self._run(self._update)
+        self._run(lambda: self._setMouseOver(entity, True))
 
     def _onMouseExit(self, entity):
+        self._run(lambda: self._setMouseOver(entity, False))
+
+    def _setMouseOver(self, entity, isOver):
         if entity != self.__hangarSpace.getVehicleEntity():
             return
-        self._isMouseOver = False
-        self._run(self._destroy)
+        self._isMouseOver = isOver
+        if isOver:
+            self._update()
+        else:
+            self._destroy()
 
     def _onAway(self):
         self._awayID = None
@@ -176,8 +181,11 @@ class ArmorTooltipPresenter(object):
         self._tooltip.update(self._overlayPanel.selected, self._overlayPanel.shellParams, collisions)
 
     def _onStatusChanged(self, status):
-        if status == WindowStatus.DESTROYED:
-            self._destroy(isDestroyed=True)
+        try:
+            if status == WindowStatus.DESTROYED:
+                self._destroy(isDestroyed=True)
+        except Exception:
+            _logger.exception('armor tooltip: cannot forget the window')
 
     def _destroy(self, isDestroyed=False):
         # isDestroyed: the window is gone already (the client destroyed it).

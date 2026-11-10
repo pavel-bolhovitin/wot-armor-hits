@@ -232,3 +232,5 @@ All modules log to the `sagtary.armor_hits` logger. The lines go to `game.log` i
 line when it starts, `[INFO] [Main] [SCRIPT] [sagtary.armor_hits] init v1.3.1` (`, debug on` with the `debug`
 setting), and then only what fails: warnings and errors with their tracebacks. The `debug` setting turns on the debug
 record only (`data/debug_recorder.py`): raw server calls in files, nothing more in the log.
+
+A handler of a client event that passes an error on (`Event.Event`: the hangar space's, the camera manager's, the service channel's, a window's) catches and logs its failures: an error out of it goes into the client's code, and the event's other listeners miss the call. The events of `g_playerEvents` and of the arena (`SafeEvent`) and of `g_eventBus` log an error themselves and go on.

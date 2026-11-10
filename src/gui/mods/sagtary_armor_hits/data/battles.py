@@ -234,8 +234,12 @@ class BattleCollector(object):
         except Exception:
             _logger.exception('battles: cannot read the battle results')
             return
-        self._store.update(battle)
-        self.onResultReceived(battle)
+        # The service channel's event passes an error on to the client and its other listeners miss the message.
+        try:
+            self._store.update(battle)
+            self.onResultReceived(battle)
+        except Exception:
+            _logger.exception('battles: cannot keep the battle results')
 
     def _onAvatarReady(self):
         try:

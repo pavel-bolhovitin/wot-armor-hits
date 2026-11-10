@@ -77,13 +77,13 @@ class HangarCamera(object):
         self.moved = False
 
     def init(self):
-        self.__hangarSpace.onVehicleChanged += self._freeCamera
+        self.__hangarSpace.onVehicleChanged += self._onCameraChanged
         self.__hangarSpace.onSpaceDestroy += self._onSpaceDestroy
         self._freeCamera()
 
     def fini(self):
         self.__hangarSpace.onSpaceDestroy -= self._onSpaceDestroy
-        self.__hangarSpace.onVehicleChanged -= self._freeCamera
+        self.__hangarSpace.onVehicleChanged -= self._onCameraChanged
         cameraManager = self.__cameraManager
         if cameraManager is not None:
             if self.moved:
@@ -126,20 +126,32 @@ class HangarCamera(object):
             spaceID = self.__hangarSpace.spaceID
             cameraManager = CGF.getSystem(spaceID, HangarCameraSystem) if spaceID is not None else None
             if cameraManager is not None:
-                cameraManager.onCameraSwitched += self._freeCamera
+                cameraManager.onCameraSwitched += self._onCameraChanged
                 self.__cameraManager = cameraManager
         return self.__cameraManager
 
     def _forget(self):
         cameraManager, self.__cameraManager = self.__cameraManager, None
         if cameraManager is not None:
-            cameraManager.onCameraSwitched -= self._freeCamera
+            cameraManager.onCameraSwitched -= self._onCameraChanged
 
+    # The hangar space's and the camera manager's events pass an error on to the client, and their other listeners
+    # miss the call: their handlers log it.
     def _onSpaceDestroy(self, *args):
         # The camera manager goes with the space: not used after that.
-        self._forget()
+        try:
+            self._forget()
+        except Exception:
+            _logger.exception('hangar camera: cannot forget the camera')
 
-    def _freeCamera(self, *args):
+    def _onCameraChanged(self, *args):
+        # Another vehicle, or the client switched the camera: the camera is free again.
+        try:
+            self._freeCamera()
+        except Exception:
+            _logger.exception('hangar camera: cannot free the camera')
+
+    def _freeCamera(self):
         cameraManager = self._getCameraManager()
         if cameraManager is None:
             return

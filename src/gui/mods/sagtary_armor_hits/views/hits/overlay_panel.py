@@ -132,16 +132,24 @@ class OverlayPanelPresenter(object):
         self._callbackID = None
         self._showOverlay()
 
+    # The hangar space's events pass an error on to the client, and their other listeners miss the call: their
+    # handlers log it.
     def _onVehicleChangeStarted(self, *args):
-        self._removeOverlay()
+        try:
+            self._removeOverlay()
+        except Exception:
+            _logger.exception('overlay panel: cannot remove the overlay')
 
     def _onVehicleChanged(self, *args):
-        if self._gameObject is None:
-            self._removeOverlay()
-            self._showOverlay()
-        else:
-            self._removeOverlay()
-            self._callbackID = BigWorld.callback(_SHOW_DELAY, self._onShowDelay)
+        try:
+            if self._gameObject is None:
+                self._removeOverlay()
+                self._showOverlay()
+            else:
+                self._removeOverlay()
+                self._callbackID = BigWorld.callback(_SHOW_DELAY, self._onShowDelay)
+        except Exception:
+            _logger.exception('overlay panel: cannot show the overlay')
 
     def _vehicleEntity(self):
         return self.__hangarSpace.getVehicleEntity() if self.__hangarSpace.isModelLoaded else None

@@ -296,13 +296,21 @@ class HitLinesPresenter(object):
         else:
             self._camera.reset()
 
+    # The hangar space's events pass an error on to the client, and their other listeners miss the call: their
+    # handlers log it.
     def _onVehicleChangeStarted(self, *args):
-        self._clear()
+        try:
+            self._clear()
+        except Exception:
+            _logger.exception('hit lines: cannot clear the lines')
 
     def _onVehicleChanged(self, *args):
-        if self._target is not None:
-            self._clear()
-            self._draw()
+        try:
+            if self._target is not None:
+                self._clear()
+                self._draw()
+        except Exception:
+            _logger.exception('hit lines: cannot draw on the vehicle')
 
     def _hangarModel(self):
         # (compound model, collisions) of the hangar vehicle when it is the vehicle of the hits and has loaded.
