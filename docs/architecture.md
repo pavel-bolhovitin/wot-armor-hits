@@ -15,7 +15,7 @@ docs/                         notes
 ```
 
 The game loads every `gui/mods/mod_*.pyc` and then calls its `init()`; `fini()` runs when the client shuts down.
-The entry module only wires the parts together; the code is in the package. The mod starts whole or not at all: a failure in `init()` is logged and the parts started are stopped again, as an error out of `init()` would close the client (the game quits on it). `fini()` stops each part on its own, so one failure does not keep the others on.
+The entry module only wires the parts together; the code is in the package. The mod loads whole or not at all: an error out of its import (other than an `ImportError`) would close the client, so the entry module catches any error of the package's import and of making the parts, logs it, and `init()` and `fini()` then do nothing. The import changes nothing in the client: no module of the package changes the client at import, and the parts' constructors only set their own fields; a part changes the client in its `install()`, called from `init()`. The mod starts whole or not at all too: a failure in `init()` is logged and the parts started are stopped again, as an error out of `init()` would close the client (the game quits on it). `fini()` stops each part on its own, so one failure does not keep the others on.
 
 Everything in `res/` is shared by the game and all mods, so this mod keeps its files in folders of its own:
 `gui/mods/sagtary_armor_hits/`, `gui/maps/sagtary_armor_hits/`, `gui/gameface/mods/sagtary_armor_hits/`. The

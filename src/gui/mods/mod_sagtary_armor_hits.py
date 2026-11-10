@@ -5,19 +5,6 @@ Entry point loaded by the game; the code is in the gui.mods.sagtary_armor_hits p
 """
 import logging
 
-from PlayerEvents import g_playerEvents
-
-from gui.mods.sagtary_armor_hits import settings
-from gui.mods.sagtary_armor_hits.config import BATTLE_FILES_DIR
-from gui.mods.sagtary_armor_hits.data import battle_modes
-from gui.mods.sagtary_armor_hits.data.battle_file import BattleFileError, BattleFiles
-from gui.mods.sagtary_armor_hits.data.battles import BattleCollector, BattleStore
-from gui.mods.sagtary_armor_hits.data.debug_recorder import DebugRecorder
-from gui.mods.sagtary_armor_hits.data.hit_collector import HitCollector
-from gui.mods.sagtary_armor_hits.data.hooks import ClientHooks
-from gui.mods.sagtary_armor_hits.views.hits.hits_screen import HitsScreen
-from gui.mods.sagtary_armor_hits.views.lobby_button.lobby_button import LobbyButton
-
 __version__ = '1.3.1'
 
 # The mod logs failures only, and one line when it starts: its version, whatever level the client gives the loggers.
@@ -30,14 +17,6 @@ def _openViewer():
     _hitsScreen.open()
 
 
-# The settings, changed by the hits screen's settings menu too.
-_settings = settings.ModSettings()
-# The client's methods the debug record and the hit collector listen to, each wrapped once.
-_hooks = ClientHooks()
-# On only with the "debug" setting.
-_debugRecorder = DebugRecorder(_hooks)
-
-
 def _saving(battle):
     # How the battle is kept, by the battleModes setting of its mode's group.
     return battle_modes.savingOf(_settings.values['battleModes'], battle.battleType)
@@ -48,13 +27,41 @@ def _isKept(battle):
     return battle.isReplay or _saving(battle) != battle_modes.OFF
 
 
-_battleStore = BattleStore()
-_battleCollector = BattleCollector(_battleStore, _isKept)
-_hitCollector = HitCollector(_battleStore, _hooks)
-# The battle files of the hits screen's save and load buttons.
-_battleFiles = BattleFiles(BATTLE_FILES_DIR, __version__)
-_hitsScreen = HitsScreen(_battleStore, _battleFiles, _settings)
-_button = LobbyButton(_openViewer)
+# The mod loads whole or not at all, as it starts: an error out of the import other than an ImportError would close
+# the client (gui.mods passes only that one, game.init quits on the others), so a failure is logged and init() and
+# fini() do nothing. The import changes nothing in the client: the parts made here start only in init().
+try:
+    from PlayerEvents import g_playerEvents
+
+    from gui.mods.sagtary_armor_hits import settings
+    from gui.mods.sagtary_armor_hits.config import BATTLE_FILES_DIR
+    from gui.mods.sagtary_armor_hits.data import battle_modes
+    from gui.mods.sagtary_armor_hits.data.battle_file import BattleFileError, BattleFiles
+    from gui.mods.sagtary_armor_hits.data.battles import BattleCollector, BattleStore
+    from gui.mods.sagtary_armor_hits.data.debug_recorder import DebugRecorder
+    from gui.mods.sagtary_armor_hits.data.hit_collector import HitCollector
+    from gui.mods.sagtary_armor_hits.data.hooks import ClientHooks
+    from gui.mods.sagtary_armor_hits.views.hits.hits_screen import HitsScreen
+    from gui.mods.sagtary_armor_hits.views.lobby_button.lobby_button import LobbyButton
+
+    # The settings, changed by the hits screen's settings menu too.
+    _settings = settings.ModSettings()
+    # The client's methods the debug record and the hit collector listen to, each wrapped once.
+    _hooks = ClientHooks()
+    # On only with the "debug" setting.
+    _debugRecorder = DebugRecorder(_hooks)
+    _battleStore = BattleStore()
+    _battleCollector = BattleCollector(_battleStore, _isKept)
+    _hitCollector = HitCollector(_battleStore, _hooks)
+    # The battle files of the hits screen's save and load buttons.
+    _battleFiles = BattleFiles(BATTLE_FILES_DIR, __version__)
+    _hitsScreen = HitsScreen(_battleStore, _battleFiles, _settings)
+    _button = LobbyButton(_openViewer)
+    _isLoaded = True
+except Exception:
+    _logger.exception('import failed: the mod is off')
+    _isLoaded = False
+
 # The battle files are loaded once a client session.
 _isImported = False
 
@@ -120,9 +127,12 @@ def _unsubscribe():
 
 
 def init():
-    # Called by gui.mods after all mods are imported. The mod starts whole or not at all: an error out of init() would
-    # close the client (game.init quits on it) and an AttributeError would end init() silently (gui.mods passes it),
-    # so a failure is logged and the parts started are stopped again; the client and the other mods go on.
+    # Called by gui.mods after all mods are imported; nothing when the mod has not loaded. The mod starts whole or not
+    # at all: an error out of init() would close the client (game.init quits on it) and an AttributeError would end
+    # init() silently (gui.mods passes it), so a failure is logged and the parts started are stopped again; the client
+    # and the other mods go on.
+    if not _isLoaded:
+        return
     try:
         values = _start()
     except Exception:
@@ -133,9 +143,11 @@ def init():
 
 
 def fini():
-    # Called by gui.mods when the client shuts down, and by init() when the mod cannot start. Each part stops on its
-    # own, also one that has not started: a failure is logged and the others stop still, as an error out of fini()
-    # would stop the other mods' fini().
+    # Called by gui.mods when the client shuts down, and by init() when the mod cannot start; nothing when the mod has
+    # not loaded. Each part stops on its own, also one that has not started: a failure is logged and the others stop
+    # still, as an error out of fini() would stop the other mods' fini().
+    if not _isLoaded:
+        return
     for part, stop in (('lobby button', _button.remove), ('debug record', _debugRecorder.uninstall),
                        ('hit collector', _hitCollector.uninstall), ('battle collector', _battleCollector.uninstall),
                        ('events', _unsubscribe), ('hits screen', _hitsScreen.uninstall)):
