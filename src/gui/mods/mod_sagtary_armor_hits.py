@@ -96,8 +96,8 @@ def _onAccountShowGUI(*args):
         _battleStore.addAll(battles)
 
 
-def init():
-    # Called by gui.mods after all mods are imported.
+def _start():
+    # Starts every part of the mod; the settings it starts with.
     values = _settings.load()
     _settings.onChanged += _onSettingChanged
     if values['debug']:
@@ -109,17 +109,37 @@ def init():
     _hitCollector.install()
     _hitsScreen.install()
     _button.add(values['showButtonInModsMenu'])
+    return values
+
+
+def _unsubscribe():
+    _settings.onChanged -= _onSettingChanged
+    _battleCollector.onResultReceived -= _autoSave
+    _battleCollector.onBattleLeft -= _autoSave
+    g_playerEvents.onAccountShowGUI -= _onAccountShowGUI
+
+
+def init():
+    # Called by gui.mods after all mods are imported. The mod starts whole or not at all: an error out of init() would
+    # close the client (game.init quits on it) and an AttributeError would end init() silently (gui.mods passes it),
+    # so a failure is logged and the parts started are stopped again; the client and the other mods go on.
+    try:
+        values = _start()
+    except Exception:
+        _logger.exception('init failed: the mod is off')
+        fini()
+        return
     _logger.info('init v%s%s', __version__, ', debug on' if values['debug'] else '')
 
 
 def fini():
-    # Called by gui.mods when the client shuts down.
-    _settings.onChanged -= _onSettingChanged
-    _button.remove()
-    _debugRecorder.uninstall()
-    _hitCollector.uninstall()
-    _battleCollector.uninstall()
-    _battleCollector.onResultReceived -= _autoSave
-    _battleCollector.onBattleLeft -= _autoSave
-    g_playerEvents.onAccountShowGUI -= _onAccountShowGUI
-    _hitsScreen.uninstall()
+    # Called by gui.mods when the client shuts down, and by init() when the mod cannot start. Each part stops on its
+    # own, also one that has not started: a failure is logged and the others stop still, as an error out of fini()
+    # would stop the other mods' fini().
+    for part, stop in (('lobby button', _button.remove), ('debug record', _debugRecorder.uninstall),
+                       ('hit collector', _hitCollector.uninstall), ('battle collector', _battleCollector.uninstall),
+                       ('events', _unsubscribe), ('hits screen', _hitsScreen.uninstall)):
+        try:
+            stop()
+        except Exception:
+            _logger.exception('fini: %s failed', part)
