@@ -20,8 +20,6 @@ See every hit of your battles on your tank in the hangar: where you were hit, wh
 
 ## Installation
 
-![Copy the mods folder from the archive into the game folder](docs/install-guide.png)
-
 Without the archive: install [OpenWG Gameface](https://gitlab.com/openwg/wot.gameface) and
 [ModsList API](https://gitlab.com/wot-public-mods/mods-list), then copy `sagtary.armor_hits_<version>.wotmod` into
 `[WoT game directory]/mods/2.4.1.0/`.
