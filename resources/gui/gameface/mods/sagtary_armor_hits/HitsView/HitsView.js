@@ -354,6 +354,74 @@ function chip(selected, onClick) {
     return node;
 }
 
+// The list in columns, each as wide as its widest cell, so a cell wider in one row (a shell kind's text, which differs
+// by language) widens its whole column, not its row: Gameface has no tables or grid, a column of cells in a flex row
+// sizes to its content. The rows under the columns, as many and as high as their cells, draw the rows' backgrounds and
+// take the hover and the clicks: the columns let the mouse through. The vehicle and the player share the rest.
+function drawHitsList(hits, selectedHit, side, hasShellModes) {
+    hitsList.textContent = "";
+    const rows = element("div", "hitsPanel__rows");
+    const columns = element("div", "hitsPanel__columns");
+    hitsList.appendChild(rows);
+    hitsList.appendChild(columns);
+    const column = (kind) => {
+        const node = element("div", `hitsPanel__column hitsPanel__column__${kind}`);
+        columns.appendChild(node);
+        return node;
+    };
+    // The order of the client's damage log after the number and the time: damage, result, critical, shell (its mode
+    // on a side with a known mode in the battle), class, vehicle; the player last.
+    const numbers = column("number");
+    const times = column("time");
+    const damages = column("damage");
+    const results = column("result");
+    const criticals = column("critical");
+    const shells = column("shell");
+    const shellModes = hasShellModes ? column("shellModes") : null;
+    const classes = column("class");
+    const vehicles = column("vehicle");
+    const players = column("player");
+    // A cell of a text, or of an icon or a plate: centered in the row's height, at the column's left.
+    const cell = (parent, text, content) => {
+        const node = element("div", content ? "hitsPanel__cell hitsPanel__cellBox" : "hitsPanel__cell", text);
+        if (content) {
+            node.appendChild(content);
+        }
+        parent.appendChild(node);
+    };
+    hits.forEach((hit, index) => {
+        const row = element("div", "hitsPanel__row");
+        row.classList.toggle("hitsPanel__rowSelected", index === selectedHit);
+        row.addEventListener("click", () => window.model.hitsPanel.onHit({ index }));
+        rows.appendChild(row);
+        cell(numbers, String(hit.number));
+        cell(times, hit.time);
+        // No damage when the hit took none.
+        cell(damages, hit.damage ? String(hit.damage) : "");
+        cell(results, undefined, hitIcon(hit.result, side));
+        // The critical icon of a hit that damaged modules or crew.
+        const critical = hitIcon("critical", side);
+        critical.classList.toggle("hitsPanel__criticalNone", !hit.hasCrits);
+        cell(criticals, undefined, critical);
+        // The shell plate at the column's left.
+        const shell = element("div", "hitsPanel__shell", hit.shellText);
+        shell.classList.toggle("hitsPanel__shellNone", !hit.shellText);
+        shell.classList.toggle("hitsPanel__shellGold", Boolean(hit.isGoldShell));
+        shell.classList.toggle("hitsPanel__shellSpg", Boolean(hit.isSpgShell));
+        shell.title = hit.shellName;
+        cell(shells, undefined, shell);
+        // The icon of the shell's mode; none on a row of an unknown mode.
+        if (shellModes) {
+            cell(shellModes, undefined, element("div", hit.shellMode
+                ? `hitsPanel__shellMode hitsPanel__shellMode__${hit.shellMode}` : "hitsPanel__shellMode"));
+        }
+        cell(classes, undefined,
+            element("div", hit.vehicleClass ? `hitIcon hitIcon__class__${hit.vehicleClass}` : "hitIcon"));
+        cell(vehicles, hit.vehicleName);
+        cell(players, hit.playerName);
+    });
+}
+
 function drawHitsPanel() {
     const model = window.model && window.model.hitsPanel;
     hitsPanel.classList.toggle("hitsPanel__visible", Boolean(model && model.isVisible));
@@ -384,39 +452,7 @@ function drawHitsPanel() {
     hitsPanel.querySelector(".hitsPanel__position").textContent = hits.length
         ? `${model.selectedHit + 1} / ${hits.length}`
         : "0 / 0";
-    hitsList.textContent = "";
-    hits.forEach((hit, index) => {
-        const row = element("div", "hitsPanel__row");
-        row.classList.toggle("hitsPanel__rowSelected", index === model.selectedHit);
-        row.appendChild(element("div", "hitsPanel__number", String(hit.number)));
-        row.appendChild(element("div", "hitsPanel__time", hit.time));
-        // Then the order of the client's damage log: damage (none when the hit took none), result, shell, class,
-        // vehicle; the player last.
-        row.appendChild(element("div", "hitsPanel__damage", hit.damage ? String(hit.damage) : ""));
-        row.appendChild(hitIcon(hit.result, side));
-        // The critical icon of a hit that damaged modules or crew; its place is kept on the others, so the columns
-        // stay in line.
-        const critical = hitIcon("critical", side);
-        critical.classList.toggle("hitsPanel__criticalNone", !hit.hasCrits);
-        row.appendChild(critical);
-        const shell = element("div", "hitsPanel__shell", hit.shellText);
-        shell.classList.toggle("hitsPanel__shellNone", !hit.shellText);
-        shell.classList.toggle("hitsPanel__shellGold", Boolean(hit.isGoldShell));
-        shell.classList.toggle("hitsPanel__shellSpg", Boolean(hit.isSpgShell));
-        shell.title = hit.shellName;
-        row.appendChild(shell);
-        // The icon of the shell's mode, in a column of its own on a side with a known mode in the battle; a row of an
-        // unknown mode keeps its place.
-        if (model.hasShellModes) {
-            row.appendChild(element("div", hit.shellMode
-                ? `hitsPanel__shellMode hitsPanel__shellMode__${hit.shellMode}` : "hitsPanel__shellMode"));
-        }
-        row.appendChild(element("div", hit.vehicleClass ? `hitIcon hitIcon__class__${hit.vehicleClass}` : "hitIcon"));
-        row.appendChild(element("div", "hitsPanel__vehicle", hit.vehicleName));
-        row.appendChild(element("div", "hitsPanel__player", hit.playerName));
-        row.addEventListener("click", () => window.model.hitsPanel.onHit({ index }));
-        hitsList.appendChild(row);
-    });
+    drawHitsList(hits, model.selectedHit, side, model.hasShellModes);
     // The selected hit in view (the steps, a hit chosen elsewhere). Its place comes from its number: the rows are all
     // as high, and Gameface lays the new rows out a few frames later.
     if (model.selectedHit >= 0 && model.selectedHit < hits.length) {

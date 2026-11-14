@@ -493,15 +493,27 @@ body {
     overflow: hidden;
 }
 
-/* Its height is HIT_ROW_REM of HitsView.js: change them together. */
-.hitsPanel__row {
+/* The list (drawHitsList of HitsView.js): the columns over the rows' backgrounds. */
+.hitsPanel__items {
     position: relative;
     display: flex;
-    align-items: center;
+    flex-direction: column;
+}
+
+.hitsPanel__rows {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Its height is HIT_ROW_REM of HitsView.js and the cells' height: change them together. */
+.hitsPanel__row {
+    flex-shrink: 0;
     height: 28rem;
-    padding: 0 10rem 0 7rem;
-    font-size: 13rem;
-    color: var(--color-general-secondary);
     border-left: 3rem solid transparent;
     border-top: 1rem solid rgba(255, 255, 255, 0.05);
     cursor: pointer;
@@ -513,54 +525,99 @@ body {
 
 .hitsPanel__rowSelected,
 .hitsPanel__rowSelected:hover {
-    color: var(--color-general-primary);
     border-left-color: #e0a248;
     background-color: rgba(224, 162, 72, 0.1);
 }
 
-.hitsPanel__number {
-    width: 22rem;
-    flex-shrink: 0;
-    color: var(--color-general-tertiary);
+/* Left: a row's left border and its padding. The mouse goes through to the rows. The panel's width is fixed
+   (.hitsView__left): what does not fit is cut, never drawn past its edge. */
+.hitsPanel__columns {
+    position: relative;
+    display: flex;
+    overflow: hidden;
+    padding: 0 10rem 0 10rem;
+    font-size: 13rem;
+    color: var(--color-general-secondary);
+    pointer-events: none;
 }
 
-.hitsPanel__time {
-    width: 38rem;
+/* As wide as its widest cell; the gap after it is its right margin. */
+.hitsPanel__column {
+    display: flex;
+    flex-direction: column;
     flex-shrink: 0;
-    color: var(--color-general-tertiary);
-}
-
-.hitsPanel__row .hitIcon {
     margin-right: 6rem;
 }
 
-.hitsPanel__damage + .hitIcon {
-    margin-left: 6rem;
+.hitsPanel__cell {
+    height: 28rem;
+    line-height: 28rem;
+    white-space: nowrap;
+}
+
+.hitsPanel__cellBox {
+    display: flex;
+    align-items: center;
+}
+
+.hitsPanel__column__number {
+    min-width: 18rem;
+    margin-right: 4rem;
+    color: var(--color-general-tertiary);
+}
+
+.hitsPanel__column__time {
+    min-width: 32rem;
+    color: var(--color-general-tertiary);
+}
+
+.hitsPanel__column__damage {
+    min-width: 28rem;
+    font-weight: bold;
+    text-align: right;
+    color: var(--color-general-primary);
 }
 
 .hitsPanel__criticalNone {
     visibility: hidden;
 }
 
-.hitsPanel__vehicle {
-    flex-grow: 1;
-    flex-basis: 0;
-    min-width: 0;
+/* The plate and the mode icon keep their own right margin. */
+.hitsPanel__column__shell,
+.hitsPanel__column__shellModes {
+    margin-right: 0;
+}
+
+/* A shell kind's text of a language too long for a plate is cut: the vehicle and the player keep their room. */
+.hitsPanel__column__shell .hitsPanel__shell {
+    max-width: 64rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/* The vehicle and the player share the rest, a long name cut. */
+.hitsPanel__column__vehicle,
+.hitsPanel__column__player {
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 0;
+    min-width: 0;
+}
+
+.hitsPanel__column__vehicle .hitsPanel__cell,
+.hitsPanel__column__player .hitsPanel__cell {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.hitsPanel__column__vehicle {
     color: var(--color-general-primary);
 }
 
-.hitsPanel__player {
-    flex-grow: 1;
-    flex-basis: 0;
-    min-width: 0;
-    margin-left: 6rem;
+.hitsPanel__column__player {
+    margin-right: 0;
     font-size: 12rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
     color: var(--color-general-tertiary);
 }
 
@@ -791,14 +848,6 @@ body {
 
 .hitsPanel__shellMode__calibrated {
     background-image: url(img://gui/maps/sagtary_armor_hits/hits/shell_calibrated.png);
-}
-
-.hitsPanel__damage {
-    width: 34rem;
-    flex-shrink: 0;
-    font-weight: bold;
-    text-align: right;
-    color: var(--color-general-primary);
 }
 
 /* The client's damage log icons (16 x 16), from its battle atlas: the vehicle classes; the results below are the
