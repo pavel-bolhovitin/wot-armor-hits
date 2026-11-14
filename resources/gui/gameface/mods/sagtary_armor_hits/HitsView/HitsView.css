@@ -1749,8 +1749,9 @@ body {
     background-color: rgba(224, 162, 72, 0.25);
 }
 
-/* Mod page at the bottom right, under the right column: the icon on a plate like the scene panel's (the mod's icons in
-   gui/maps/sagtary_armor_hits/modPage/, drawn at twice their size), the card above it while open. */
+/* Mod page at the bottom right, under the right column: the icon alone like the settings', dim, bright on hover and
+   while the card is open (the mod's icons in gui/maps/sagtary_armor_hits/modPage/, drawn at twice their size); the
+   card above it while open. */
 .modPage {
     position: absolute;
     right: 0;
@@ -1762,27 +1763,16 @@ body {
 .modPage__button {
     width: 40rem;
     height: 40rem;
-    box-sizing: border-box;
-    background-color: rgba(14, 16, 18, 0.9);
-    border: 1rem solid rgba(255, 255, 255, 0.1);
     cursor: pointer;
 }
 
-.modPage__button:hover {
-    border-color: rgba(255, 255, 255, 0.3);
-}
-
-.modPage__shown .modPage__button {
-    border-color: #e0a248;
-}
-
-/* A bug and a like, a dim slash between them. */
+/* A bug and a like, a dim slash between them; drawn at 64 x 64 for 32rem. */
 .modPage__icon {
-    width: 24rem;
-    height: 24rem;
-    margin: 7rem;
+    width: 32rem;
+    height: 32rem;
+    margin: 4rem;
     background: url(img://gui/maps/sagtary_armor_hits/modPage/button.png) no-repeat center/contain;
-    opacity: 0.85;
+    opacity: 0.6;
 }
 
 .modPage__button:hover .modPage__icon,
