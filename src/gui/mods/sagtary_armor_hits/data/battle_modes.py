@@ -16,12 +16,14 @@ A group's battles are kept:
 - OFF: not at all, the hits screen does not get them;
 - SESSION: until the game closes;
 - FILE: until the game closes, and in their battle files from the moment the player leaves them.
-By default the random and the competitive battles are kept for the session, the others not.
+By default every group's battles are kept for the session (config.DEFAULT_SETTINGS).
 
 The types are looked up by their names when needed: the game modes (comp7, fun_random, ...) add theirs to
 ARENA_GUI_TYPE while the client starts, after the mod is imported.
 """
 import constants
+
+from gui.mods.sagtary_armor_hits.config import DEFAULT_SETTINGS
 
 OFF = 'off'
 SESSION = 'session'
@@ -35,7 +37,7 @@ FUN = 'fun'
 OTHER = 'other'
 GROUPS = (RANDOM, COMPETITIVE, TRAINING, FUN, OTHER)
 
-DEFAULT_SAVINGS = {RANDOM: SESSION, COMPETITIVE: SESSION, TRAINING: OFF, FUN: OFF, OTHER: OFF}
+DEFAULT_SAVINGS = DEFAULT_SETTINGS['battleModes']
 
 _TYPE_NAMES = {
     RANDOM: ('RANDOM', 'EPIC_RANDOM', 'MAPBOX'),

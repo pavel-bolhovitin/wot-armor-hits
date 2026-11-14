@@ -14,7 +14,8 @@ DEFAULT_SETTINGS = {
     'showFriendlyFire': False,
     # How the battles of each group of modes (data/battle_modes.py) are kept: "off" not at all, "session" until the
     # game closes, "file" also in their battle files in BATTLE_FILES_DIR when the player leaves them (not a replay).
-    'battleModes': {'random': 'session', 'competitive': 'session', 'training': 'off', 'fun': 'off', 'other': 'off'},
+    'battleModes': {'random': 'session', 'competitive': 'session', 'training': 'session', 'fun': 'session',
+                    'other': 'session'},
 }
 
 # Debug records (one JSON Lines file per battle), relative to the game folder.

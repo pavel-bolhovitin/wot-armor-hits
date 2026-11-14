@@ -1,1 +1,1 @@
-✨ New: link to the mod's page for bugs, ideas and likes, bottom right of the hits screen. 🔄 Changed: SPG shell plates look as in the game's damage log.
+✨ New: link to the mod's page for bugs, ideas and likes, bottom right of the hits screen. 🔄 Changed: 1) SPG shell plates look as in the game's damage log; 2) battles of all modes are kept for the session by default.
