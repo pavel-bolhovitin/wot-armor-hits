@@ -6,7 +6,8 @@ the side (received or dealt hits), the result filters with their counts, and the
 chosen hit and tells its listeners when the panel changes (onChanged, the battle, the side and the chosen hit in
 selection). The hits on allies (Hit.isAllyHit) are left out, numbered without them, unless the mod's settings show
 them (showFriendlyFire; the panel follows the setting at once). The icons are the client's damage log icons; the shell
-kinds, the vehicle names and the "All" label are the client's texts. A hit with a known shell mode (Hit.shellMode, the
+kinds, the vehicle names and the "All" label are the client's texts; an SPG's shell has its plate inverted, like in the
+client's damage log (isSpgShell). A hit with a known shell mode (Hit.shellMode, the
 shell params switcher of a few vehicles) gets the mod's icon of the mode in a column of its own, which the list has
 only on a side with such a hit in the battle (hasShellModes). A row without an icon is a hit of an unknown mode.
 """
@@ -38,6 +39,11 @@ def _time(seconds):
     return '%d:%02d' % (seconds // 60, seconds % 60)
 
 
+def isSpgShell(hit):
+    # The hit's shell is an SPG's: the shell plate is inverted then, like the client's damage log shows it.
+    return vehicleClass(hit.shooter.vehicleId) == 'SPG'
+
+
 def _fillHit(item, number, hit):
     item.setNumber(number)
     item.setTime(_time(hit.time))
@@ -52,6 +58,7 @@ def _fillHit(item, number, hit):
     item.setDamage(hit.damage)
     item.setHasCrits(hit.critsTotal > 0)
     item.setIsGoldShell(hit.isGoldShell)
+    item.setIsSpgShell(isSpgShell(hit))
     item.setShellMode(hit.shellMode)
 
 

@@ -755,6 +755,21 @@ body {
     background-color: #ffc262;
 }
 
+/* An SPG's shell, inverted like in the client's damage log: the plate's text color as its background, its background
+   color as the frame and the text; gold for a premium shell. The frame is inside the plate's height. */
+.hitsPanel__shellSpg {
+    box-sizing: border-box;
+    line-height: 12rem;
+    color: rgba(255, 255, 255, 0.5);
+    background-color: #121212;
+    border: 1rem solid rgba(255, 255, 255, 0.5);
+}
+
+.hitsPanel__shellSpg.hitsPanel__shellGold {
+    color: #ffc262;
+    border-color: #ffc262;
+}
+
 .hitsPanel__shellNone {
     visibility: hidden;
 }

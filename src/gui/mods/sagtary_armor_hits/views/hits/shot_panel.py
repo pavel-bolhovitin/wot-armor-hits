@@ -51,7 +51,7 @@ from skeletons.gui.shared.utils import IHangarSpace
 from gui.mods.sagtary_armor_hits.data.client_names import (clientText, copiedName, shownVehicleDescr,
                                                            shownVehicleId, vehicleShortName)
 from gui.mods.sagtary_armor_hits.data.hits import HitResult
-from gui.mods.sagtary_armor_hits.views.hits.hits_panel import DEALT
+from gui.mods.sagtary_armor_hits.views.hits.hits_panel import DEALT, isSpgShell
 from gui.mods.sagtary_armor_hits.views.models.shot_panel_model import (ShotDeviceModel, ShotModuleModel, ShotRowModel,
                                                                        ShotSectionModel, ShotTankPartModel)
 
@@ -328,6 +328,7 @@ class ShotPanelPresenter(object):
             model.setShellText(clientText(_SHELL_TEXT_KEY % hit.shellType) or '' if hit.shellType else '')
             # The shell shown on the shooter's card, else the hit's premium flag.
             model.setIsGoldShell(bool(gunShot[1].shell.isGold) if gunShot is not None else bool(hit.isGoldShell))
+            model.setIsSpgShell(isSpgShell(hit))
             tiles, parts = self._deviceTiles(side, hit)
             devices = model.getDevices()
             devices.clear()

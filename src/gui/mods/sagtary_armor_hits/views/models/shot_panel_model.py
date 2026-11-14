@@ -266,7 +266,7 @@ class ShotTankPartModel(ViewModel):
 class ShotPanelModel(ViewModel):
     __slots__ = ()
 
-    def __init__(self, properties=11, commands=0):
+    def __init__(self, properties=12, commands=0):
         super(ShotPanelModel, self).__init__(properties=properties, commands=commands)
 
     def getIsVisible(self):
@@ -357,6 +357,13 @@ class ShotPanelModel(ViewModel):
     def getTankPartsType():
         return ShotTankPartModel
 
+    def getIsSpgShell(self):
+        # A shell of an SPG: the plate is inverted.
+        return self._getBool(11)
+
+    def setIsSpgShell(self, value):
+        self._setBool(11, value)
+
     def _initialize(self):
         super(ShotPanelModel, self)._initialize()
         self._addBoolProperty('isVisible', False)
@@ -370,3 +377,4 @@ class ShotPanelModel(ViewModel):
         self._addArrayProperty('devices', Array())
         self._addStringProperty('devicesNote', '')
         self._addArrayProperty('tankParts', Array())
+        self._addBoolProperty('isSpgShell', False)

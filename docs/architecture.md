@@ -201,7 +201,7 @@ place on the page.
 The hits panel under the selector shows the hits of the selected battle: on the player's vehicle or by the player,
 the result filters with their counts, the chosen hit and the list (number and time, then the order of the client's damage log:
 damage (none when the hit took none),
-result, the critical icon for a hit with crits (no count), shell kind (white plate, gold for a premium shell), vehicle class, vehicle; the player last). Its result icons are the mod's copies in
+result, the critical icon for a hit with crits (no count), shell kind (white plate, gold for a premium shell; an SPG's inverted like in the client's damage log: dark, its frame and text white or gold), vehicle class, vehicle; the player last). Its result icons are the mod's copies in
 `gui/maps/sagtary_armor_hits/hits/`: the client's damage log icons (damage, critical, blocked) cut out of its battle
 atlas, and the mod's own ricochet (a dashed way off a plate, on a pink square) and no damage (the blocked shield in
 cyan, a dash inside), drawn in their style in the colors of the armor tooltip's results' texts. Its vehicle class icons are the client's damage log icons, taken from the

@@ -8,7 +8,7 @@ from frameworks.wulf import Array, ViewModel
 class HitItemModel(ViewModel):
     __slots__ = ()
 
-    def __init__(self, properties=12, commands=0):
+    def __init__(self, properties=13, commands=0):
         super(HitItemModel, self).__init__(properties=properties, commands=commands)
 
     def getNumber(self):
@@ -91,6 +91,13 @@ class HitItemModel(ViewModel):
     def setShellMode(self, value):
         self._setString(11, value)
 
+    def getIsSpgShell(self):
+        # A shell of an SPG: the plate is inverted, like the client's damage log shows it.
+        return self._getBool(12)
+
+    def setIsSpgShell(self, value):
+        self._setBool(12, value)
+
     def _initialize(self):
         super(HitItemModel, self)._initialize()
         self._addNumberProperty('number', 0)
@@ -105,6 +112,7 @@ class HitItemModel(ViewModel):
         self._addBoolProperty('isGoldShell', False)
         self._addBoolProperty('hasCrits', False)
         self._addStringProperty('shellMode', '')
+        self._addBoolProperty('isSpgShell', False)
 
 
 class HitFilterModel(ViewModel):

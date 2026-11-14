@@ -5,9 +5,12 @@ battle asks of the player's skill, and how the battles of each group are kept (t
 The groups, in the settings menu's order:
 - random: battles by the usual rules (random, grand battles, Mapbox);
 - competitive: rated and team battles (ranked, Onslaught, team battles, Stronghold);
-- training: not real battles (training rooms, the modes' trainings, map training);
+- training: not real battles (training rooms, the modes' trainings, map training, the new player's onboarding);
 - fun: farm and event modes, where skill matters little (Frontline, Steel Hunter, special modes, events, ...);
 - other: every type of no group: the special battle, and the modes a client update adds.
+
+The lists hold every type of the WG clients (EU, NA, ASIA) since 2021, also the events gone from the current client:
+an event comes back under its old name.
 
 A group's battles are kept:
 - OFF: not at all, the hits screen does not get them;
@@ -38,10 +41,10 @@ _TYPE_NAMES = {
     RANDOM: ('RANDOM', 'EPIC_RANDOM', 'MAPBOX'),
     COMPETITIVE: ('RANKED', 'COMP7', 'TOURNAMENT_COMP7', 'COMP7_LIGHT', 'CYBERSPORT', 'SORTIE_2', 'FORT_BATTLE_2'),
     TRAINING: ('TRAINING', 'EPIC_RANDOM_TRAINING', 'EPIC_TRAINING', 'TRAINING_COMP7', 'MAPS_TRAINING', 'RTS_TRAINING',
-               'RTS_BOOTCAMP'),
-    FUN: ('EPIC_BATTLE', 'BATTLE_ROYALE', 'FUN_RANDOM', 'EVENT_BATTLES', 'WINBACK', 'RTS', 'LAST_STAND', 'WHITE_TIGER',
-          'FALL_TANKS', 'STORY_MODE_ONBOARDING', 'STORY_MODE_REGULAR', 'FALLOUT', 'FALLOUT_CLASSIC',
-          'FALLOUT_MULTITEAM'),
+               'RTS_BOOTCAMP', 'STORY_MODE_ONBOARDING'),
+    FUN: ('EPIC_BATTLE', 'BATTLE_ROYALE', 'FUN_RANDOM', 'EVENT_BATTLES', 'WINBACK', 'RTS', 'STORY_MODE_REGULAR',
+          'FALLOUT', 'FALLOUT_CLASSIC', 'FALLOUT_MULTITEAM', 'HALLOWEEN', 'HALLOWEEN_DEFENCE', 'LAST_STAND', 'FORT_RUSH',
+          'GRINCH', 'LUNAR_POSSESSION', 'COSMIC_EVENT', 'WHITE_TIGER', 'FALL_TANKS'),
 }
 
 

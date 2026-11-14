@@ -402,6 +402,7 @@ function drawHitsPanel() {
         const shell = element("div", "hitsPanel__shell", hit.shellText);
         shell.classList.toggle("hitsPanel__shellNone", !hit.shellText);
         shell.classList.toggle("hitsPanel__shellGold", Boolean(hit.isGoldShell));
+        shell.classList.toggle("hitsPanel__shellSpg", Boolean(hit.isSpgShell));
         shell.title = hit.shellName;
         row.appendChild(shell);
         // The icon of the shell's mode, in a column of its own on a side with a known mode in the battle; a row of an
@@ -755,6 +756,7 @@ function drawShotPanel() {
         if (section.kind === "penetration" && model.shellText) {
             const plate = element("div", "hitsPanel__shell shotPanel__shell", model.shellText);
             plate.classList.toggle("hitsPanel__shellGold", Boolean(model.isGoldShell));
+            plate.classList.toggle("hitsPanel__shellSpg", Boolean(model.isSpgShell));
             head.appendChild(plate);
         }
         shotSections.appendChild(head);
