@@ -79,13 +79,14 @@ sceneInput.addEventListener("wheel", (event) => {
 });
 // Scroll view: a list (.scrollView__content, its rows in one block) that scrolls in its box (.scrollView) with a bar
 // right of it, like the client's barracks list (its VerticalScroll): arrows at the ends, the thumb on a rail, the
-// client's images. Gameface draws no bar of its own. The page scrolls the list itself: the wheel and the arrows a part
-// of the visible height a step (Gameface's own wheel step is a few pixels), a click on the rail a page, the thumb
-// follows a drag. Gameface gives a negative deltaY for the wheel turned towards the user (down). The bar shows only
-// when the list does not fit.
+// client's images. Gameface draws no bar of its own. The page scrolls the list itself: the wheel and the arrows
+// SCROLL_STEP (Gameface's own wheel step is a few pixels), a click on the rail a page, the thumb follows a drag.
+// Gameface gives a negative deltaY for the wheel turned towards the user (down). The bar shows only when the list
+// does not fit.
 // It follows the sizes, as the client's scroll does (useRefResizeObserver): of the visible list (shown, hidden, the
 // window resized) and of its rows (filled again); Gameface lays a list out a few frames after it changes.
-const LIST_STEP = 0.3;
+// The wheel's and the arrows' step in rem, the same in all lists and panels that scroll.
+const SCROLL_STEP = 90;
 // A drag of a thumb that ended this long ago in ms is still ending: the click it makes is not a click elsewhere.
 const DRAG_CLICK_MS = 300;
 let dragEndedAt = 0;
@@ -160,7 +161,7 @@ class ScrollView {
     }
 
     step() {
-        return Math.max(40, this.content.clientHeight * LIST_STEP);
+        return viewEnv.remToPx(SCROLL_STEP);
     }
 
     scrollBy(delta) {
@@ -695,6 +696,15 @@ document.addEventListener("keydown", (event) => {
 const shotPanel = document.querySelector(".shotPanel");
 const shotVehicles = shotPanel.querySelector(".shotPanel__vehicles");
 const shotSections = shotPanel.querySelector(".shotPanel__sections");
+// On a low screen the panel does not fit and scrolls, without a bar: the wheel by the scroll views' step and way.
+shotPanel.addEventListener("wheel", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.deltaY) {
+        const step = viewEnv.remToPx(SCROLL_STEP);
+        shotPanel.scrollTop += event.deltaY < 0 ? step : -step;
+    }
+});
 
 // The client's tooltip of a card's module (a backport tooltip; HitsView.getTooltipData finds it by the role and the
 // index), shown and hidden like the client's pages do (a view event, as OpenWG Gameface's libs/views.js sends).
