@@ -73,6 +73,7 @@ UI (`views/`), a package per screen or button. The view models, the data the Gam
 | `views/hits/shot_panel.py`                | presenter of the shot panel: the chosen hit's shooter and target cards (vehicle; icons of the shooter's gun and shell, the hit's shell mode in the shell icon's top right corner, the target's turret and gun, with the client's module and shell tooltips), result, and sections (damage, penetration, armor and angle counted in the garage, distance, modules and crew: on a hit on the player's vehicle that damaged some, laid out like the battle damage panel with its icons copied into `gui/maps/sagtary_armor_hits/modules/`: the vehicle's module kinds in two columns, an abstract tank between them with its 2 or 4 tracks or its wheels, its crew members in a row under them; what that shot damaged by the hit's crits mask framed in its state, the exact track, wheel or crew member by its damage info, the rest dim, and a note that it is this shot's damage only) |
 | `views/hits/armor_tooltip.py`             | presenter of the armor tooltip: the client's armor page tooltip (`ArmorTooltipWindow`) for the armor under the mouse, with the chosen hit's shell |
 | `views/hits/scene_panel.py`               | presenter of the scene panel: lines of all shown hits on the chosen hit's vehicle (received side only) or of the chosen one, the shooter view (camera along the shell) |
+| `views/hits/mod_page.py`                  | presenter of the mod page card, the mod's one link in the game: the icon at the bottom right (a bug and a like) opens a card with a line for bugs and ideas (their links are on the page), a line for the like, and a button that opens `MOD_PAGE_URL` (WGMods) in the system browser, as the client opens its external links (`IExternalLinksController.open`); the button shows the site's domain under its label; the icons are the mod's, in `gui/maps/sagtary_armor_hits/modPage/` |
 | `views/hits/file_buttons.py`              | presenter of the file buttons: save the chosen battle to its file, load all the battle files into the `BattleStore`; the result is a system message with the path |
 | `views/lobby_button/lobby_button.py`      | the hangar button that opens the screen; picks one of the two below |
 | `views/lobby_button/mods_list_entry.py`   | entry in the ModsList API mods list (optional)               |
@@ -85,6 +86,7 @@ UI (`views/`), a package per screen or button. The view models, the data the Gam
 | `views/models/overlay_panel_model.py`     | view models of the overlay panel and its types               |
 | `views/models/shot_panel_model.py`        | view models of the shot panel: vehicle cards, modules, sections and their lines, the cells of modules and crew, the tank's tracks or wheels |
 | `views/models/scene_panel_model.py`       | view model of the scene panel                                |
+| `views/models/mod_page_model.py`          | view model of the mod page card                              |
 
 ## Lobby button
 

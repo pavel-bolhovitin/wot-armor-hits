@@ -37,6 +37,10 @@ FOOTER_BUTTON_MODEL = 'SagtaryArmorHitsFooterButton'
 FOOTER_BUTTON_STYLE = 'coui://gui/gameface/mods/sagtary_armor_hits/FooterButton/FooterButton.css'
 FOOTER_BUTTON_SCRIPT = 'coui://gui/gameface/mods/sagtary_armor_hits/FooterButton/FooterButton.js'
 
+# The mod's page on WGMods, the only link in the game: the card of the hits screen opens it in the system browser. Bug
+# reports, ideas and the other links are on that page.
+MOD_PAGE_URL = 'https://wgmods.net/8076/'
+
 # The mod's own texts by client language, only those the client does not have; 'en' is used for a language that is
 # not here.
 TEXTS = {
@@ -87,6 +91,9 @@ TEXTS = {
         'settings/showButtonInModsMenu': u'Show the button in the mods menu',
         'settings/debug': u'Debug',
         'settings/restart': u'(game restart required)',
+        'modPage/bugs': u'Bug or idea? Links are on the mod page.',
+        'modPage/like': u'The like button is there too.',
+        'modPage/open': u'Open mod page',
     },
     'ru': {
         'lobbyButton/name': u'Armor Hits',
@@ -135,6 +142,9 @@ TEXTS = {
         'settings/showButtonInModsMenu': u'Показывать кнопку в меню модов',
         'settings/debug': u'Дебаг',
         'settings/restart': u'(требуется перезапуск игры)',
+        'modPage/bugs': u'Баг или идея? Ссылки на странице мода.',
+        'modPage/like': u'Там же есть кнопка лайка.',
+        'modPage/open': u'Открыть страницу мода',
     },
     'bg': {
         'lobbyButton/name': u'Armor Hits',
@@ -183,6 +193,9 @@ TEXTS = {
         'settings/showButtonInModsMenu': u'Показвай бутона в менюто с модове',
         'settings/debug': u'Отстраняване на грешки',
         'settings/restart': u'(изисква се рестартиране на играта)',
+        'modPage/bugs': u'Бъг или идея? Връзките са на страницата на мода.',
+        'modPage/like': u'Там има и бутон за харесване.',
+        'modPage/open': u'Отвори страницата на мода',
     },
     'cs': {
         'lobbyButton/name': u'Armor Hits',
@@ -231,6 +244,9 @@ TEXTS = {
         'settings/showButtonInModsMenu': u'Zobrazit tlačítko v nabídce modů',
         'settings/debug': u'Ladění',
         'settings/restart': u'(vyžaduje restart hry)',
+        'modPage/bugs': u'Chyba nebo nápad? Odkazy jsou na stránce módu.',
+        'modPage/like': u'Je tam i tlačítko like.',
+        'modPage/open': u'Otevřít stránku módu',
     },
     'da': {
         'lobbyButton/name': u'Armor Hits',
@@ -279,6 +295,9 @@ TEXTS = {
         'settings/showButtonInModsMenu': u'Vis knappen i mod-menuen',
         'settings/debug': u'Fejlfinding',
         'settings/restart': u'(kræver genstart af spillet)',
+        'modPage/bugs': u'Fejl eller idé? Links er på modsiden.',
+        'modPage/like': u'Der er også en like-knap.',
+        'modPage/open': u'Åbn modsiden',
     },
     'de': {
         'lobbyButton/name': u'Armor Hits',
@@ -327,6 +346,9 @@ TEXTS = {
         'settings/showButtonInModsMenu': u'Schaltfläche im Mod-Menü anzeigen',
         'settings/debug': u'Debug',
         'settings/restart': u'(Neustart des Spiels erforderlich)',
+        'modPage/bugs': u'Fehler oder Idee? Links gibt es auf der Mod-Seite.',
+        'modPage/like': u'Dort gibt es auch den Like-Button.',
+        'modPage/open': u'Mod-Seite öffnen',
     },
     'el': {
         'lobbyButton/name': u'Armor Hits',
@@ -375,6 +397,9 @@ TEXTS = {
         'settings/showButtonInModsMenu': u'Εμφάνιση κουμπιού στο μενού mods',
         'settings/debug': u'Αποσφαλμάτωση',
         'settings/restart': u'(απαιτείται επανεκκίνηση του παιχνιδιού)',
+        'modPage/bugs': u'Σφάλμα ή ιδέα; Οι σύνδεσμοι είναι στη σελίδα του mod.',
+        'modPage/like': u'Εκεί υπάρχει και το κουμπί like.',
+        'modPage/open': u'Άνοιγμα σελίδας του mod',
     },
     'es': {
         'lobbyButton/name': u'Armor Hits',
@@ -423,6 +448,9 @@ TEXTS = {
         'settings/showButtonInModsMenu': u'Mostrar el botón en el menú de mods',
         'settings/debug': u'Depuración',
         'settings/restart': u'(requiere reiniciar el juego)',
+        'modPage/bugs': u'¿Un error o una idea? Los enlaces están en la página del mod.',
+        'modPage/like': u'Allí también está el botón de «me gusta».',
+        'modPage/open': u'Abrir la página del mod',
     },
     'fi': {
         'lobbyButton/name': u'Armor Hits',
@@ -471,6 +499,9 @@ TEXTS = {
         'settings/showButtonInModsMenu': u'Näytä painike modivalikossa',
         'settings/debug': u'Vianetsintä',
         'settings/restart': u'(vaatii pelin uudelleenkäynnistyksen)',
+        'modPage/bugs': u'Bugi tai idea? Linkit ovat modin sivulla.',
+        'modPage/like': u'Siellä on myös tykkäysnappi.',
+        'modPage/open': u'Avaa modin sivu',
     },
     'fr': {
         'lobbyButton/name': u'Armor Hits',
@@ -519,6 +550,9 @@ TEXTS = {
         'settings/showButtonInModsMenu': u'Afficher le bouton dans le menu des mods',
         'settings/debug': u'Débogage',
         'settings/restart': u'(redémarrage du jeu requis)',
+        'modPage/bugs': u'Un bug ou une idée ? Les liens sont sur la page du mod.',
+        'modPage/like': u'Le bouton j\'aime y est aussi.',
+        'modPage/open': u'Ouvrir la page du mod',
     },
     'hr': {
         'lobbyButton/name': u'Armor Hits',
@@ -567,6 +601,9 @@ TEXTS = {
         'settings/showButtonInModsMenu': u'Prikaži gumb u izborniku modova',
         'settings/debug': u'Otklanjanje pogrešaka',
         'settings/restart': u'(potrebno ponovno pokretanje igre)',
+        'modPage/bugs': u'Greška ili ideja? Poveznice su na stranici moda.',
+        'modPage/like': u'Tamo je i gumb za lajk.',
+        'modPage/open': u'Otvori stranicu moda',
     },
     'hu': {
         'lobbyButton/name': u'Armor Hits',
@@ -615,6 +652,9 @@ TEXTS = {
         'settings/showButtonInModsMenu': u'Gomb megjelenítése a modmenüben',
         'settings/debug': u'Hibakeresés',
         'settings/restart': u'(a játék újraindítása szükséges)',
+        'modPage/bugs': u'Hiba vagy ötlet? A linkek a mod oldalán vannak.',
+        'modPage/like': u'Ott van a lájk gomb is.',
+        'modPage/open': u'A mod oldalának megnyitása',
     },
     'it': {
         'lobbyButton/name': u'Armor Hits',
@@ -663,6 +703,9 @@ TEXTS = {
         'settings/showButtonInModsMenu': u'Mostra il pulsante nel menu delle mod',
         'settings/debug': u'Debug',
         'settings/restart': u'(riavvio del gioco richiesto)',
+        'modPage/bugs': u'Un bug o un\'idea? I link sono nella pagina della mod.',
+        'modPage/like': u'Lì c\'è anche il pulsante like.',
+        'modPage/open': u'Apri la pagina della mod',
     },
     'lt': {
         'lobbyButton/name': u'Armor Hits',
@@ -711,6 +754,9 @@ TEXTS = {
         'settings/showButtonInModsMenu': u'Rodyti mygtuką modų meniu',
         'settings/debug': u'Derinimas',
         'settings/restart': u'(reikia paleisti žaidimą iš naujo)',
+        'modPage/bugs': u'Klaida ar idėja? Nuorodos yra modo puslapyje.',
+        'modPage/like': u'Ten yra ir mygtukas „patinka“.',
+        'modPage/open': u'Atidaryti modo puslapį',
     },
     'lv': {
         'lobbyButton/name': u'Armor Hits',
@@ -759,6 +805,9 @@ TEXTS = {
         'settings/showButtonInModsMenu': u'Rādīt pogu modu izvēlnē',
         'settings/debug': u'Atkļūdošana',
         'settings/restart': u'(nepieciešama spēles restartēšana)',
+        'modPage/bugs': u'Kļūda vai ideja? Saites ir moda lapā.',
+        'modPage/like': u'Tur ir arī poga „patīk“.',
+        'modPage/open': u'Atvērt moda lapu',
     },
     'nl': {
         'lobbyButton/name': u'Armor Hits',
@@ -807,6 +856,9 @@ TEXTS = {
         'settings/showButtonInModsMenu': u'Knop in het modmenu tonen',
         'settings/debug': u'Debug',
         'settings/restart': u'(herstart van het spel vereist)',
+        'modPage/bugs': u'Bug of idee? De links staan op de modpagina.',
+        'modPage/like': u'Daar staat ook de likeknop.',
+        'modPage/open': u'Modpagina openen',
     },
     'no': {
         'lobbyButton/name': u'Armor Hits',
@@ -855,6 +907,9 @@ TEXTS = {
         'settings/showButtonInModsMenu': u'Vis knappen i mod-menyen',
         'settings/debug': u'Feilsøking',
         'settings/restart': u'(krever omstart av spillet)',
+        'modPage/bugs': u'Feil eller idé? Lenkene er på modsiden.',
+        'modPage/like': u'Der finner du også like-knappen.',
+        'modPage/open': u'Åpne modsiden',
     },
     'pl': {
         'lobbyButton/name': u'Armor Hits',
@@ -903,6 +958,9 @@ TEXTS = {
         'settings/showButtonInModsMenu': u'Pokazuj przycisk w menu modów',
         'settings/debug': u'Debugowanie',
         'settings/restart': u'(wymagany restart gry)',
+        'modPage/bugs': u'Błąd lub pomysł? Linki są na stronie moda.',
+        'modPage/like': u'Jest tam też przycisk polubienia.',
+        'modPage/open': u'Otwórz stronę moda',
     },
     'pt': {
         'lobbyButton/name': u'Armor Hits',
@@ -951,6 +1009,9 @@ TEXTS = {
         'settings/showButtonInModsMenu': u'Mostrar o botão no menu de mods',
         'settings/debug': u'Depuração',
         'settings/restart': u'(requer reiniciar o jogo)',
+        'modPage/bugs': u'Um bug ou uma ideia? Os links estão na página do mod.',
+        'modPage/like': u'Lá também está o botão de like.',
+        'modPage/open': u'Abrir a página do mod',
     },
     'ro': {
         'lobbyButton/name': u'Armor Hits',
@@ -999,6 +1060,9 @@ TEXTS = {
         'settings/showButtonInModsMenu': u'Arată butonul în meniul mod-urilor',
         'settings/debug': u'Depanare',
         'settings/restart': u'(necesită repornirea jocului)',
+        'modPage/bugs': u'O eroare sau o idee? Linkurile sunt pe pagina modului.',
+        'modPage/like': u'Acolo este și butonul de like.',
+        'modPage/open': u'Deschide pagina modului',
     },
     'sr': {
         'lobbyButton/name': u'Armor Hits',
@@ -1047,6 +1111,9 @@ TEXTS = {
         'settings/showButtonInModsMenu': u'Prikaži dugme u meniju modova',
         'settings/debug': u'Otklanjanje grešaka',
         'settings/restart': u'(potreban restart igre)',
+        'modPage/bugs': u'Greška ili ideja? Linkovi su na stranici moda.',
+        'modPage/like': u'Tamo je i dugme za lajk.',
+        'modPage/open': u'Otvori stranicu moda',
     },
     'sv': {
         'lobbyButton/name': u'Armor Hits',
@@ -1095,6 +1162,9 @@ TEXTS = {
         'settings/showButtonInModsMenu': u'Visa knappen i mod-menyn',
         'settings/debug': u'Felsökning',
         'settings/restart': u'(kräver omstart av spelet)',
+        'modPage/bugs': u'Bugg eller idé? Länkarna finns på modsidan.',
+        'modPage/like': u'Där finns också gilla-knappen.',
+        'modPage/open': u'Öppna modsidan',
     },
     'tr': {
         'lobbyButton/name': u'Armor Hits',
@@ -1143,6 +1213,9 @@ TEXTS = {
         'settings/showButtonInModsMenu': u'Düğmeyi mod menüsünde göster',
         'settings/debug': u'Hata ayıklama',
         'settings/restart': u'(oyunun yeniden başlatılması gerekir)',
+        'modPage/bugs': u'Hata mı, fikir mi? Bağlantılar mod sayfasında.',
+        'modPage/like': u'Beğen düğmesi de orada.',
+        'modPage/open': u'Mod sayfasını aç',
     },
     'uk': {
         'lobbyButton/name': u'Armor Hits',
@@ -1191,5 +1264,8 @@ TEXTS = {
         'settings/showButtonInModsMenu': u'Показувати кнопку в меню модів',
         'settings/debug': u'Налагодження',
         'settings/restart': u'(потрібен перезапуск гри)',
+        'modPage/bugs': u'Баг чи ідея? Посилання на сторінці моду.',
+        'modPage/like': u'Там же є кнопка лайка.',
+        'modPage/open': u'Відкрити сторінку моду',
     },
 }

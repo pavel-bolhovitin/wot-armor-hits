@@ -612,6 +612,47 @@ document.addEventListener("keydown", (event) => {
     }
 });
 
+// Mod page: the icon at the bottom right opens the card above it, a click on its button opens the mod page in the
+// browser (onOpen) and closes the card, a click anywhere else or Escape closes it (window.model.modPage). The other
+// panels stop their clicks, so the card watches the clicks before they reach them.
+const modPage = document.querySelector(".modPage");
+const modPageButton = modPage.querySelector(".modPage__button");
+
+function setModPageShown(shown) {
+    modPage.classList.toggle("modPage__shown", shown);
+}
+
+function drawModPage() {
+    const model = window.model && window.model.modPage;
+    if (!model) {
+        return;
+    }
+    modPage.querySelector(".modPage__bugsText").textContent = model.bugsText;
+    modPage.querySelector(".modPage__likeText").textContent = model.likeText;
+    modPage.querySelector(".modPage__openLabel").textContent = model.openLabel;
+    modPage.querySelector(".modPage__domain").textContent = model.domain;
+}
+
+modPageButton.addEventListener("click", () => setModPageShown(!modPage.classList.contains("modPage__shown")));
+modPage.querySelector(".modPage__link").addEventListener("click", () => {
+    setModPageShown(false);
+    window.model.modPage.onOpen();
+});
+document.addEventListener("click", (event) => {
+    let node = event.target;
+    while (node && node !== modPage) {
+        node = node.parentNode;
+    }
+    if (!node) {
+        setModPageShown(false);
+    }
+}, true);
+document.addEventListener("keydown", (event) => {
+    if (event.keyCode === 27) {
+        setModPageShown(false);
+    }
+});
+
 // Shot panel: the chosen hit's shooter and target cards, its result, its sections (window.model.shotPanel). A value
 // counted in the garage is underlined with dashes.
 const shotPanel = document.querySelector(".shotPanel");
@@ -794,13 +835,14 @@ function draw() {
     drawScenePanel();
     drawShotPanel();
     drawSettingsMenu();
+    drawModPage();
 }
 
 // The page draws again on a change of the model or of any of its parts: a change inside a part (its arrays, its
 // selection) is told to the observers of that part's path.
 engine.whenReady.then(() => {
     const paths = ["model", "model.battleSelector", "model.hitsPanel", "model.fileButtons", "model.overlayPanel",
-        "model.scenePanel", "model.shotPanel", "model.settingsMenu", "model.settingsMenu.items", "model.settingsMenu.modes",
+        "model.scenePanel", "model.shotPanel", "model.settingsMenu", "model.modPage", "model.settingsMenu.items", "model.settingsMenu.modes",
         "model.shotPanel.shooter", "model.shotPanel.target", "model.shotPanel.sections", "model.shotPanel.devices",
         "model.shotPanel.tankParts",
         "model.shotPanel.shooter.modules", "model.shotPanel.target.modules"];
