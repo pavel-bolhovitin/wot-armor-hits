@@ -27,6 +27,7 @@ from messenger.proto.events import g_messengerEvents
 from gui.mods.sagtary_armor_hits.config import BATTLES_LIMIT
 from gui.mods.sagtary_armor_hits.data.hits import DealtHit, ReceivedHit, compactDescriptor, vehicleTypeId
 from gui.mods.sagtary_armor_hits.data.record import Record
+from gui.mods.sagtary_armor_hits.data.vehicle_catalog import CatalogVehicle
 
 _logger = logging.getLogger('sagtary.armor_hits')
 
@@ -50,7 +51,7 @@ _MAP_ID_MASK = (1 << _GAMEPLAY_ID_SHIFT) - 1
 
 
 # The latest format of the battle files (battle_file.py, migrations/).
-FORMAT_VERSION = 3
+FORMAT_VERSION = 4
 
 
 class Battle(Record):
@@ -75,10 +76,12 @@ class Battle(Record):
         ('playerTeam', None),   # the player's team, 1 or 2; None when not known
         ('winnerTeam', None),   # the team that won, 1 or 2, DRAW_TEAM for a draw; None when not known
         ('endReason', None),    # how the battle ended (constants.FINISH_REASON); None when not known
+        ('vehicleCatalog', ()), # each vehicle of each player the hits met, once, in the order they were met
+                                # (vehicle_catalog.CatalogVehicle)
         ('receivedHits', ()),   # hits on the player's vehicle, in battle order (hits.ReceivedHit)
         ('dealtHits', ()),      # the player's hits on other vehicles, in battle order (hits.DealtHit)
     )
-    NESTED = {'receivedHits': ReceivedHit, 'dealtHits': DealtHit}
+    NESTED = {'vehicleCatalog': CatalogVehicle, 'receivedHits': ReceivedHit, 'dealtHits': DealtHit}
     __slots__ = tuple(name for name, _ in FIELDS)
 
     @property

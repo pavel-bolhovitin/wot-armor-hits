@@ -6,10 +6,10 @@ stays as it is. A converter (v<N>_to_v<N+1>.py) takes the file's JSON data and g
 nothing of the mod, so a later change of the mod's code does not touch it. What it cannot convert it leaves out: the
 field gets its default when the battle is read.
 """
-from gui.mods.sagtary_armor_hits.data.migrations import v1_to_v2, v2_to_v3
+from gui.mods.sagtary_armor_hits.data.migrations import v1_to_v2, v2_to_v3, v3_to_v4
 
 # {format version: the converter to the next version}
-_CONVERTERS = {1: v1_to_v2.convert, 2: v2_to_v3.convert}
+_CONVERTERS = {1: v1_to_v2.convert, 2: v2_to_v3.convert, 3: v3_to_v4.convert}
 
 
 def toLatest(data):

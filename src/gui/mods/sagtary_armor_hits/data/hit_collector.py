@@ -7,7 +7,8 @@ one). The client knows the hits on the vehicles it sees, so all the player's hit
 player's vehicle; not those on a vehicle already destroyed (a wreck takes no damage, the server tells it as pierced
 without damage).
 
-- Vehicle.showDamageFromShot, showDamageFromExplosion: a hit. The client decodes its points
+- Vehicle.showDamageFromShot, showDamageFromExplosion: a hit. Its two vehicles go to the battle's vehicle catalog
+  first (vehicle_catalog.py), so the hit can refer to them by their index later. The client decodes its points
   (DamageFromShotDecoder.parseHitPoint, by the parts of the vehicle's collision model); the hit gets its two
   vehicles as they are then (player, team, compact descriptor), the distance between them when the client sees the
   shooter, the battle time, the target's pose (its turret, gun, hull on its chassis and steered wheels, as the client
@@ -32,8 +33,9 @@ from Vehicle import Vehicle
 from VehicleEffects import DamageFromShotDecoder
 from vehicle_systems.tankStructure import TankPartIndexes, TankPartNames
 
-from gui.mods.sagtary_armor_hits.data import hit_parser
+from gui.mods.sagtary_armor_hits.data import hit_parser, vehicle_catalog
 from gui.mods.sagtary_armor_hits.data.hits import HitVehicle, compactDescriptor, ownShellIsGold
+from gui.mods.sagtary_armor_hits.data.vehicle_catalog import CatalogVehicle
 
 _logger = logging.getLogger('sagtary.armor_hits')
 
@@ -111,6 +113,16 @@ def _hitVehicle(arena, vehicleID):
                       team=arenaVehicle.get('team'))
 
 
+def _catalogVehicle(arena, vehicleID):
+    # The vehicle of a player as it is now, for the vehicle catalog: its descriptor always from the arena's list (the
+    # player's own one with its optional devices), from the vehicle the client sees only when the list has none (the
+    # fog of war), so a vehicle has one descriptor (vehicle_catalog.py).
+    arenaVehicle = arena.vehicles.get(vehicleID) or {}
+    descriptor = arenaVehicle.get('vehicleType') or getattr(BigWorld.entities.get(vehicleID), 'typeDescriptor', None)
+    return CatalogVehicle(battlePlayerId=vehicleID, playerName=arenaVehicle.get('name') or '',
+                          team=arenaVehicle.get('team'), vehicleDescriptor=compactDescriptor(descriptor))
+
+
 def _distance(vehicleID, otherID):
     # Metres between two vehicles the client sees, 0 when it does not see one of them.
     vehicle, other = BigWorld.entities.get(vehicleID), BigWorld.entities.get(otherID)
@@ -183,6 +195,10 @@ class HitCollector(object):
         battle = self._store.getBattle(player.arenaUniqueID)
         if battle is None:
             return
+        catalog = battle.vehicleCatalog
+        for vehicleID in (attackerID, vehicle.id):
+            if vehicleID:
+                catalog, _ = vehicle_catalog.withVehicle(catalog, _catalogVehicle(player.arena, vehicleID))
         if call.name == 'showDamageFromShot':
             hit = hit_parser.shotHit(field, call.get('damage'), _decodedPoints(vehicle, call.get('hitPoints')))
             if hit.vehiclePoints:
@@ -202,7 +218,7 @@ class HitCollector(object):
         hit = self._pairing.withPending(key, hit, now)
         hits = getattr(battle, field) + (hit,)
         self._pairing.noteHit(key, now, battle.battleId, len(hits) - 1)
-        self._store.update(battle.replace(**{field: hits}))
+        self._store.update(battle.replace(vehicleCatalog=catalog, **{field: hits}))
 
     def _shotDirection(self, vehicle, attackerID, point):
         matrix = _partMatrix(vehicle, point.tankPartIndex)
