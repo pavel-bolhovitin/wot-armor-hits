@@ -6,13 +6,13 @@
   (battle_file.py): a file is the fields of one Battle.
 - BattleStore: the battles of this session in memory, newest first, up to BATTLES_LIMIT. It tells its listeners
   when the list changes (onChanged). The store is not saved by itself; battle_file.py writes and reads it on demand.
-- BattleCollector: adds a Battle to the store when the player enters a battle or starts a replay, follows the player's
-  vehicle while it changes in the battle (a respawn, another one chosen before the battle starts), and writes the
-  winner to it when the round finishes. A battle the player left before its end gets its winner later, from the
-  battle results the server puts into the service channel when the battle ends (onResultReceived); until then it
-  has none (result UNKNOWN). It tells its listeners when the player leaves the battle (onBattleLeft, with the battle
-  as it is in the store). A battle that is not to be kept (isKept: the battleModes setting) is not added, so its hits
-  are not collected.
+- BattleCollector: adds a Battle to the store when the player enters a battle or starts a replay, with the vehicle
+  the player enters it with; adds each vehicle the player gets later in the battle (a respawn, another one chosen
+  before the battle starts) to its vehicle catalog, and writes the winner to it when the round finishes. A battle the
+  player left before its end gets its winner later, from the battle results the server puts into the service channel
+  when the battle ends (onResultReceived); until then it has none (result UNKNOWN). It tells its listeners when the
+  player leaves the battle (onBattleLeft, with the battle as it is in the store). A battle that is not to be kept
+  (isKept: the battleModes setting) is not added, so its hits are not collected.
 """
 import logging
 import time
@@ -25,7 +25,8 @@ from chat_shared import SYS_MESSAGE_TYPE
 from messenger.proto.events import g_messengerEvents
 
 from gui.mods.sagtary_armor_hits.config import BATTLES_LIMIT
-from gui.mods.sagtary_armor_hits.data.hits import DealtHit, ReceivedHit, compactDescriptor, vehicleTypeId
+from gui.mods.sagtary_armor_hits.data import vehicle_catalog
+from gui.mods.sagtary_armor_hits.data.hits import DealtHit, ReceivedHit
 from gui.mods.sagtary_armor_hits.data.record import Record
 from gui.mods.sagtary_armor_hits.data.vehicle_catalog import CatalogVehicle
 
@@ -67,17 +68,17 @@ class Battle(Record):
         ('mapId', 0),           # the map (the client's geometryID: the low 16 bits of arenaTypeID)
         ('gameplayId', 0),      # the gameplay on the map: standard, encounter, assault, ... (the high bits)
         ('battleType', 0),      # kind of battle: random, training, ... (constants.ARENA_GUI_TYPE)
-        ('vehicleDescriptor', ''),
-                                # the player's last vehicle of the battle: its compact descriptor (type and modules),
-                                # hex; '' when not known. The hits have the vehicles they were on (hits.HitVehicle)
+        ('playerVehicleIndex', None),
+                                # the vehicle the player entered the battle with (in a replay, the recorded player):
+                                # its index in vehicleCatalog, which has the player's name and team; None when not
+                                # known. The player's later vehicles are in vehicleCatalog too; each hit has the
+                                # vehicles it was on
         ('startedAt', 0.0),     # when the player entered the battle, Unix time in seconds
         ('isReplay', False),    # a replay watched, not a battle played
-        ('playerName', ''),     # the name of the player who played the battle (in a replay, the recorded one)
-        ('playerTeam', None),   # the player's team, 1 or 2; None when not known
         ('winnerTeam', None),   # the team that won, 1 or 2, DRAW_TEAM for a draw; None when not known
         ('endReason', None),    # how the battle ended (constants.FINISH_REASON); None when not known
-        ('vehicleCatalog', ()), # each vehicle of each player the hits met, once, in the order they were met
-                                # (vehicle_catalog.CatalogVehicle)
+        ('vehicleCatalog', ()), # each vehicle of each player the battle met (the player's own ones, the hits' ones),
+                                # once, in the order they were met (vehicle_catalog.CatalogVehicle)
         ('receivedHits', ()),   # hits on the player's vehicle, in battle order (hits.ReceivedHit)
         ('dealtHits', ()),      # the player's hits on other vehicles, in battle order (hits.DealtHit)
     )
@@ -89,22 +90,34 @@ class Battle(Record):
         # Read from a file of an old format: its file is never written over.
         return self.formatVersion < FORMAT_VERSION
 
+    def vehicle(self, index):
+        # The vehicle of vehicleCatalog at the index (playerVehicleIndex, a hit's shooterVehicleIndex or
+        # targetVehicleIndex); one with nothing known for None and for an index the catalog has not (a broken file).
+        if index is None or not 0 <= index < len(self.vehicleCatalog):
+            return CatalogVehicle()
+        return self.vehicleCatalog[index]
+
     @property
-    def vehicleId(self):
-        # The type (intCD) of the player's last vehicle, from its compact descriptor; 0 when not known.
-        return vehicleTypeId(self.vehicleDescriptor)
+    def playerVehicle(self):
+        # The vehicle the player entered the battle with (CatalogVehicle).
+        return self.vehicle(self.playerVehicleIndex)
 
     @property
     def vehicleIds(self):
         # The types (intCD) of the player's vehicles of the battle, in the order of their first hits; without hits, the
-        # last vehicle's.
-        hits = [(hit.time, hit.target.vehicleId) for hit in self.receivedHits]
-        hits.extend((hit.time, hit.shooter.vehicleId) for hit in self.dealtHits)
+        # type of the vehicle the player entered the battle with.
+        hits = [(hit.time, self.vehicle(hit.targetVehicleIndex).vehicleId) for hit in self.receivedHits]
+        hits.extend((hit.time, self.vehicle(hit.shooterVehicleIndex).vehicleId) for hit in self.dealtHits)
         vehicleIds = []
         for _, vehicleId in sorted(hits):
             if vehicleId and vehicleId not in vehicleIds:
                 vehicleIds.append(vehicleId)
-        return vehicleIds or [self.vehicleId]
+        return vehicleIds or [self.playerVehicle.vehicleId]
+
+    def isAllyHit(self, hit):
+        # A hit on a vehicle of the shooter's own team that took no damage (the client's team damage is off).
+        shooter, target = self.vehicle(hit.shooterVehicleIndex), self.vehicle(hit.targetVehicleIndex)
+        return shooter.team is not None and shooter.team == target.team and hit.damage == 0
 
     @property
     def result(self):
@@ -113,7 +126,7 @@ class Battle(Record):
             return BattleResult.UNKNOWN
         if self.winnerTeam == DRAW_TEAM:
             return BattleResult.DRAW
-        return BattleResult.WIN if self.winnerTeam == self.playerTeam else BattleResult.DEFEAT
+        return BattleResult.WIN if self.winnerTeam == self.playerVehicle.team else BattleResult.DEFEAT
 
 
 def _winnerTeam(isWinner, playerTeam):
@@ -129,22 +142,19 @@ def _winnerTeam(isWinner, playerTeam):
 
 
 def battleFromAvatar(player):
-    # The battle the player has just entered, read from the client.
-    arena = player.arena
-    vehicleInfo = (arena.vehicles.get(player.playerVehicleID) or {}) if arena is not None else {}
-    descriptor = getattr(player, 'vehicleTypeDescriptor', None)
-    if descriptor is None:
-        descriptor = vehicleInfo.get('vehicleType')
+    # The battle the player has just entered, read from the client: its vehicle catalog starts with the player's
+    # vehicle, its team and name from the avatar too, which knows them also before the arena's list has the vehicle.
+    vehicle = vehicle_catalog.playerVehicle(player.arena, player.playerVehicleID)
+    vehicle = vehicle.replace(playerName=vehicle.playerName or getattr(player, 'name', '') or '', team=player.team)
     return Battle(
         battleId=player.arenaUniqueID,
         mapId=player.arenaTypeID & _MAP_ID_MASK,
         gameplayId=player.arenaTypeID >> _GAMEPLAY_ID_SHIFT,
         battleType=player.arenaGuiType,
+        playerVehicleIndex=0,
         startedAt=time.time(),
         isReplay=BattleReplay.isPlaying(),
-        playerName=vehicleInfo.get('name') or getattr(player, 'name', '') or '',
-        playerTeam=player.team,
-        vehicleDescriptor=compactDescriptor(descriptor),
+        vehicleCatalog=(vehicle,),
     )
 
 
@@ -230,7 +240,7 @@ class BattleCollector(object):
             battle = self._store.getBattle(data.get('arenaUniqueID'))
             if battle is None or battle.winnerTeam is not None:
                 return
-            winnerTeam = _winnerTeam(data.get('isWinner'), battle.playerTeam or data.get('team'))
+            winnerTeam = _winnerTeam(data.get('isWinner'), battle.playerVehicle.team or data.get('team'))
             if winnerTeam is None:
                 return
             battle = battle.replace(winnerTeam=winnerTeam)
@@ -259,13 +269,15 @@ class BattleCollector(object):
             self._arena.onVehicleUpdated += self._onVehicleUpdated
 
     def _onVehicleUpdated(self, vehicleID):
-        # The arena tells the vehicle's new type before the client shows it.
+        # The arena tells the player's new vehicle before the client shows it: one more vehicle in the catalog; the
+        # player's vehicle (playerVehicleIndex) stays the one the player entered the battle with.
         battle = self._store.getBattle(self._battleId) if self._battleId is not None else None
         if battle is None or vehicleID != getattr(BigWorld.player(), 'playerVehicleID', None):
             return
-        descriptor = compactDescriptor((self._arena.vehicles.get(vehicleID) or {}).get('vehicleType'))
-        if descriptor and vehicleTypeId(descriptor) != battle.vehicleId:
-            self._store.update(battle.replace(vehicleDescriptor=descriptor))
+        catalog, _ = vehicle_catalog.withVehicle(battle.vehicleCatalog,
+                                                 vehicle_catalog.playerVehicle(self._arena, vehicleID))
+        if catalog != battle.vehicleCatalog:
+            self._store.update(battle.replace(vehicleCatalog=catalog))
 
     def _stopFollowing(self):
         if self._arena is not None:

@@ -8,11 +8,10 @@ player's vehicle; not those on a vehicle already destroyed (a wreck takes no dam
 without damage).
 
 - Vehicle.showDamageFromShot, showDamageFromExplosion: a hit. Its two vehicles go to the battle's vehicle catalog
-  first (vehicle_catalog.py), so the hit can refer to them by their index later. The client decodes its points
-  (DamageFromShotDecoder.parseHitPoint, by the parts of the vehicle's collision model); the hit gets its two
-  vehicles as they are then (player, team, compact descriptor), the distance between them when the client sees the
-  shooter, the battle time, the target's pose (its turret, gun, hull on its chassis and steered wheels, as the client
-  shows them). A splash keeps where the shell burst, in
+  first, as they are then (vehicle_catalog.py): the hit refers to them by their index there. The client decodes its
+  points (DamageFromShotDecoder.parseHitPoint, by the parts of the vehicle's collision model); the hit gets the
+  distance between its vehicles when the client sees the shooter, the battle time, the target's pose (its turret,
+  gun, hull on its chassis and steered wheels, as the client shows them). A splash keeps where the shell burst, in
   the hit vehicle's chassis space (like the points), even when it burst on the ground nearby. The premium flag of the
   player's own shell is the player's current shell's. The player's shell gets its mechanic shot mode by the gun's shell
   params switcher, when the gun has one (its dynamic component ShellParamsSwitcherController: publicStatus): the server
@@ -34,8 +33,7 @@ from VehicleEffects import DamageFromShotDecoder
 from vehicle_systems.tankStructure import TankPartIndexes, TankPartNames
 
 from gui.mods.sagtary_armor_hits.data import hit_parser, vehicle_catalog
-from gui.mods.sagtary_armor_hits.data.hits import HitVehicle, compactDescriptor, ownShellIsGold
-from gui.mods.sagtary_armor_hits.data.vehicle_catalog import CatalogVehicle
+from gui.mods.sagtary_armor_hits.data.hits import ownShellIsGold
 
 _logger = logging.getLogger('sagtary.armor_hits')
 
@@ -100,27 +98,6 @@ def _vehiclePose(vehicle):
     except Exception:
         _logger.exception('hits: no pose of vehicle %s', vehicle.id)
         return None
-
-
-def _hitVehicle(arena, vehicleID):
-    # The shooter or the target of a hit as it is now: the type of the vehicle the client sees, its points are on it,
-    # else of the arena's.
-    arenaVehicle = arena.vehicles.get(vehicleID) or {}
-    descriptor = getattr(BigWorld.entities.get(vehicleID), 'typeDescriptor', None)
-    if descriptor is None:
-        descriptor = arenaVehicle.get('vehicleType')
-    return HitVehicle(vehicleDescriptor=compactDescriptor(descriptor), playerName=arenaVehicle.get('name') or '',
-                      team=arenaVehicle.get('team'))
-
-
-def _catalogVehicle(arena, vehicleID):
-    # The vehicle of a player as it is now, for the vehicle catalog: its descriptor always from the arena's list (the
-    # player's own one with its optional devices), from the vehicle the client sees only when the list has none (the
-    # fog of war), so a vehicle has one descriptor (vehicle_catalog.py).
-    arenaVehicle = arena.vehicles.get(vehicleID) or {}
-    descriptor = arenaVehicle.get('vehicleType') or getattr(BigWorld.entities.get(vehicleID), 'typeDescriptor', None)
-    return CatalogVehicle(battlePlayerId=vehicleID, playerName=arenaVehicle.get('name') or '',
-                          team=arenaVehicle.get('team'), vehicleDescriptor=compactDescriptor(descriptor))
 
 
 def _distance(vehicleID, otherID):
@@ -195,10 +172,12 @@ class HitCollector(object):
         battle = self._store.getBattle(player.arenaUniqueID)
         if battle is None:
             return
-        catalog = battle.vehicleCatalog
-        for vehicleID in (attackerID, vehicle.id):
-            if vehicleID:
-                catalog, _ = vehicle_catalog.withVehicle(catalog, _catalogVehicle(player.arena, vehicleID))
+        catalog, shooterIndex = battle.vehicleCatalog, None
+        if attackerID:
+            catalog, shooterIndex = vehicle_catalog.withVehicle(
+                catalog, vehicle_catalog.playerVehicle(player.arena, attackerID))
+        catalog, targetIndex = vehicle_catalog.withVehicle(
+            catalog, vehicle_catalog.playerVehicle(player.arena, vehicle.id))
         if call.name == 'showDamageFromShot':
             hit = hit_parser.shotHit(field, call.get('damage'), _decodedPoints(vehicle, call.get('hitPoints')))
             if hit.vehiclePoints:
@@ -211,8 +190,8 @@ class HitCollector(object):
             center = call.get('center')
             hit = hit_parser.splashHit(field, call.get('damage'),
                                       _chassisPoint(vehicle, center) if center is not None else ())
-        hit = hit.replace(time=_battleTime(player.arena), shooter=_hitVehicle(player.arena, attackerID),
-                          target=_hitVehicle(player.arena, vehicle.id), distance=_distance(vehicle.id, attackerID),
+        hit = hit.replace(time=_battleTime(player.arena), shooterVehicleIndex=shooterIndex,
+                          targetVehicleIndex=targetIndex, distance=_distance(vehicle.id, attackerID),
                           targetPose=_vehiclePose(vehicle))
         key, now = (field, otherID), BigWorld.serverTime()
         hit = self._pairing.withPending(key, hit, now)

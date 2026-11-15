@@ -302,7 +302,7 @@ class ShotPanelPresenter(object):
     def _onFrame(self):
         # The fill of the frame after a change, or the next try of the armor.
         self._callbackID = None
-        _, side, hit = self._hitsPanel.selection
+        battle, side, hit = self._hitsPanel.selection
         if hit is None:
             self._model.setIsVisible(False)
             return
@@ -315,17 +315,18 @@ class ShotPanelPresenter(object):
             self._tries += 1
             self._callbackID = BigWorld.callback(_RETRY, self._onFrame)
         gunShot = self._overlayPanel.gunShot
-        shooterModules = self._shooterModules(hit.shooter, gunShot, hit.shellMode)
-        targetModules = self._targetModules(hit.target)
+        shooter, target = battle.vehicle(hit.shooterVehicleIndex), battle.vehicle(hit.targetVehicleIndex)
+        shooterModules = self._shooterModules(shooter, gunShot, hit.shellMode)
+        targetModules = self._targetModules(target)
         with self._model.transaction() as model:
             model.setIsVisible(True)
-            self._fillVehicle(model.shooter, self._texts['shooter'], hit.shooter, shooterModules)
-            self._fillVehicle(model.target, self._texts['target'], hit.target, targetModules)
+            self._fillVehicle(model.shooter, self._texts['shooter'], shooter, shooterModules)
+            self._fillVehicle(model.target, self._texts['target'], target, targetModules)
             model.setShellText(clientText(_SHELL_TEXT_KEY % hit.shellType) or '' if hit.shellType else '')
             # The shell shown on the shooter's card, else the hit's premium flag.
             model.setIsGoldShell(bool(gunShot[1].shell.isGold) if gunShot is not None else bool(hit.isGoldShell))
-            model.setIsSpgShell(isSpgShell(hit))
-            tiles, parts = self._deviceTiles(side, hit)
+            model.setIsSpgShell(isSpgShell(battle, hit))
+            tiles, parts = self._deviceTiles(side, target, hit)
             devices = model.getDevices()
             devices.clear()
             for icon, group, state in tiles:
@@ -353,12 +354,12 @@ class ShotPanelPresenter(object):
             sections.invalidate()
 
     @staticmethod
-    def _deviceTiles(side, hit):
+    def _deviceTiles(side, target, hit):
         # The modules and crew cells and the tank's parts of a hit on the player's vehicle that damaged some; none on
         # another vehicle.
         if side == DEALT:
             return [], []
-        descriptor = _descriptor(hit.target.vehicleId, hit.target.vehicleDescriptor)
+        descriptor = _descriptor(target.vehicleId, target.vehicleDescriptor)
         if descriptor is None:
             return [], []
         try:

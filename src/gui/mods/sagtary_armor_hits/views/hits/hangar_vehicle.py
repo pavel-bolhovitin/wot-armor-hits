@@ -48,12 +48,12 @@ def _shownVehicle(vehicleId, descr):
 
 def hitsVehicle(battle, side, hit):
     # The vehicle the hits are on: (intCD, compact descriptor or None); _NO_VEHICLE without one: no battle, no hits on
-    # the dealt side, a vehicle the client does not have.
+    # the dealt side, a vehicle the client does not have. Without a chosen hit on the received side, the vehicle the
+    # player entered the battle with.
     if battle is None or (hit is None and side == DEALT):
         return _NO_VEHICLE
-    if hit is None:
-        return _shownVehicle(battle.vehicleId, battle.vehicleDescriptor) or _NO_VEHICLE
-    return _shownVehicle(hit.target.vehicleId, hit.target.vehicleDescriptor) or _NO_VEHICLE
+    vehicle = battle.playerVehicle if hit is None else battle.vehicle(hit.targetVehicleIndex)
+    return _shownVehicle(vehicle.vehicleId, vehicle.vehicleDescriptor) or _NO_VEHICLE
 
 
 class HangarVehiclePresenter(object):

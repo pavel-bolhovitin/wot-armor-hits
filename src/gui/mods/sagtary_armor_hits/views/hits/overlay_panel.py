@@ -53,12 +53,13 @@ def _vehicleDescriptor(vehicleId, descr):
         return None
 
 
-def _hitShot(hit):
+def _hitShot(battle, hit):
     # (gun, shot) the hit was fired with: the shooter's gun and its shot with the hit's shell kind (and premium or not),
     # else another gun of the shooter's type with it; None when not known.
     if hit is None or not hit.shellType:
         return None
-    descriptor = _vehicleDescriptor(hit.shooter.vehicleId, hit.shooter.vehicleDescriptor)
+    shooter = battle.vehicle(hit.shooterVehicleIndex)
+    descriptor = _vehicleDescriptor(shooter.vehicleId, shooter.vehicleDescriptor)
     if descriptor is None:
         return None
     guns = [descriptor.gun]
@@ -192,7 +193,8 @@ class OverlayPanelPresenter(object):
 
     def _setShell(self):
         # The penetration chance overlay and the armor tooltip count the chance of the chosen hit's shell.
-        self.gunShot = _hitShot(self._hitsPanel.selection[2])
+        battle, _, hit = self._hitsPanel.selection
+        self.gunShot = _hitShot(battle, hit)
         self.shellParams = None
         if self.gunShot is None:
             return

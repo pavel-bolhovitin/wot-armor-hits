@@ -4,7 +4,7 @@
 HitsPanelPresenter fills the view model (views/models/hits_panel_model.py) for the battle the battle selector shows:
 the side (received or dealt hits), the result filters with their counts, and the hits that pass them; it keeps the
 chosen hit and tells its listeners when the panel changes (onChanged, the battle, the side and the chosen hit in
-selection). The hits on allies (Hit.isAllyHit) are left out, numbered without them, unless the mod's settings show
+selection). The hits on allies (Battle.isAllyHit) are left out, numbered without them, unless the mod's settings show
 them (showFriendlyFire; the panel follows the setting at once). The icons are the client's damage log icons; the shell
 kinds, the vehicle names and the "All" label are the client's texts; an SPG's shell has its plate inverted, like in the
 client's damage log (isSpgShell). A hit with a known shell mode (Hit.shellMode, the
@@ -39,16 +39,16 @@ def _time(seconds):
     return '%d:%02d' % (seconds // 60, seconds % 60)
 
 
-def isSpgShell(hit):
+def isSpgShell(battle, hit):
     # The hit's shell is an SPG's: the shell plate is inverted then, like the client's damage log shows it.
-    return vehicleClass(hit.shooter.vehicleId) == 'SPG'
+    return vehicleClass(battle.vehicle(hit.shooterVehicleIndex).vehicleId) == 'SPG'
 
 
-def _fillHit(item, number, hit):
+def _fillHit(item, number, battle, hit):
     item.setNumber(number)
     item.setTime(_time(hit.time))
     item.setResult(hit.result)
-    other = hit.other
+    other = battle.vehicle(hit.otherVehicleIndex)
     item.setVehicleName(vehicleShortName(other.vehicleId) or '#%s' % other.vehicleId)
     item.setVehicleClass(_CLASS_ICONS.get(vehicleClass(other.vehicleId), ''))
     item.setPlayerName(other.playerName)
@@ -58,7 +58,7 @@ def _fillHit(item, number, hit):
     item.setDamage(hit.damage)
     item.setHasCrits(hit.critsTotal > 0)
     item.setIsGoldShell(hit.isGoldShell)
-    item.setIsSpgShell(isSpgShell(hit))
+    item.setIsSpgShell(isSpgShell(battle, hit))
     item.setShellMode(hit.shellMode)
 
 
@@ -175,7 +175,7 @@ class HitsPanelPresenter(object):
             return None
         hits = getattr(battle, _HITS_FIELD[self._side])
         if self._settings is None or not self._settings.values.get('showFriendlyFire'):
-            hits = [hit for hit in hits if not hit.isAllyHit]
+            hits = [hit for hit in hits if not battle.isAllyHit(hit)]
         return list(enumerate(hits, 1))
 
     def _shownHits(self):
@@ -204,6 +204,7 @@ class HitsPanelPresenter(object):
             numbers = [number for number, _ in shown]
             if self._hitNumber not in numbers:
                 self._hitNumber = numbers[0] if numbers else None
+            battle = self._store.getBattle(self._battleId)
             hitModels = model.getHits()
             hitModels.clear()
             for number, hit in shown:
@@ -211,7 +212,7 @@ class HitsPanelPresenter(object):
                 # A file can come from another player: a hit the client cannot show stays a row without its data, so
                 # the rows keep their numbers and the screen stays open.
                 try:
-                    _fillHit(item, number, hit)
+                    _fillHit(item, number, battle, hit)
                 except Exception:
                     _logger.exception('hits panel: cannot show hit %s', number)
                 hitModels.addViewModel(item)
