@@ -34,12 +34,13 @@ body {
         linear-gradient(330deg, rgba(29, 35, 39, 0.8) 15%, transparent 50%) right bottom/470rem 303rem no-repeat;
 }
 
-/* The common content area: the screen without the header and the footer, with the side offsets of the client's pages. */
+/* The common content area: the screen without the header and the footer; under the header the gap of the client's
+   armor page (vehicle_hub Page_content), down to the footer as there. */
 .hitsView__content {
     position: absolute;
-    top: calc(var(--external-padding-top) + 16rem);
+    top: calc(var(--external-padding-top) + 12rem);
     right: 32rem;
-    bottom: calc(var(--external-padding-bottom) + 16rem);
+    bottom: var(--external-padding-bottom);
     left: 32rem;
 }
 
@@ -53,24 +54,23 @@ body {
     flex-direction: column;
 }
 
-/* Its bottom is over the mod page icon (.modPage): the icon's height and a gap. */
 .hitsView__right {
     position: absolute;
     top: 0;
     right: 0;
-    bottom: 48rem;
+    bottom: 0;
     width: 364rem;
     display: flex;
     flex-direction: column;
 }
 
 /* The note of a battle from a file of an old format: small, at the top in the middle of the screen, clear of the
-   columns and the settings button. */
+   columns and the settings and mod page icons. */
 .oldFormatAlert {
     position: absolute;
     top: 0;
-    right: 490rem;
-    left: 490rem;
+    right: 530rem;
+    left: 530rem;
     display: none;
     justify-content: center;
 }
@@ -1751,13 +1751,13 @@ body {
     background-color: rgba(224, 162, 72, 0.25);
 }
 
-/* Mod page at the bottom right, under the right column: the icon alone like the settings', dim, bright on hover and
-   while the card is open (the mod's icons in gui/maps/sagtary_armor_hits/modPage/, drawn at twice their size); the
-   card above it while open. */
+/* Mod page right of the settings, in the middle of the battle selector card's height like them: the icon alone like
+   the settings', dim, bright on hover and while the card is open (the mod's icons in
+   gui/maps/sagtary_armor_hits/modPage/, drawn at twice their size); the card below it while open. */
 .modPage {
     position: absolute;
-    right: 0;
-    bottom: 0;
+    top: 12rem;
+    left: 483rem;
     z-index: 20;
     pointer-events: auto;
 }
@@ -1786,8 +1786,8 @@ body {
     display: none;
     flex-direction: column;
     position: absolute;
-    right: 0;
-    bottom: 48rem;
+    top: 46rem;
+    left: 0;
     width: 300rem;
     padding: 12rem 14rem 14rem;
     box-sizing: border-box;

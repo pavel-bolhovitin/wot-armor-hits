@@ -674,7 +674,7 @@ document.addEventListener("keydown", (event) => {
     }
 });
 
-// Mod page: the icon at the bottom right opens the card above it, a click on its button opens the mod page in the
+// Mod page: the icon right of the settings opens the card below it, a click on its button opens the mod page in the
 // browser (onOpen) and closes the card, a click anywhere else or Escape closes it (window.model.modPage). The other
 // panels stop their clicks, so the card watches the clicks before they reach them.
 const modPage = document.querySelector(".modPage");
