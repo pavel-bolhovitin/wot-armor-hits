@@ -41,7 +41,6 @@ from helpers_common import computePiercingPowerAtDist
 from gui import TANKMEN_ROLES_ORDER_DICT
 from gui.battle_control.vehicle_getter import getCrewMainRolesWithIndexes, hasTurretRotator
 from gui.impl.backport import createTooltipData
-from gui.impl.gen import R
 from gui.Scaleform.genConsts.TOOLTIPS_CONSTANTS import TOOLTIPS_CONSTANTS
 from gui.shared.gui_items.Vehicle import Vehicle
 from items import parseIntCompactDescr, vehicles
@@ -273,9 +272,6 @@ class ShotPanelPresenter(object):
         return createTooltipData(isSpecial=True, specialAlias=alias, specialArgs=(compactDescr, vehicle))
 
     def init(self):
-        with self._model.transaction() as model:
-            model.setTooltipContentId(R.views.common.tooltip_window.backport_tooltip_content.BackportTooltipContent())
-            model.setTooltipDecoratorId(R.views.common.tooltip_window.tooltip_window.TooltipWindow())
         self._hitsPanel.onChanged += self._update
         self._hitLines.onDrawn += self._update
         self._update()

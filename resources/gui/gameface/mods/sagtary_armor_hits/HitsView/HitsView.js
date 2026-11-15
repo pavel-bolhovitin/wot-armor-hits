@@ -504,31 +504,56 @@ fileButtons.querySelector(".fileButtons__choiceDelete").addEventListener("click"
 });
 fileButtons.querySelector(".fileButtons__choiceCancel").addEventListener("click", () => setDeleteAsked(false));
 
-// Overlay panel: the overlay type dropdown (window.model.overlayPanel). A click on
-// the dropdown opens its list, a click on a type chooses it (onSelect), a click elsewhere or Escape closes the list.
-const overlayPanel = document.querySelector(".overlayPanel");
-const overlayDropdown = overlayPanel.querySelector(".overlayPanel__dropdown");
-const overlayList = overlayPanel.querySelector(".overlayPanel__list");
-
-function setOverlayOpen(open) {
-    overlayDropdown.classList.toggle("overlayPanel__open", open);
+// The client's tooltip over a control (a backport tooltip: HitsView.getTooltipData finds it by the arguments, strings
+// and numbers), shown and hidden like the client's pages do (a view event, as OpenWG Gameface's libs/views.js sends).
+function clientTooltip(on, args) {
+    const event = {
+        __Type: "GFViewEventProxy",
+        type: 1,
+        contentID: window.model.tooltipContentId,
+        decoratorID: window.model.tooltipDecoratorId,
+        targetID: 0,
+        on: on,
+    };
+    if (on) {
+        event.isMouseEvent = true;
+        event.arguments = Object.keys(args).map((name) => typeof args[name] === "number"
+            ? { __Type: "GFValueProxy", name, number: args[name] }
+            : { __Type: "GFValueProxy", name, string: args[name] });
+    }
+    viewEnv.handleViewEvent(event);
 }
 
-function drawOverlayPanel() {
+// The tooltip of a scene panel control by its id (lines, shooter, reset), its name, while the mouse is over it.
+function sceneTooltip(node, id) {
+    node.addEventListener("mouseenter", () => clientTooltip(true, { role: "scene", id }));
+    node.addEventListener("mouseleave", () => clientTooltip(false, { role: "scene", id }));
+}
+
+// Overlay select: the overlay type (window.model.overlayPanel). A click on it opens its list above it, a click on a
+// type chooses it (onSelect), a click elsewhere or Escape closes the list. It has no tooltip.
+const overlaySelect = document.querySelector(".overlaySelect");
+const overlayTrigger = overlaySelect.querySelector(".overlaySelect__trigger");
+const overlayItems = overlaySelect.querySelector(".overlaySelect__items");
+
+function setOverlayOpen(open) {
+    overlaySelect.classList.toggle("overlaySelect__open", open);
+}
+
+function drawOverlaySelect() {
     const model = window.model && window.model.overlayPanel;
     if (!model) {
         return;
     }
-    overlayPanel.querySelector(".overlayPanel__title").textContent = model.title;
+    overlaySelect.querySelector(".overlaySelect__title").textContent = model.title;
     const selectedId = model.selectedId;
     const items = arrayItems(model.items);
     const selected = items.filter((item) => item.id === selectedId)[0];
-    overlayPanel.querySelector(".overlayPanel__selected").textContent = selected ? selected.label : "";
-    overlayList.innerHTML = "";
+    overlaySelect.querySelector(".overlaySelect__selected").textContent = selected ? selected.label : "";
+    overlayItems.textContent = "";
     items.forEach((item) => {
-        const row = element("div", `overlayPanel__item${item.id === selectedId ? " overlayPanel__itemSelected" : ""}`);
-        row.appendChild(element("div", "overlayPanel__itemBg"));
-        row.appendChild(element("div", "overlayPanel__itemLabel", item.label));
+        const row = element("div", `overlaySelect__item${item.id === selectedId ? " overlaySelect__itemSelected" : ""}`,
+            item.label);
         // Handlers keep plain values: the model's items are destroyed when the model is filled again.
         const id = item.id;
         row.addEventListener("click", (event) => {
@@ -536,14 +561,15 @@ function drawOverlayPanel() {
             setOverlayOpen(false);
             window.model.overlayPanel.onSelect({ id });
         });
-        overlayList.appendChild(row);
+        overlayItems.appendChild(row);
     });
 }
 
-overlayPanel.querySelector(".overlayPanel__trigger").addEventListener("click", (event) => {
+overlayTrigger.addEventListener("click", (event) => {
     event.stopPropagation();
-    setOverlayOpen(!overlayDropdown.classList.contains("overlayPanel__open"));
+    setOverlayOpen(!overlaySelect.classList.contains("overlaySelect__open"));
 });
+overlaySelect.querySelector(".overlaySelect__list").addEventListener("click", (event) => event.stopPropagation());
 document.addEventListener("click", () => setOverlayOpen(false));
 document.addEventListener("keydown", (event) => {
     if (event.keyCode === 27) {
@@ -551,10 +577,10 @@ document.addEventListener("keydown", (event) => {
     }
 });
 
-// Scene panel: the lines group (a check box: the lines of all the shown hits or of the chosen one, onLines), the camera
-// group (the shooter view's check box, onShooterView; the reset, onResetCamera), from window.model.scenePanel.
+// Scene panel: the overlay select, the toggles of the lines of all the shown hits (onLines) and of the shooter view
+// (onShooterView), the camera's reset (onResetCamera), from window.model.scenePanel. Their names are in the tooltips.
 const scenePanel = document.querySelector(".scenePanel");
-const sceneAllLines = scenePanel.querySelector(".scenePanel__allLines");
+const sceneLines = scenePanel.querySelector(".scenePanel__lines");
 const sceneShooter = scenePanel.querySelector(".scenePanel__shooter");
 const sceneReset = scenePanel.querySelector(".scenePanel__reset");
 
@@ -563,21 +589,19 @@ function drawScenePanel() {
     if (!model) {
         return;
     }
-    scenePanel.querySelector(".scenePanel__linesTitle").textContent = model.linesTitle;
-    scenePanel.querySelector(".scenePanel__allLabel").textContent = model.allLabel;
-    scenePanel.querySelector(".scenePanel__cameraTitle").textContent = model.cameraTitle;
-    scenePanel.querySelector(".scenePanel__shooterLabel").textContent = model.shooterLabel;
-    scenePanel.querySelector(".scenePanel__resetLabel").textContent = model.resetLabel;
-    sceneAllLines.classList.toggle("scenePanel__checkOn", Boolean(model.allLines));
-    sceneShooter.classList.toggle("scenePanel__checkOn", Boolean(model.shooterView));
-    // On the dealt side only the chosen hit's line is drawn: no lines group.
+    sceneLines.classList.toggle("scenePanel__toggleOn", Boolean(model.allLines));
+    sceneShooter.classList.toggle("scenePanel__toggleOn", Boolean(model.shooterView));
+    // On the dealt side only the chosen hit's line is drawn: no lines toggle.
     scenePanel.classList.toggle("scenePanel__oneLine", !model.allLinesEnabled);
 }
 
-sceneAllLines.addEventListener("click", () =>
+sceneLines.addEventListener("click", () =>
     window.model.scenePanel.onLines({ all: !window.model.scenePanel.allLines }));
 sceneShooter.addEventListener("click", () => window.model.scenePanel.onShooterView());
 sceneReset.addEventListener("click", () => window.model.scenePanel.onResetCamera());
+sceneTooltip(sceneLines, "lines");
+sceneTooltip(sceneShooter, "shooter");
+sceneTooltip(sceneReset, "reset");
 
 // Settings menu: the gear right of the battle selector opens it, a click on a setting turns it over (onToggle), a click
 // on a choice of a group of modes sets how its battles are kept (onBattleMode), a click elsewhere or Escape closes it
@@ -706,28 +730,6 @@ shotPanel.addEventListener("wheel", (event) => {
     }
 });
 
-// The client's tooltip of a card's module (a backport tooltip; HitsView.getTooltipData finds it by the role and the
-// index), shown and hidden like the client's pages do (a view event, as OpenWG Gameface's libs/views.js sends).
-function moduleTooltip(on, role, index) {
-    const model = window.model.shotPanel;
-    const event = {
-        __Type: "GFViewEventProxy",
-        type: 1,
-        contentID: model.tooltipContentId,
-        decoratorID: model.tooltipDecoratorId,
-        targetID: 0,
-        on: on,
-    };
-    if (on) {
-        event.isMouseEvent = true;
-        event.arguments = [
-            { __Type: "GFValueProxy", name: "role", string: role },
-            { __Type: "GFValueProxy", name: "index", number: index },
-        ];
-    }
-    viewEnv.handleViewEvent(event);
-}
-
 function shotVehicle(vehicle, role) {
     const node = element("div", "shotPanel__vehicle");
     const who = element("div", "shotPanel__who");
@@ -758,8 +760,9 @@ function shotVehicle(vehicle, role) {
         if (module.shellMode) {
             moduleIcon.appendChild(element("div", `shotPanel__shellMode shotPanel__shellMode__${module.shellMode}`));
         }
-        moduleIcon.addEventListener("mouseenter", () => moduleTooltip(true, role, index));
-        moduleIcon.addEventListener("mouseleave", () => moduleTooltip(false, role, index));
+        // The client's tooltip of the module: HitsView.getTooltipData finds it by the card's role and the index.
+        moduleIcon.addEventListener("mouseenter", () => clientTooltip(true, { role, index }));
+        moduleIcon.addEventListener("mouseleave", () => clientTooltip(false, { role, index }));
         modules.appendChild(moduleIcon);
     });
     body.appendChild(modules);
@@ -879,7 +882,7 @@ function draw() {
     drawBattleSelector();
     drawHitsPanel();
     drawFileButtons();
-    drawOverlayPanel();
+    drawOverlaySelect();
     drawScenePanel();
     drawShotPanel();
     drawSettingsMenu();

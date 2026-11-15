@@ -28,6 +28,7 @@ own: a failure is logged and the others stop still, so the hangar is put back wh
 import logging
 
 from frameworks.wulf import WindowFlags
+from gui.impl.backport import createTooltipData
 from gui.impl.gen import R
 from gui.impl.lobby.common.view_wrappers import createBackportTooltipDecorator
 from gui.impl.pub import WindowImpl
@@ -57,6 +58,21 @@ VIEW_ALIAS = 'sagtaryArmorHitsView'
 SCREEN_LEFT_EVENT = 'sagtaryArmorHitsScreenLeft'
 
 
+# The role the page gives the tooltips of the scene panel's controls, with the control's id.
+_SCENE_ROLE = 'scene'
+
+
+def _unicode(value):
+    # The client's texts may come as UTF-8 bytes, the mod's are unicode.
+    return value.decode('utf-8') if isinstance(value, str) else value
+
+
+def _textTooltip(header):
+    # The client's tooltip of a header only, in the format of gui.shared.utils.functions.makeTooltip, which would take
+    # the text for a key to translate.
+    return u'{HEADER}%s{/HEADER}' % _unicode(header)
+
+
 # The shot panel's texts.
 _SHOT_TEXTS = ('shot/shooter', 'shot/target', 'shot/damage', 'shot/penetration', 'shot/armor', 'shot/angle',
                'shot/distance', 'shot/crits', 'shot/critsNote', 'shot/avgDamage', 'shot/avgPenetration',
@@ -76,6 +92,7 @@ class HitsView(ViewComponent):
         self._settings = modSettings
         self._presenters = []
         self._shotPanel = None
+        self._scenePanel = None
         self._camera = None
 
     @createBackportTooltipDecorator()
@@ -83,11 +100,16 @@ class HitsView(ViewComponent):
         return super(HitsView, self).createToolTip(event)
 
     def getTooltipData(self, event):
-        # The client's tooltip of a module or the shell of the shot panel's cards (the page tells the card's role and
-        # the module's index).
+        # The client's tooltips: of a scene panel's control (the page tells the scene role and the control's id), a
+        # text one of its name; of a module or the shell of the shot panel's cards (the card's role and the module's
+        # index).
+        role = event.getArgument('role')
+        if role == _SCENE_ROLE:
+            name = self._scenePanel.tooltipText(event.getArgument('id')) if self._scenePanel is not None else None
+            return createTooltipData(tooltip=_textTooltip(name)) if name else None
         if self._shotPanel is None:
             return None
-        return self._shotPanel.tooltipData(event.getArgument('role'), int(event.getArgument('index', -1)))
+        return self._shotPanel.tooltipData(role, int(event.getArgument('index', -1)))
 
     def _getEvents(self):
         model = self.getViewModel()
@@ -96,6 +118,9 @@ class HitsView(ViewComponent):
     def _onLoading(self, *args, **kwargs):
         super(HitsView, self)._onLoading(*args, **kwargs)
         model = self.getViewModel()
+        with model.transaction() as tx:
+            tx.setTooltipContentId(R.views.common.tooltip_window.backport_tooltip_content.BackportTooltipContent())
+            tx.setTooltipDecoratorId(R.views.common.tooltip_window.tooltip_window.TooltipWindow())
         battleSelector = BattleSelectorPresenter(model.battleSelector, self._battleStore, {
             'empty': text('battles/empty'), 'oldFormat': text('battles/oldFormat')})
         self._presenters.append(battleSelector)
@@ -110,9 +135,10 @@ class HitsView(ViewComponent):
         self._presenters.append(self._camera)
         # The scene panel's choices: which lines are drawn over that vehicle, the shooter view.
         scenePanel = ScenePanelPresenter(model.scenePanel, {
-            'lines': text('lines/title'), 'allHits': text('lines/all'), 'shooter': text('camera/shooter'),
+            'allHits': text('lines/all'), 'shooter': text('camera/shooter'),
             'reset': text('camera/reset')}, hitsPanel)
         self._presenters.append(scenePanel)
+        self._scenePanel = scenePanel
         hitLines = HitLinesPresenter(hitsPanel, scenePanel, self._camera)
         self._presenters.append(hitLines)
         overlayPanel = OverlayPanelPresenter(model.overlayPanel, hitsPanel)
@@ -158,6 +184,7 @@ class HitsView(ViewComponent):
         # Once: when the screen is left, or when the view closes without that, or when a presenter cannot start.
         presenters, self._presenters = self._presenters, []
         self._shotPanel = None
+        self._scenePanel = None
         self._camera = None
         for presenter in reversed(presenters):
             try:

@@ -926,260 +926,199 @@ body {
     background-position: -982rem -292rem;
 }
 
-/* Overlay panel: the overlay type dropdown, like the client's armor page (its header, its dropdown with the client's
-   arrow and list item background). */
-.overlayPanel {
-    flex-shrink: 0;
-    padding: 10rem 12rem 12rem;
-    background-color: rgba(14, 16, 18, 0.88);
-    border: 1rem solid rgba(255, 255, 255, 0.1);
-    pointer-events: auto;
-}
-
-.overlayPanel__title {
-    font-size: 18rem;
-    font-weight: bold;
-    color: var(--color-general-primary);
-}
-
-.overlayPanel__dropdown {
-    position: relative;
-    margin-top: 6rem;
-    z-index: 5;
-}
-
-.overlayPanel__trigger {
-    display: flex;
-    align-items: center;
-    height: 30rem;
-    padding: 0 10rem;
-    border: 1rem solid rgba(255, 255, 255, 0.25);
-    background-color: rgba(21, 24, 27, 0.9);
-    cursor: pointer;
-}
-
-.overlayPanel__trigger:hover,
-.overlayPanel__open .overlayPanel__trigger {
-    border-color: rgba(255, 255, 255, 0.4);
-}
-
-.overlayPanel__selected {
-    flex-grow: 1;
-    font-size: 15rem;
-    color: var(--color-general-primary);
-}
-
-.overlayPanel__arrow {
-    width: 9rem;
-    height: 6rem;
-    background: url(img://gui/maps/icons/lobby/armor_inspector/arrow.png) no-repeat center/contain;
-    transition: transform 150ms ease-in-out;
-}
-
-.overlayPanel__open .overlayPanel__arrow {
-    transform: rotate(-180deg);
-}
-
-.overlayPanel__list {
-    display: none;
-    position: absolute;
-    top: 31rem;
-    left: 0;
-    right: 0;
-    padding: 5rem 0;
-    background-color: rgba(14, 16, 18, 0.96);
-    border: 1rem solid rgba(255, 255, 255, 0.25);
-    box-shadow: 0 8rem 24rem rgba(0, 0, 0, 0.5);
-}
-
-.overlayPanel__open .overlayPanel__list {
-    display: block;
-}
-
-.overlayPanel__item {
-    position: relative;
-    padding: 6rem 12rem;
-    font-size: 15rem;
-    color: var(--color-general-tertiary);
-    cursor: pointer;
-}
-
-.overlayPanel__itemSelected {
-    color: var(--color-general-secondary);
-}
-
-.overlayPanel__itemBg {
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    background: url(img://gui/maps/icons/hangar/playlists/item_bg.png) no-repeat center/cover;
-    opacity: 0;
-    transition: opacity 200ms ease-in-out;
-    pointer-events: none;
-}
-
-.overlayPanel__item:hover .overlayPanel__itemBg {
-    opacity: 0.3;
-}
-
-.overlayPanel__itemSelected .overlayPanel__itemBg {
-    opacity: 0.15;
-}
-
-.overlayPanel__itemLabel {
-    position: relative;
-}
-
-/* Scene panel at the bottom, in the middle of the scene: two groups side by side, each on its own plate with its title
-   above: the lines (a check box) and the camera (the shooter view's check box, a line, the reset). The check boxes are
-   the settings menu's. */
+/* Scene panel at the bottom, in the middle of the scene: one row on one plate, no padding. The select and the buttons
+   have no plate or frame of their own: a hover lights them, a press of the reset more. A toggle that is on has an amber
+   icon over a short amber line at its bottom. A short line sets the select off. Square corners and flat fills, as the
+   client's controls. */
 .scenePanel {
     position: absolute;
-    bottom: 14rem;
+    bottom: 0;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    align-items: stretch;
+    align-items: center;
+    background-color: rgba(14, 16, 18, 0.78);
     pointer-events: auto;
 }
 
-.scenePanel__group {
-    display: flex;
-    flex-direction: column;
-    padding: 7rem 12rem 3rem 14rem;
-    background-color: rgba(14, 16, 18, 0.9);
-    border: 1rem solid rgba(255, 255, 255, 0.1);
-}
-
-.scenePanel__camera {
-    margin-left: 6rem;
-}
-
-/* The dealt side: the hits are on other vehicles each, so only the chosen hit's line and no lines group. */
+/* The dealt side: the hits are on other vehicles each, so only the chosen hit's line and no lines toggle. */
 .scenePanel__oneLine .scenePanel__lines {
     display: none;
 }
 
-.scenePanel__oneLine .scenePanel__camera {
-    margin-left: 0;
+.scenePanel__divider {
+    flex-shrink: 0;
+    width: 1rem;
+    height: 24rem;
+    background-color: rgba(255, 255, 255, 0.16);
 }
 
-.scenePanel__title {
-    font-size: 11rem;
-    line-height: 14rem;
-    font-weight: bold;
-    color: var(--color-general-tertiary);
-}
-
-.scenePanel__row {
-    display: flex;
-    align-items: center;
-}
-
-.scenePanel__check,
-.scenePanel__reset {
-    display: flex;
-    align-items: center;
-    height: 32rem;
+.scenePanel__button {
+    position: relative;
+    flex-shrink: 0;
+    width: 44rem;
+    height: 44rem;
     cursor: pointer;
 }
 
-.scenePanel__box {
-    position: relative;
-    width: 14rem;
-    height: 14rem;
-    flex-shrink: 0;
-    margin-right: 10rem;
-    box-sizing: border-box;
-    border: 1rem solid rgba(255, 255, 255, 0.35);
+.scenePanel__button:hover {
+    background-color: rgba(255, 255, 255, 0.08);
 }
 
-.scenePanel__checkOn .scenePanel__box {
-    border-color: #e0a248;
-    background-color: rgba(224, 162, 72, 0.25);
+.scenePanel__reset:active {
+    background-color: rgba(255, 255, 255, 0.16);
 }
 
-/* The check: two sides of a rotated box. */
-.scenePanel__tick {
+/* The icons are white, dimmed; a toggle that is on has an amber copy. */
+.scenePanel__icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20rem;
+    height: 20rem;
+    margin: -10rem 0 0 -10rem;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    opacity: 0.75;
+}
+
+.scenePanel__reset .scenePanel__icon {
+    opacity: 0.85;
+}
+
+.scenePanel__toggleOn .scenePanel__icon {
+    opacity: 1;
+}
+
+.scenePanel__lines .scenePanel__icon {
+    background-image: url(img://gui/maps/sagtary_armor_hits/scene/lines.png);
+}
+
+.scenePanel__lines.scenePanel__toggleOn .scenePanel__icon {
+    background-image: url(img://gui/maps/sagtary_armor_hits/scene/lines_on.png);
+}
+
+.scenePanel__shooter .scenePanel__icon {
+    background-image: url(img://gui/maps/sagtary_armor_hits/scene/shooter.png);
+}
+
+.scenePanel__shooter.scenePanel__toggleOn .scenePanel__icon {
+    background-image: url(img://gui/maps/sagtary_armor_hits/scene/shooter_on.png);
+}
+
+.scenePanel__reset .scenePanel__icon {
+    background-image: url(img://gui/maps/sagtary_armor_hits/scene/reset.png);
+}
+
+.scenePanel__line {
     display: none;
     position: absolute;
-    left: 4rem;
-    top: 1rem;
-    width: 4rem;
-    height: 8rem;
-    border-right: 2rem solid #f2c47e;
-    border-bottom: 2rem solid #f2c47e;
-    transform: rotate(45deg);
+    right: 8rem;
+    bottom: 0;
+    left: 8rem;
+    height: 3rem;
+    background-color: #e0a248;
 }
 
-.scenePanel__checkOn .scenePanel__tick {
+.scenePanel__toggleOn .scenePanel__line {
     display: block;
 }
 
-.scenePanel__label {
+/* Overlay select: the overlay type, its icon, the chosen type and the client's arrow; its list opens above the panel,
+   the title of the armor page's menu over the types. A long type's name is cut. */
+.overlaySelect {
+    position: relative;
+    flex-shrink: 0;
+    z-index: 5;
+}
+
+.overlaySelect__trigger {
+    display: flex;
+    align-items: center;
+    width: 220rem;
+    height: 44rem;
+    padding: 0 14rem;
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+.overlaySelect__trigger:hover,
+.overlaySelect__open .overlaySelect__trigger {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.overlaySelect__icon {
+    flex-shrink: 0;
+    width: 18rem;
+    height: 18rem;
+    margin-right: 8rem;
+    background: url(img://gui/maps/sagtary_armor_hits/scene/layers.png) no-repeat center/contain;
+    opacity: 0.7;
+}
+
+.overlaySelect__selected {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+    font-size: 14rem;
+    color: var(--color-general-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.overlaySelect__arrow {
+    flex-shrink: 0;
+    width: 9rem;
+    height: 6rem;
+    margin-left: 8rem;
+    background: url(img://gui/maps/icons/lobby/armor_inspector/arrow.png) no-repeat center/contain;
+    transition: transform 150ms ease-in-out;
+}
+
+.overlaySelect__open .overlaySelect__arrow {
+    transform: rotate(-180deg);
+}
+
+.overlaySelect__list {
+    display: none;
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    min-width: 100%;
+    padding: 6rem 0;
+    box-sizing: border-box;
+    background-color: rgba(14, 16, 18, 0.92);
+}
+
+.overlaySelect__open .overlaySelect__list {
+    display: block;
+}
+
+.overlaySelect__title {
+    padding: 4rem 14rem 6rem;
+    font-size: 12rem;
+    font-weight: bold;
+    white-space: nowrap;
+    color: var(--color-general-tertiary);
+}
+
+.overlaySelect__item {
+    padding: 7rem 14rem;
     font-size: 14rem;
     white-space: nowrap;
     color: var(--color-general-secondary);
+    cursor: pointer;
 }
 
-.scenePanel__check:hover .scenePanel__label,
-.scenePanel__reset:hover .scenePanel__label,
-.scenePanel__checkOn .scenePanel__label {
+.overlaySelect__item:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.overlaySelect__item:hover,
+.overlaySelect__itemSelected {
     color: var(--color-general-primary);
-}
-
-.scenePanel__divider {
-    width: 1rem;
-    height: 22rem;
-    margin: 0 14rem;
-    background-color: rgba(255, 255, 255, 0.12);
-}
-
-.scenePanel__reset:active .scenePanel__label {
-    color: #e0a248;
-}
-
-.scenePanel__resetIcon {
-    position: relative;
-    width: 16rem;
-    height: 16rem;
-    margin-right: 7rem;
-}
-
-/* Three quarters of a ring, open at the top right, and an arrow head at its end. */
-.scenePanel__resetArc {
-    position: absolute;
-    top: 2rem;
-    left: 2rem;
-    width: 12rem;
-    height: 12rem;
-    box-sizing: border-box;
-    border: 2rem solid #8a8f94;
-    border-top-color: transparent;
-    border-radius: 50%;
-    transform: rotate(45deg);
-}
-
-.scenePanel__resetHead {
-    position: absolute;
-    top: 0;
-    left: 9rem;
-    width: 0;
-    height: 0;
-    border-top: 4rem solid transparent;
-    border-bottom: 4rem solid transparent;
-    border-left: 5rem solid #8a8f94;
-}
-
-.scenePanel__reset:hover .scenePanel__resetArc {
-    border-color: #c8c8c8;
-    border-top-color: transparent;
-}
-
-.scenePanel__reset:hover .scenePanel__resetHead {
-    border-left-color: #c8c8c8;
 }
 
 /* Shot panel on the right: the vehicle cards of the shooter and the target, the result row, the sections. */
@@ -1188,7 +1127,6 @@ body {
     flex-direction: column;
     flex-shrink: 1;
     min-height: 0;
-    margin-top: 8rem;
     overflow-y: auto;
     background-color: rgba(14, 16, 18, 0.88);
     border: 1rem solid rgba(255, 255, 255, 0.1);

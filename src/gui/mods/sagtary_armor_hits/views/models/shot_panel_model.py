@@ -266,7 +266,7 @@ class ShotTankPartModel(ViewModel):
 class ShotPanelModel(ViewModel):
     __slots__ = ()
 
-    def __init__(self, properties=12, commands=0):
+    def __init__(self, properties=10, commands=0):
         super(ShotPanelModel, self).__init__(properties=properties, commands=commands)
 
     def getIsVisible(self):
@@ -301,39 +301,26 @@ class ShotPanelModel(ViewModel):
     def getSectionsType():
         return ShotSectionModel
 
-    def getTooltipContentId(self):
-        # The resource ids of the client's tooltip (backport tooltip content, tooltip window) the page asks for.
-        return self._getNumber(4)
-
-    def setTooltipContentId(self, value):
-        self._setNumber(4, value)
-
-    def getTooltipDecoratorId(self):
-        return self._getNumber(5)
-
-    def setTooltipDecoratorId(self, value):
-        self._setNumber(5, value)
-
     def getShellText(self):
         # The shell kind's abbreviation of the client's damage log, on a plate beside the penetration.
-        return self._getString(6)
+        return self._getString(4)
 
     def setShellText(self, value):
-        self._setString(6, value)
+        self._setString(4, value)
 
     def getIsGoldShell(self):
         # A premium shell: the plate is gold.
-        return self._getBool(7)
+        return self._getBool(5)
 
     def setIsGoldShell(self, value):
-        self._setBool(7, value)
+        self._setBool(5, value)
 
     def getDevices(self):
         # The modules and crew section's cells: the module kinds, then the crew members; none when not known.
-        return self._getArray(8)
+        return self._getArray(6)
 
     def setDevices(self, value):
-        self._setArray(8, value)
+        self._setArray(6, value)
 
     @staticmethod
     def getDevicesType():
@@ -341,17 +328,17 @@ class ShotPanelModel(ViewModel):
 
     def getDevicesNote(self):
         # The note under the cells: they show what this shot did, not the damage of earlier hits.
-        return self._getString(9)
+        return self._getString(7)
 
     def setDevicesNote(self, value):
-        self._setString(9, value)
+        self._setString(7, value)
 
     def getTankParts(self):
         # The tracks or wheels of the abstract tank between the cells of the modules.
-        return self._getArray(10)
+        return self._getArray(8)
 
     def setTankParts(self, value):
-        self._setArray(10, value)
+        self._setArray(8, value)
 
     @staticmethod
     def getTankPartsType():
@@ -359,10 +346,10 @@ class ShotPanelModel(ViewModel):
 
     def getIsSpgShell(self):
         # A shell of an SPG: the plate is inverted.
-        return self._getBool(11)
+        return self._getBool(9)
 
     def setIsSpgShell(self, value):
-        self._setBool(11, value)
+        self._setBool(9, value)
 
     def _initialize(self):
         super(ShotPanelModel, self)._initialize()
@@ -370,8 +357,6 @@ class ShotPanelModel(ViewModel):
         self._addViewModelProperty('shooter', ShotVehicleModel())
         self._addViewModelProperty('target', ShotVehicleModel())
         self._addArrayProperty('sections', Array())
-        self._addNumberProperty('tooltipContentId', 0)
-        self._addNumberProperty('tooltipDecoratorId', 0)
         self._addStringProperty('shellText', '')
         self._addBoolProperty('isGoldShell', False)
         self._addArrayProperty('devices', Array())

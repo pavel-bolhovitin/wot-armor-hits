@@ -2,7 +2,8 @@
 """Overlay panel of the hits screen: the overlay of the armor on the hangar vehicle, like on the client's armor page.
 
 OverlayPanelPresenter fills the view model (views/models/overlay_panel_model.py) with the client's texts of the armor
-page (armor_inspector): its title and the three overlay types of its menu, one of them chosen.
+page (armor_inspector): its title and the three overlay types of its menu, one of them chosen. The page shows them as a
+select in the scene panel at the bottom, the title over its list.
 
 The overlay is the client's own, as the armor page shows it: the armor inspector component on the hangar vehicle's
 game object (ArmorInspectorComponent; its system colors the armor). It is put on the vehicle when the hangar has

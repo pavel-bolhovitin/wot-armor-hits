@@ -8,25 +8,26 @@ on other vehicles each, and the hangar shows one, so on the dealt side the panel
 (showsAllLines is False there, the page hides the choice of lines) and keeps the choice for the received side. It
 tells its listeners when the choices change (onChanged); the hit lines presenter draws by them. The reset button
 asks for the camera's start (onResetCamera): the hit lines presenter puts it back, or behind the shell when the shooter
-view is on. The page shows two groups: the lines (a check box) and the camera (the shooter view's check box and the
-reset). The camera's title and the reset's label are the client's texts, the others the mod's.
+view is on. The page shows them as icons, two toggles and a button, beside the overlay select; their tooltips tell
+their names (tooltipText). The reset's name is the client's text, the others the mod's.
 """
 from Event import Event
 
 from gui.mods.sagtary_armor_hits.data.client_names import clientText
 from gui.mods.sagtary_armor_hits.views.hits.hits_panel import DEALT
 
-_CAMERA_KEY = '#settings:keyboard/keysBlocks/group/camera'
 _RESET_KEY = '#settings:colorSettings/view/resetBtn'
 
 
 class ScenePanelPresenter(object):
 
     def __init__(self, model, texts, hitsPanel):
-        # texts: {'lines', 'allHits', 'shooter', 'reset'} in the client language.
+        # texts: {'allHits', 'shooter', 'reset'} in the client language.
         self._model = model
         self._texts = texts
         self._hitsPanel = hitsPanel
+        # {control id: name} of the tooltips.
+        self._tooltips = {}
         self.allLines = False
         self.shooterView = False
         self.onChanged = Event()
@@ -41,13 +42,16 @@ class ScenePanelPresenter(object):
         # The lines of all the shown hits are drawn: chosen, and on the received side.
         return self.allLines and self.canShowAllLines
 
+    def tooltipText(self, controlId):
+        # The name in the tooltip of a control: lines, shooter or reset; None for another id.
+        return self._tooltips.get(controlId)
+
     def init(self):
-        with self._model.transaction() as model:
-            model.setLinesTitle(self._texts['lines'])
-            model.setAllLabel(self._texts['allHits'])
-            model.setCameraTitle(clientText(_CAMERA_KEY) or '')
-            model.setShooterLabel(self._texts['shooter'])
-            model.setResetLabel(clientText(_RESET_KEY) or self._texts['reset'])
+        self._tooltips = {
+            'lines': self._texts['allHits'],
+            'shooter': self._texts['shooter'],
+            'reset': clientText(_RESET_KEY) or self._texts['reset'],
+        }
         self._model.onLines += self._onLines
         self._model.onShooterView += self._onShooterView
         self._model.onResetCamera += self._onResetCamera

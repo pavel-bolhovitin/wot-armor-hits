@@ -100,17 +100,6 @@
                     </div>
                 </div>
                 <div class="hitsView__right">
-                    <!-- Overlay panel: the armor overlay type, like the client's armor page (HitsView.js). -->
-                    <div class="overlayPanel">
-                        <div class="overlayPanel__title"></div>
-                        <div class="overlayPanel__dropdown">
-                            <div class="overlayPanel__trigger">
-                                <div class="overlayPanel__selected"></div>
-                                <div class="overlayPanel__arrow"></div>
-                            </div>
-                            <div class="overlayPanel__list"></div>
-                        </div>
-                    </div>
                     <!-- Shot panel: the chosen hit's shooter and target and its numbers (HitsView.js). -->
                     <div class="shotPanel">
                         <div class="shotPanel__vehicles"></div>
@@ -141,36 +130,35 @@
                     </div>
                     <div class="modPage__button"><div class="modPage__icon"></div></div>
                 </div>
-                <!-- Scene panel: two groups under their titles: the lines (all the shown hits' or the chosen hit's;
-                     hidden on the dealt side), the camera (the shooter view, the reset) (HitsView.js). -->
+                <!-- Scene panel at the bottom in the middle, one row on one plate: the overlay type (a select, its list
+                     opens above it), a short line, the lines of all the shown hits (a toggle; hidden on the dealt side),
+                     the shooter view (a toggle), the camera's reset (a button). The toggles and the reset are icons, their
+                     names in the client's tooltips (HitsView.js). -->
                 <div class="scenePanel">
-                    <div class="scenePanel__group scenePanel__lines">
-                        <div class="scenePanel__title scenePanel__linesTitle"></div>
-                        <div class="scenePanel__row">
-                            <div class="scenePanel__check scenePanel__allLines">
-                                <div class="scenePanel__box"><div class="scenePanel__tick"></div></div>
-                                <div class="scenePanel__label scenePanel__allLabel"></div>
-                            </div>
+                    <!-- Overlay type: the armor overlay, the types of the client's armor page. -->
+                    <div class="overlaySelect">
+                        <div class="overlaySelect__trigger">
+                            <div class="overlaySelect__icon"></div>
+                            <div class="overlaySelect__selected"></div>
+                            <div class="overlaySelect__arrow"></div>
+                        </div>
+                        <div class="overlaySelect__list">
+                            <div class="overlaySelect__title"></div>
+                            <div class="overlaySelect__items"></div>
                         </div>
                     </div>
-                    <div class="scenePanel__group scenePanel__camera">
-                        <div class="scenePanel__title scenePanel__cameraTitle"></div>
-                        <div class="scenePanel__row">
-                            <div class="scenePanel__check scenePanel__shooter">
-                                <div class="scenePanel__box"><div class="scenePanel__tick"></div></div>
-                                <div class="scenePanel__label scenePanel__shooterLabel"></div>
-                            </div>
-                            <div class="scenePanel__divider"></div>
-                            <!-- Reset: the camera back to its start, or behind the shell with the shooter view on. -->
-                            <div class="scenePanel__reset">
-                                <div class="scenePanel__resetIcon">
-                                    <div class="scenePanel__resetArc"></div>
-                                    <div class="scenePanel__resetHead"></div>
-                                </div>
-                                <div class="scenePanel__label scenePanel__resetLabel"></div>
-                            </div>
-                        </div>
+                    <div class="scenePanel__divider"></div>
+                    <!-- A toggle: when on, its icon amber over a short amber line. -->
+                    <div class="scenePanel__button scenePanel__toggle scenePanel__lines">
+                        <div class="scenePanel__icon"></div>
+                        <div class="scenePanel__line"></div>
                     </div>
+                    <div class="scenePanel__button scenePanel__toggle scenePanel__shooter">
+                        <div class="scenePanel__icon"></div>
+                        <div class="scenePanel__line"></div>
+                    </div>
+                    <!-- Reset: the camera back to its start, or behind the shell with the shooter view on. -->
+                    <div class="scenePanel__button scenePanel__reset"><div class="scenePanel__icon"></div></div>
                 </div>
             </div>
         </div>
