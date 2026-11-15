@@ -1,15 +1,25 @@
-/* Minimap: the last part of the hits panel, at its bottom, on the panel's background. With little height the hits
-   list gives way first (HitsView.css), then the map: never less than its header. */
+/* Minimap: the last part of the hits panel, at its bottom, on the panel's background. It shares the height under the
+   nav equally with the hits list, the same flex (HitsView.css, also why it starts from 112rem), up to its square map:
+   the header (28rem, the line in it) and the map as high as the panel is wide inside its frame (440rem less 2rem).
+   Below that it gets lower with the list, down to its header. */
 .minimap {
     display: none;
     flex-direction: column;
+    flex-grow: 1;
     flex-shrink: 1;
-    min-height: 29rem;
-    margin-top: auto;
+    flex-basis: 112rem;
+    min-height: 28rem;
+    max-height: 466rem;
 }
 
 .minimap__visible {
     display: flex;
+}
+
+/* Folded, only the header: the list takes the rest. */
+.minimap__folded {
+    flex-grow: 0;
+    flex-basis: auto;
 }
 
 /* The header folds the map away and back: a line over it like the panel's, the title at the left, the arrow at the
@@ -45,12 +55,13 @@
     transform: rotate(-180deg);
 }
 
-/* As wide as the panel inside its frame (440rem less 2rem), as high: the client's square image (300 x 300) scaled to
-   fit, in the middle when the height is less. */
+/* The rest of the minimap under the header: the client's square image (300 x 300) scaled to fit, in the middle when
+   the height is less than the width. */
 .minimap__map {
+    flex-grow: 1;
     flex-shrink: 1;
+    flex-basis: 0;
     min-height: 0;
-    height: 438rem;
     background-repeat: no-repeat;
     background-position: center;
     background-size: contain;

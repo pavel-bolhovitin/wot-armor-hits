@@ -360,8 +360,7 @@ body {
 /* Developer tools: small buttons under the battle selector, in the colors of the selector card. */
 /* Hits panel: tabs, result filters, the chosen hit's position, the list and the minimap at its bottom
    (components/Minimap/). */
-/* Down to the bottom of the column, so the minimap stays in the corner; with many hits the list shrinks to the free
-   height and scrolls. */
+/* Down to the bottom of the column: the list and the minimap share the height under the nav (their flex). */
 .hitsPanel {
     display: none;
     flex-direction: column;
@@ -487,13 +486,17 @@ body {
     transform: rotate(-90deg);
 }
 
-/* With little height the list gives way first, down to 4 rows (28rem and a 1rem line each); then the minimap does:
-   their flex-shrink weights. */
+/* The list and the minimap (Minimap.css) share the height under the nav equally, the same flex; the minimap stops at
+   its square map, the list takes the rest. The list never gets lower than 4 rows (28rem each, the line in them), the
+   minimap has no such limit. Gameface counts an item's min-height as used but grows the item from its flex-basis: a
+   flex-basis under the min-height leaves that much empty at the bottom of the panel. So both start from the list's
+   minimum. */
 .hitsPanel__list {
     display: flex;
-    flex-grow: 0;
-    flex-shrink: 1000;
-    min-height: 116rem;
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 112rem;
+    min-height: 112rem;
     overflow: hidden;
 }
 
