@@ -7,6 +7,7 @@
              The panels follow the design of the "Armor Hits Core" artifact. -->
         <title>Armor Hits</title>
         <link rel="stylesheet" href="HitsView.css" />
+        <link rel="stylesheet" href="components/ScenePanel/ScenePanel.css" />
     </head>
     <body>
         <div class="hitsView">
@@ -130,36 +131,8 @@
                     </div>
                     <div class="modPage__button"><div class="modPage__icon"></div></div>
                 </div>
-                <!-- Scene panel at the bottom in the middle, one row on one plate: the overlay type (a select, its list
-                     opens above it), a short line, the lines of all the shown hits (a toggle; hidden on the dealt side),
-                     the shooter view (a toggle), the camera's reset (a button). The toggles and the reset are icons, their
-                     names in the client's tooltips (HitsView.js). -->
-                <div class="scenePanel">
-                    <!-- Overlay type: the armor overlay, the types of the client's armor page. -->
-                    <div class="overlaySelect">
-                        <div class="overlaySelect__trigger">
-                            <div class="overlaySelect__icon"></div>
-                            <div class="overlaySelect__selected"></div>
-                            <div class="overlaySelect__arrow"></div>
-                        </div>
-                        <div class="overlaySelect__list">
-                            <div class="overlaySelect__title"></div>
-                            <div class="overlaySelect__items"></div>
-                        </div>
-                    </div>
-                    <div class="scenePanel__divider"></div>
-                    <!-- A toggle: when on, its icon amber over a short amber line. -->
-                    <div class="scenePanel__button scenePanel__toggle scenePanel__lines">
-                        <div class="scenePanel__icon"></div>
-                        <div class="scenePanel__line"></div>
-                    </div>
-                    <div class="scenePanel__button scenePanel__toggle scenePanel__shooter">
-                        <div class="scenePanel__icon"></div>
-                        <div class="scenePanel__line"></div>
-                    </div>
-                    <!-- Reset: the camera back to its start, or behind the shell with the shooter view on. -->
-                    <div class="scenePanel__button scenePanel__reset"><div class="scenePanel__icon"></div></div>
-                </div>
+                <!-- Scene panel at the bottom: components/ScenePanel/, its script makes it here, after the
+                     others. -->
             </div>
         </div>
         <script type="module" src="HitsView.js"></script>

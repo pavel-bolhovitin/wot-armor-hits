@@ -10,6 +10,9 @@ src/gui/mods/                 Python sources, packed to res/scripts/client/gui/m
 resources/                    packed to res/ as they are
   gui/gen_resources/            declarations of the mod's own R.mods.sagtary_armor_hits.* resources
   gui/gameface/mods/sagtary_armor_hits/   Gameface pages, scripts and styles
+    HitsView/                   the hits screen's page
+      common/                   helpers its scripts share
+      components/<Name>/        a part of the page: its script and its styles
   gui/maps/sagtary_armor_hits/  images
 docs/                         notes
 ```
@@ -72,7 +75,7 @@ UI (`views/`), a package per screen or button. The view models, the data the Gam
 | `views/hits/overlay_panel.py`             | presenter of the overlay panel: the armor page's three overlay types (client texts) and the client's armor overlay on the hangar vehicle; the page shows them as a select in the scene panel, the title over its list |
 | `views/hits/shot_panel.py`                | presenter of the shot panel: the chosen hit's shooter and target cards (vehicle; icons of the shooter's gun and shell, the hit's shell mode in the shell icon's top right corner, the target's turret and gun, with the client's module and shell tooltips), result, and sections (damage, penetration, armor and angle counted in the garage, distance, modules and crew: on a hit on the player's vehicle that damaged some, laid out like the battle damage panel with its icons copied into `gui/maps/sagtary_armor_hits/modules/`: the vehicle's module kinds in two columns, an abstract tank between them with its 2 or 4 tracks or its wheels, its crew members in a row under them; what that shot damaged by the hit's crits mask framed in its state, the exact track, wheel or crew member by its damage info, the rest dim, and a note that it is this shot's damage only) |
 | `views/hits/armor_tooltip.py`             | presenter of the armor tooltip: the client's armor page tooltip (`ArmorTooltipWindow`) for the armor under the mouse, with the chosen hit's shell |
-| `views/hits/scene_panel.py`               | presenter of the scene panel at the bottom: lines of all shown hits on the chosen hit's vehicle (received side only) or of the chosen one, the shooter view (camera along the shell), the camera's reset; the page shows them as icons beside the overlay select, all on one plate with no plate or frame of their own (a toggle that is on: amber icon over a short amber line), icons the mod's, in `gui/maps/sagtary_armor_hits/scene/`, their names in the client's text tooltips (`HitsView.getTooltipData`), the select with none |
+| `views/hits/scene_panel.py`               | presenter of the scene panel at the bottom: lines of all shown hits on the chosen hit's vehicle (received side only) or of the chosen one, the shooter view (camera along the shell), the camera's reset; the page shows them as icons beside the overlay select, all on one plate with no plate or frame of their own (a toggle: its icon over a short line, both dim white when off, amber when on), icons the mod's, in `gui/maps/sagtary_armor_hits/scene/`, their names in the client's text tooltips (`HitsView.getTooltipData`), the select with none |
 | `views/hits/mod_page.py`                  | presenter of the mod page card, the mod's one link in the game: the icon right of the settings (a bug and a like) opens a card with a line for bugs and ideas (their links are on the page), a line for the like, and a button that opens `MOD_PAGE_URL` (WGMods) in the system browser, as the client opens its external links (`IExternalLinksController.open`); the button shows the site's domain under its label; the icons are the mod's, in `gui/maps/sagtary_armor_hits/modPage/` |
 | `views/hits/file_buttons.py`              | presenter of the file buttons: save the chosen battle to its file, load all the battle files into the `BattleStore`; the result is a system message with the path |
 | `views/lobby_button/lobby_button.py`      | the hangar button that opens the screen; picks one of the two below |
@@ -190,6 +193,8 @@ The screen is built like the client's vehicle armor page (Vehicle Hub, `VehicleH
   (`HangarCamera`) fires `CameraRelatedEvents.LOBBY_VIEW_MOUSE_MOVE`; for `onMouseOver3dScene` it fires
   `NOTIFY_CURSOR_OVER_3DSCENE`; the
   panels' container lets the mouse through (`pointer-events: none`), the panels do not.
+
+The page is in `gui/gameface/mods/sagtary_armor_hits/HitsView/`: `HitsView.html`, `HitsView.css`, `HitsView.js`, and its parts split off into components, the scene panel first. A component is a folder `components/<Name>/` with its script and its styles: the script is an ES module that makes the part's nodes with `createElement` (`mount<Name>`, once, before the first drawing, so they are there at once) and draws them from the model (`draw<Name>`, on every change); `HitsView.js` imports it, `HitsView.html` links its styles. The helpers the scripts share are in `common/`: nodes (`dom.js`), the model's arrays (`model.js`), the client's tooltips (`tooltip.js`). Tried: a component's markup in an HTML file of its own, loaded with an `XMLHttpRequest`, comes after the scripts have run, so the page would have to wait for it.
 
 The battle selector shows the selected battle (map preview `gui/maps/icons/map/small/<map>.png`, map, result,
 vehicle, time) and opens the list of the session's battles grouped by date. Every text of it is the client's: names by

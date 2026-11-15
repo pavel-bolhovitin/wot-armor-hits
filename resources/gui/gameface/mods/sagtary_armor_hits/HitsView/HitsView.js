@@ -1,3 +1,8 @@
+import { element } from "./common/dom.js";
+import { arrayItems } from "./common/model.js";
+import { clientTooltip } from "./common/tooltip.js";
+import { drawScenePanel, mountScenePanel } from "./components/ScenePanel/ScenePanel.js";
+
 // The hits screen. Like the client's armor page, the page tells the lobby it supports the full screen mode: the
 // Flash lobby page then gives the window the whole screen and draws its header and footer over it in the new style
 // (not as opaque bars). The space the header and the footer take is given as external paddings, put into the CSS
@@ -214,25 +219,6 @@ const oldFormatAlert = document.querySelector(".oldFormatAlert");
 const selectorCard = selector.querySelector(".battleSelector__card");
 const selectorItems = selector.querySelector(".battleSelector__items");
 new ScrollView(selector.querySelector(".battleSelector__list"));
-
-// Array items of a view model may come wrapped as {value: item}.
-function arrayItems(array) {
-    const items = [];
-    for (let index = 0; array && index < array.length; index++) {
-        const item = array[index];
-        items.push(item && item.value !== undefined ? item.value : item);
-    }
-    return items;
-}
-
-function element(tag, className, text) {
-    const node = document.createElement(tag);
-    node.className = className;
-    if (text !== undefined) {
-        node.textContent = text;
-    }
-    return node;
-}
 
 function setImage(node, path) {
     node.style.backgroundImage = path ? `url(${path})` : "none";
@@ -504,104 +490,8 @@ fileButtons.querySelector(".fileButtons__choiceDelete").addEventListener("click"
 });
 fileButtons.querySelector(".fileButtons__choiceCancel").addEventListener("click", () => setDeleteAsked(false));
 
-// The client's tooltip over a control (a backport tooltip: HitsView.getTooltipData finds it by the arguments, strings
-// and numbers), shown and hidden like the client's pages do (a view event, as OpenWG Gameface's libs/views.js sends).
-function clientTooltip(on, args) {
-    const event = {
-        __Type: "GFViewEventProxy",
-        type: 1,
-        contentID: window.model.tooltipContentId,
-        decoratorID: window.model.tooltipDecoratorId,
-        targetID: 0,
-        on: on,
-    };
-    if (on) {
-        event.isMouseEvent = true;
-        event.arguments = Object.keys(args).map((name) => typeof args[name] === "number"
-            ? { __Type: "GFValueProxy", name, number: args[name] }
-            : { __Type: "GFValueProxy", name, string: args[name] });
-    }
-    viewEnv.handleViewEvent(event);
-}
-
-// The tooltip of a scene panel control by its id (lines, shooter, reset), its name, while the mouse is over it.
-function sceneTooltip(node, id) {
-    node.addEventListener("mouseenter", () => clientTooltip(true, { role: "scene", id }));
-    node.addEventListener("mouseleave", () => clientTooltip(false, { role: "scene", id }));
-}
-
-// Overlay select: the overlay type (window.model.overlayPanel). A click on it opens its list above it, a click on a
-// type chooses it (onSelect), a click elsewhere or Escape closes the list. It has no tooltip.
-const overlaySelect = document.querySelector(".overlaySelect");
-const overlayTrigger = overlaySelect.querySelector(".overlaySelect__trigger");
-const overlayItems = overlaySelect.querySelector(".overlaySelect__items");
-
-function setOverlayOpen(open) {
-    overlaySelect.classList.toggle("overlaySelect__open", open);
-}
-
-function drawOverlaySelect() {
-    const model = window.model && window.model.overlayPanel;
-    if (!model) {
-        return;
-    }
-    overlaySelect.querySelector(".overlaySelect__title").textContent = model.title;
-    const selectedId = model.selectedId;
-    const items = arrayItems(model.items);
-    const selected = items.filter((item) => item.id === selectedId)[0];
-    overlaySelect.querySelector(".overlaySelect__selected").textContent = selected ? selected.label : "";
-    overlayItems.textContent = "";
-    items.forEach((item) => {
-        const row = element("div", `overlaySelect__item${item.id === selectedId ? " overlaySelect__itemSelected" : ""}`,
-            item.label);
-        // Handlers keep plain values: the model's items are destroyed when the model is filled again.
-        const id = item.id;
-        row.addEventListener("click", (event) => {
-            event.stopPropagation();
-            setOverlayOpen(false);
-            window.model.overlayPanel.onSelect({ id });
-        });
-        overlayItems.appendChild(row);
-    });
-}
-
-overlayTrigger.addEventListener("click", (event) => {
-    event.stopPropagation();
-    setOverlayOpen(!overlaySelect.classList.contains("overlaySelect__open"));
-});
-overlaySelect.querySelector(".overlaySelect__list").addEventListener("click", (event) => event.stopPropagation());
-document.addEventListener("click", () => setOverlayOpen(false));
-document.addEventListener("keydown", (event) => {
-    if (event.keyCode === 27) {
-        setOverlayOpen(false);
-    }
-});
-
-// Scene panel: the overlay select, the toggles of the lines of all the shown hits (onLines) and of the shooter view
-// (onShooterView), the camera's reset (onResetCamera), from window.model.scenePanel. Their names are in the tooltips.
-const scenePanel = document.querySelector(".scenePanel");
-const sceneLines = scenePanel.querySelector(".scenePanel__lines");
-const sceneShooter = scenePanel.querySelector(".scenePanel__shooter");
-const sceneReset = scenePanel.querySelector(".scenePanel__reset");
-
-function drawScenePanel() {
-    const model = window.model && window.model.scenePanel;
-    if (!model) {
-        return;
-    }
-    sceneLines.classList.toggle("scenePanel__toggleOn", Boolean(model.allLines));
-    sceneShooter.classList.toggle("scenePanel__toggleOn", Boolean(model.shooterView));
-    // On the dealt side only the chosen hit's line is drawn: no lines toggle.
-    scenePanel.classList.toggle("scenePanel__oneLine", !model.allLinesEnabled);
-}
-
-sceneLines.addEventListener("click", () =>
-    window.model.scenePanel.onLines({ all: !window.model.scenePanel.allLines }));
-sceneShooter.addEventListener("click", () => window.model.scenePanel.onShooterView());
-sceneReset.addEventListener("click", () => window.model.scenePanel.onResetCamera());
-sceneTooltip(sceneLines, "lines");
-sceneTooltip(sceneShooter, "shooter");
-sceneTooltip(sceneReset, "reset");
+// Scene panel at the bottom: a component of its own (components/ScenePanel/), at the end of the content.
+mountScenePanel(document.querySelector(".hitsView__content"));
 
 // Settings menu: the gear right of the battle selector opens it, a click on a setting turns it over (onToggle), a click
 // on a choice of a group of modes sets how its battles are kept (onBattleMode), a click elsewhere or Escape closes it
@@ -882,7 +772,6 @@ function draw() {
     drawBattleSelector();
     drawHitsPanel();
     drawFileButtons();
-    drawOverlaySelect();
     drawScenePanel();
     drawShotPanel();
     drawSettingsMenu();
