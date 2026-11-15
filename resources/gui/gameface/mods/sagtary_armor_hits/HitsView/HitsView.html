@@ -8,6 +8,7 @@
         <title>Armor Hits</title>
         <link rel="stylesheet" href="HitsView.css" />
         <link rel="stylesheet" href="components/ScenePanel/ScenePanel.css" />
+        <link rel="stylesheet" href="components/SettingsButton/SettingsButton.css" />
         <link rel="stylesheet" href="components/BugButton/BugButton.css" />
     </head>
     <body>
@@ -15,49 +16,6 @@
             <!-- Mouse over the 3D scene: drags turn the camera, the wheel zooms (HitsView.js). -->
             <div class="sceneInput"></div>
             <div class="hitsView__content">
-                <!-- Settings: the gear right of the battle selector opens the menu of the mod's settings below it,
-                     each on or off, and the file buttons (HitsView.js). -->
-                <div class="settingsButton">
-                    <div class="settingsButton__icon"></div>
-                    <div class="settingsMenu">
-                        <div class="settingsMenu__title"></div>
-                        <div class="settingsMenu__items"></div>
-                        <!-- How the battles of each group of modes are kept: a row a group, its name and three
-                             choices: off, for the session, in files too (HitsView.js). -->
-                        <div class="settingsMenu__modes">
-                            <div class="settingsMenu__modesTitle"></div>
-                            <div class="settingsMenu__modeRows"></div>
-                        </div>
-                        <!-- File buttons under the settings: save the chosen battle to its file (a disk), delete all the
-                             battles (a bin; the question and its two choices in its place first); an icon and a label
-                             each (HitsView.js). -->
-                        <div class="fileButtons">
-                            <div class="fileButtons__button fileButtons__save">
-                                <div class="fileButtons__icon">
-                                    <div class="fileButtons__disk"></div>
-                                    <div class="fileButtons__diskShutter"></div>
-                                    <div class="fileButtons__diskLabel"></div>
-                                </div>
-                                <div class="fileButtons__label fileButtons__saveLabel"></div>
-                            </div>
-                            <div class="fileButtons__button fileButtons__delete">
-                                <div class="fileButtons__icon">
-                                    <div class="fileButtons__binLid"></div>
-                                    <div class="fileButtons__binHandle"></div>
-                                    <div class="fileButtons__binBody"></div>
-                                </div>
-                                <div class="fileButtons__label fileButtons__deleteLabel"></div>
-                            </div>
-                            <div class="fileButtons__confirm">
-                                <div class="fileButtons__confirmText"></div>
-                                <div class="fileButtons__choices">
-                                    <div class="fileButtons__choice fileButtons__choiceDelete"></div>
-                                    <div class="fileButtons__choice fileButtons__choiceCancel"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
                 <!-- The note at the top of the screen: the selected battle is from a file of an old format (HitsView.js). -->
                 <div class="oldFormatAlert"><div class="oldFormatAlert__text"></div></div>
                 <div class="hitsView__left">
@@ -109,7 +67,8 @@
                     </div>
                 </div>
                 <!-- Made here by their scripts, after the others: the scene panel at the bottom
-                     (components/ScenePanel/), the bug button right of the settings (components/BugButton/). -->
+                     (components/ScenePanel/), the settings button right of the battle selector
+                     (components/SettingsButton/), the bug button right of the settings (components/BugButton/). -->
             </div>
         </div>
         <script type="module" src="HitsView.js"></script>

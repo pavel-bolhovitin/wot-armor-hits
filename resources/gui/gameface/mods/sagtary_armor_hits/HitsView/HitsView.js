@@ -3,6 +3,7 @@ import { arrayItems } from "./common/model.js";
 import { clientTooltip } from "./common/tooltip.js";
 import { drawBugButton, mountBugButton } from "./components/BugButton/BugButton.js";
 import { drawScenePanel, mountScenePanel } from "./components/ScenePanel/ScenePanel.js";
+import { drawSettingsButton, mountSettingsButton } from "./components/SettingsButton/SettingsButton.js";
 
 // The hits screen. Like the client's armor page, the page tells the lobby it supports the full screen mode: the
 // Flash lobby page then gives the window the whole screen and draws its header and footer over it in the new style
@@ -455,115 +456,12 @@ hitsPanel.querySelectorAll(".hitsPanel__tab").forEach((tab) => {
 hitsPanel.querySelector(".hitsPanel__prev").addEventListener("click", () => window.model.hitsPanel.onStep({ delta: -1 }));
 hitsPanel.querySelector(".hitsPanel__next").addEventListener("click", () => window.model.hitsPanel.onStep({ delta: 1 }));
 
-// File buttons: save the chosen battle to its file, delete all the battles (window.model.fileButtons); the save is off
-// without a battle, the delete without battles. The delete asks first: the question and its two choices in its place,
-// until a choice or the menu closes.
-const fileButtons = document.querySelector(".fileButtons");
-let isDeleteAsked = false;
-
-function setDeleteAsked(asked) {
-    isDeleteAsked = asked;
-    fileButtons.classList.toggle("fileButtons__asking", asked);
-}
-
-function drawFileButtons() {
-    const model = window.model && window.model.fileButtons;
-    fileButtons.classList.toggle("fileButtons__visible", Boolean(model));
-    fileSave.classList.toggle("fileButtons__disabled", !(model && model.canSave));
-    fileDelete.classList.toggle("fileButtons__disabled", !(model && model.canDelete));
-    fileButtons.querySelector(".fileButtons__saveLabel").textContent = model ? model.saveLabel : "";
-    fileButtons.querySelector(".fileButtons__deleteLabel").textContent = model ? model.deleteLabel : "";
-    fileButtons.querySelector(".fileButtons__confirmText").textContent = model ? model.confirmText : "";
-    fileButtons.querySelector(".fileButtons__choiceDelete").textContent = model ? model.confirmLabel : "";
-    fileButtons.querySelector(".fileButtons__choiceCancel").textContent = model ? model.cancelLabel : "";
-    if (isDeleteAsked && !(model && model.canDelete)) {
-        setDeleteAsked(false);
-    }
-}
-
-const fileSave = fileButtons.querySelector(".fileButtons__save");
-fileSave.addEventListener("click", () => window.model.fileButtons.onSave());
-const fileDelete = fileButtons.querySelector(".fileButtons__delete");
-fileDelete.addEventListener("click", () => setDeleteAsked(true));
-fileButtons.querySelector(".fileButtons__choiceDelete").addEventListener("click", () => {
-    setDeleteAsked(false);
-    window.model.fileButtons.onDelete();
-});
-fileButtons.querySelector(".fileButtons__choiceCancel").addEventListener("click", () => setDeleteAsked(false));
-
 // Scene panel at the bottom: a component of its own (components/ScenePanel/), at the end of the content.
 mountScenePanel(document.querySelector(".hitsView__content"));
 
-// Settings menu: the gear right of the battle selector opens it, a click on a setting turns it over (onToggle), a click
-// on a choice of a group of modes sets how its battles are kept (onBattleMode), a click elsewhere or Escape closes it
-// (window.model.settingsMenu).
-const settingsButton = document.querySelector(".settingsButton");
-const settingsMenu = settingsButton.querySelector(".settingsMenu");
-const settingsItems = settingsMenu.querySelector(".settingsMenu__items");
-const settingsModes = settingsMenu.querySelector(".settingsMenu__modeRows");
-
-function setSettingsOpen(open) {
-    settingsButton.classList.toggle("settingsButton__open", open);
-    if (!open) {
-        setDeleteAsked(false);
-    }
-}
-
-function drawSettingsMenu() {
-    const model = window.model && window.model.settingsMenu;
-    if (!model) {
-        return;
-    }
-    settingsMenu.querySelector(".settingsMenu__title").textContent = model.title;
-    settingsItems.textContent = "";
-    arrayItems(model.items).forEach((item) => {
-        const row = element("div", "settingsMenu__item");
-        row.classList.toggle("settingsMenu__itemOn", Boolean(item.isOn));
-        const box = element("div", "settingsMenu__box");
-        box.appendChild(element("div", "settingsMenu__check"));
-        row.appendChild(box);
-        const textBox = element("div", "settingsMenu__text");
-        textBox.appendChild(element("div", "settingsMenu__label", item.label));
-        if (item.note) {
-            textBox.appendChild(element("div", "settingsMenu__note", item.note));
-        }
-        row.appendChild(textBox);
-        // Handlers keep plain values: the model's items are destroyed when the model is filled again.
-        const key = item.key;
-        row.addEventListener("click", () => window.model.settingsMenu.onToggle({ key }));
-        settingsItems.appendChild(row);
-    });
-
-    settingsMenu.querySelector(".settingsMenu__modesTitle").textContent = model.modesTitle;
-    const savings = [["off", model.offLabel], ["session", model.sessionLabel], ["file", model.fileLabel]];
-    settingsModes.textContent = "";
-    arrayItems(model.modes).forEach((mode) => {
-        const row = element("div", "settingsMenu__mode");
-        row.appendChild(element("div", "settingsMenu__modeLabel", mode.label));
-        const choices = element("div", "settingsMenu__choices");
-        const group = mode.group;
-        savings.forEach(([saving, label]) => {
-            const choice = element("div", "settingsMenu__choice", label);
-            choice.classList.toggle("settingsMenu__choiceSelected", saving === mode.saving);
-            choice.addEventListener("click", () => window.model.settingsMenu.onBattleMode({ group, saving }));
-            choices.appendChild(choice);
-        });
-        row.appendChild(choices);
-        settingsModes.appendChild(row);
-    });
-}
-
-settingsButton.addEventListener("click", (event) => {
-    event.stopPropagation();
-    setSettingsOpen(!settingsButton.classList.contains("settingsButton__open"));
-});
-settingsMenu.addEventListener("click", (event) => event.stopPropagation());
-document.addEventListener("click", () => setSettingsOpen(false));
-document.addEventListener("keydown", (event) => {
-    if (event.keyCode === 27) {
-        setSettingsOpen(false);
-    }
-});
+// Settings button right of the battle selector: a component of its own (components/SettingsButton/), at the end
+// of the content.
+mountSettingsButton(document.querySelector(".hitsView__content"));
 
 // Bug button right of the settings: a component of its own (components/BugButton/), at the end of the content.
 mountBugButton(document.querySelector(".hitsView__content"));
@@ -734,10 +632,9 @@ function drawDevices(model) {
 function draw() {
     drawBattleSelector();
     drawHitsPanel();
-    drawFileButtons();
     drawScenePanel();
     drawShotPanel();
-    drawSettingsMenu();
+    drawSettingsButton();
     drawBugButton();
 }
 
