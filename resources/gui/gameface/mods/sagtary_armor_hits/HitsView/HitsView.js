@@ -1,6 +1,7 @@
 import { element } from "./common/dom.js";
 import { arrayItems } from "./common/model.js";
 import { clientTooltip } from "./common/tooltip.js";
+import { drawBugButton, mountBugButton } from "./components/BugButton/BugButton.js";
 import { drawScenePanel, mountScenePanel } from "./components/ScenePanel/ScenePanel.js";
 
 // The hits screen. Like the client's armor page, the page tells the lobby it supports the full screen mode: the
@@ -564,46 +565,8 @@ document.addEventListener("keydown", (event) => {
     }
 });
 
-// Mod page: the icon right of the settings opens the card below it, a click on its button opens the mod page in the
-// browser (onOpen) and closes the card, a click anywhere else or Escape closes it (window.model.modPage). The other
-// panels stop their clicks, so the card watches the clicks before they reach them.
-const modPage = document.querySelector(".modPage");
-const modPageButton = modPage.querySelector(".modPage__button");
-
-function setModPageShown(shown) {
-    modPage.classList.toggle("modPage__shown", shown);
-}
-
-function drawModPage() {
-    const model = window.model && window.model.modPage;
-    if (!model) {
-        return;
-    }
-    modPage.querySelector(".modPage__bugsText").textContent = model.bugsText;
-    modPage.querySelector(".modPage__likeText").textContent = model.likeText;
-    modPage.querySelector(".modPage__openLabel").textContent = model.openLabel;
-    modPage.querySelector(".modPage__domain").textContent = model.domain;
-}
-
-modPageButton.addEventListener("click", () => setModPageShown(!modPage.classList.contains("modPage__shown")));
-modPage.querySelector(".modPage__link").addEventListener("click", () => {
-    setModPageShown(false);
-    window.model.modPage.onOpen();
-});
-document.addEventListener("click", (event) => {
-    let node = event.target;
-    while (node && node !== modPage) {
-        node = node.parentNode;
-    }
-    if (!node) {
-        setModPageShown(false);
-    }
-}, true);
-document.addEventListener("keydown", (event) => {
-    if (event.keyCode === 27) {
-        setModPageShown(false);
-    }
-});
+// Bug button right of the settings: a component of its own (components/BugButton/), at the end of the content.
+mountBugButton(document.querySelector(".hitsView__content"));
 
 // Shot panel: the chosen hit's shooter and target cards, its result, its sections (window.model.shotPanel). A value
 // counted in the garage is underlined with dashes.
@@ -775,7 +738,7 @@ function draw() {
     drawScenePanel();
     drawShotPanel();
     drawSettingsMenu();
-    drawModPage();
+    drawBugButton();
 }
 
 // The page draws again on a change of the model or of any of its parts: a change inside a part (its arrays, its

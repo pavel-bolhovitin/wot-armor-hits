@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """Mod page card of the hits screen: the one link of the mod in the game, to its page on WGMods.
 
-The icon right of the settings (a bug and a like) opens a card: two lines with the same icons (a bug or an
-idea: the links are on the mod page; the like button is there too) and a button with the action and the site's domain
+The red bug right of the settings opens a card: a line with the bug (a bug or an idea: the links are on the mod
+page), a line with a like (the like button is there too) and a button with the action and the site's domain
 under it, so the player sees that it opens a website. ModPagePresenter fills the view model
 (views/models/mod_page_model.py) and opens MOD_PAGE_URL in the system browser when the button is clicked, as the
 client opens its own external links (IExternalLinksController.open). The texts are the mod's: the client has none

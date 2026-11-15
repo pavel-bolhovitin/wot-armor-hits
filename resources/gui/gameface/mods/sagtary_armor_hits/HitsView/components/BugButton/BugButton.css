@@ -1,0 +1,127 @@
+/* Bug button right of the settings, in the middle of the battle selector card's height like them: the red bug alone
+   like the settings' icon, dim, bright on hover and while the card is open (the mod's icons in
+   gui/maps/sagtary_armor_hits/modPage/); the card below it while open. */
+.bugButton {
+    position: absolute;
+    top: 12rem;
+    left: 479rem;
+    z-index: 20;
+    pointer-events: auto;
+}
+
+.bugButton__trigger {
+    width: 40rem;
+    height: 40rem;
+    cursor: pointer;
+}
+
+/* The card's red bug, as big as the settings' icon. */
+.bugButton__icon {
+    width: 24rem;
+    height: 24rem;
+    margin: 8rem;
+    background: url(img://gui/maps/sagtary_armor_hits/modPage/bug.png) no-repeat center/contain;
+    opacity: 0.6;
+}
+
+.bugButton__trigger:hover .bugButton__icon,
+.bugButton__open .bugButton__icon {
+    opacity: 1;
+}
+
+.bugButton__card {
+    display: none;
+    flex-direction: column;
+    position: absolute;
+    top: 46rem;
+    left: 0;
+    width: 300rem;
+    padding: 12rem 14rem 14rem;
+    box-sizing: border-box;
+    background-color: rgba(14, 16, 18, 0.96);
+    border: 1rem solid rgba(255, 255, 255, 0.1);
+    cursor: default;
+}
+
+.bugButton__open .bugButton__card {
+    display: flex;
+}
+
+/* A line: the part of the icon it tells of, then its text. */
+.bugButton__line {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 6rem;
+}
+
+.bugButton__lineIcon {
+    width: 16rem;
+    height: 16rem;
+    flex-shrink: 0;
+    margin: 1rem 8rem 0 0;
+    background: no-repeat center/contain;
+}
+
+.bugButton__bug {
+    background-image: url(img://gui/maps/sagtary_armor_hits/modPage/bug.png);
+}
+
+.bugButton__like {
+    background-image: url(img://gui/maps/sagtary_armor_hits/modPage/like.png);
+}
+
+.bugButton__text {
+    min-width: 0;
+    font-size: 14rem;
+    line-height: 18rem;
+    color: var(--color-general-secondary);
+}
+
+/* The button: its action, the site's domain under it, the external link icon on the right; framed in the accent. */
+.bugButton__link {
+    display: flex;
+    align-items: center;
+    height: 48rem;
+    margin-top: 6rem;
+    padding: 0 12rem 0 14rem;
+    box-sizing: border-box;
+    border: 1rem solid #e0a248;
+    background-color: rgba(255, 255, 255, 0.04);
+    cursor: pointer;
+}
+
+.bugButton__link:hover {
+    background-color: rgba(224, 162, 72, 0.15);
+}
+
+.bugButton__openText {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.bugButton__openLabel {
+    font-size: 15rem;
+    line-height: 18rem;
+    color: var(--color-general-primary);
+}
+
+.bugButton__domain {
+    font-size: 12rem;
+    line-height: 15rem;
+    color: var(--color-general-tertiary);
+}
+
+.bugButton__external {
+    width: 16rem;
+    height: 16rem;
+    flex-shrink: 0;
+    margin-left: 10rem;
+    background: url(img://gui/maps/sagtary_armor_hits/modPage/external.png) no-repeat center/contain;
+    opacity: 0.7;
+}
+
+.bugButton__link:hover .bugButton__external {
+    opacity: 1;
+}

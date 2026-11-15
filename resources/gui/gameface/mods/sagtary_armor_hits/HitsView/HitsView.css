@@ -65,7 +65,7 @@ body {
 }
 
 /* The note of a battle from a file of an old format: small, at the top in the middle of the screen, clear of the
-   columns and the settings and mod page icons. */
+   columns and the settings and bug icons. */
 .oldFormatAlert {
     position: absolute;
     top: 0;
@@ -1554,134 +1554,6 @@ body {
     color: #f2c47e;
     border-color: #e0a248;
     background-color: rgba(224, 162, 72, 0.25);
-}
-
-/* Mod page right of the settings, in the middle of the battle selector card's height like them: the icon alone like
-   the settings', dim, bright on hover and while the card is open (the mod's icons in
-   gui/maps/sagtary_armor_hits/modPage/, drawn at twice their size); the card below it while open. */
-.modPage {
-    position: absolute;
-    top: 12rem;
-    left: 483rem;
-    z-index: 20;
-    pointer-events: auto;
-}
-
-.modPage__button {
-    width: 40rem;
-    height: 40rem;
-    cursor: pointer;
-}
-
-/* A bug and a like, a dim slash between them; drawn at 64 x 64 for 32rem. */
-.modPage__icon {
-    width: 32rem;
-    height: 32rem;
-    margin: 4rem;
-    background: url(img://gui/maps/sagtary_armor_hits/modPage/button.png) no-repeat center/contain;
-    opacity: 0.6;
-}
-
-.modPage__button:hover .modPage__icon,
-.modPage__shown .modPage__icon {
-    opacity: 1;
-}
-
-.modPage__card {
-    display: none;
-    flex-direction: column;
-    position: absolute;
-    top: 46rem;
-    left: 0;
-    width: 300rem;
-    padding: 12rem 14rem 14rem;
-    box-sizing: border-box;
-    background-color: rgba(14, 16, 18, 0.96);
-    border: 1rem solid rgba(255, 255, 255, 0.1);
-    cursor: default;
-}
-
-.modPage__shown .modPage__card {
-    display: flex;
-}
-
-/* A line: the part of the icon it tells of, then its text. */
-.modPage__line {
-    display: flex;
-    align-items: flex-start;
-    margin-bottom: 6rem;
-}
-
-.modPage__lineIcon {
-    width: 16rem;
-    height: 16rem;
-    flex-shrink: 0;
-    margin: 1rem 8rem 0 0;
-    background: no-repeat center/contain;
-}
-
-.modPage__bug {
-    background-image: url(img://gui/maps/sagtary_armor_hits/modPage/bug.png);
-}
-
-.modPage__like {
-    background-image: url(img://gui/maps/sagtary_armor_hits/modPage/like.png);
-}
-
-.modPage__text {
-    min-width: 0;
-    font-size: 14rem;
-    line-height: 18rem;
-    color: var(--color-general-secondary);
-}
-
-/* The button: its action, the site's domain under it, the external link icon on the right; framed in the accent. */
-.modPage__link {
-    display: flex;
-    align-items: center;
-    height: 48rem;
-    margin-top: 6rem;
-    padding: 0 12rem 0 14rem;
-    box-sizing: border-box;
-    border: 1rem solid #e0a248;
-    background-color: rgba(255, 255, 255, 0.04);
-    cursor: pointer;
-}
-
-.modPage__link:hover {
-    background-color: rgba(224, 162, 72, 0.15);
-}
-
-.modPage__openText {
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-    min-width: 0;
-}
-
-.modPage__openLabel {
-    font-size: 15rem;
-    line-height: 18rem;
-    color: var(--color-general-primary);
-}
-
-.modPage__domain {
-    font-size: 12rem;
-    line-height: 15rem;
-    color: var(--color-general-tertiary);
-}
-
-.modPage__external {
-    width: 16rem;
-    height: 16rem;
-    flex-shrink: 0;
-    margin-left: 10rem;
-    background: url(img://gui/maps/sagtary_armor_hits/modPage/external.png) no-repeat center/contain;
-    opacity: 0.7;
-}
-
-.modPage__link:hover .modPage__external {
-    opacity: 1;
 }
 
 /* Scroll view (HitsView.js): the list scrolls in its box, the bar right of it shows when the list does not fit. The

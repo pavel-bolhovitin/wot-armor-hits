@@ -8,6 +8,7 @@
         <title>Armor Hits</title>
         <link rel="stylesheet" href="HitsView.css" />
         <link rel="stylesheet" href="components/ScenePanel/ScenePanel.css" />
+        <link rel="stylesheet" href="components/BugButton/BugButton.css" />
     </head>
     <body>
         <div class="hitsView">
@@ -107,32 +108,8 @@
                         <div class="shotPanel__sections"></div>
                     </div>
                 </div>
-                <!-- Mod page: the icon right of the settings (a bug and a like) opens the card below it: a line with
-                     the bug (the links for bugs and ideas are on the mod page), a line with the like (the like button
-                     is there too), and the button that opens the page in the browser, its domain under its label
-                     (HitsView.js). -->
-                <div class="modPage">
-                    <div class="modPage__card">
-                        <div class="modPage__line">
-                            <div class="modPage__lineIcon modPage__bug"></div>
-                            <div class="modPage__text modPage__bugsText"></div>
-                        </div>
-                        <div class="modPage__line">
-                            <div class="modPage__lineIcon modPage__like"></div>
-                            <div class="modPage__text modPage__likeText"></div>
-                        </div>
-                        <div class="modPage__link">
-                            <div class="modPage__openText">
-                                <div class="modPage__openLabel"></div>
-                                <div class="modPage__domain"></div>
-                            </div>
-                            <div class="modPage__external"></div>
-                        </div>
-                    </div>
-                    <div class="modPage__button"><div class="modPage__icon"></div></div>
-                </div>
-                <!-- Scene panel at the bottom: components/ScenePanel/, its script makes it here, after the
-                     others. -->
+                <!-- Made here by their scripts, after the others: the scene panel at the bottom
+                     (components/ScenePanel/), the bug button right of the settings (components/BugButton/). -->
             </div>
         </div>
         <script type="module" src="HitsView.js"></script>
