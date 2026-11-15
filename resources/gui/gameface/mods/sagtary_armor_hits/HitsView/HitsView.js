@@ -2,6 +2,7 @@ import { element } from "./common/dom.js";
 import { arrayItems } from "./common/model.js";
 import { clientTooltip } from "./common/tooltip.js";
 import { drawBugButton, mountBugButton } from "./components/BugButton/BugButton.js";
+import { drawMinimap, mountMinimap } from "./components/Minimap/Minimap.js";
 import { drawScenePanel, mountScenePanel } from "./components/ScenePanel/ScenePanel.js";
 import { drawSettingsButton, mountSettingsButton } from "./components/SettingsButton/SettingsButton.js";
 
@@ -456,6 +457,9 @@ hitsPanel.querySelectorAll(".hitsPanel__tab").forEach((tab) => {
 hitsPanel.querySelector(".hitsPanel__prev").addEventListener("click", () => window.model.hitsPanel.onStep({ delta: -1 }));
 hitsPanel.querySelector(".hitsPanel__next").addEventListener("click", () => window.model.hitsPanel.onStep({ delta: 1 }));
 
+// Minimap at the bottom of the hits panel: a component of its own (components/Minimap/), at the end of the panel.
+mountMinimap(hitsPanel);
+
 // Scene panel at the bottom: a component of its own (components/ScenePanel/), at the end of the content.
 mountScenePanel(document.querySelector(".hitsView__content"));
 
@@ -632,6 +636,7 @@ function drawDevices(model) {
 function draw() {
     drawBattleSelector();
     drawHitsPanel();
+    drawMinimap();
     drawScenePanel();
     drawShotPanel();
     drawSettingsButton();
@@ -642,7 +647,8 @@ function draw() {
 // selection) is told to the observers of that part's path.
 engine.whenReady.then(() => {
     const paths = ["model", "model.battleSelector", "model.hitsPanel", "model.fileButtons", "model.overlayPanel",
-        "model.scenePanel", "model.shotPanel", "model.settingsMenu", "model.modPage", "model.settingsMenu.items", "model.settingsMenu.modes",
+        "model.scenePanel", "model.shotPanel", "model.settingsMenu", "model.modPage", "model.minimap",
+        "model.settingsMenu.items", "model.settingsMenu.modes",
         "model.shotPanel.shooter", "model.shotPanel.target", "model.shotPanel.sections", "model.shotPanel.devices",
         "model.shotPanel.tankParts",
         "model.shotPanel.shooter.modules", "model.shotPanel.target.modules"];

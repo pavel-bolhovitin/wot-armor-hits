@@ -1,0 +1,61 @@
+/* Minimap: the last part of the hits panel, at its bottom, on the panel's background. With little height the hits
+   list gives way first (HitsView.css), then the map: never less than its header. */
+.minimap {
+    display: none;
+    flex-direction: column;
+    flex-shrink: 1;
+    min-height: 29rem;
+    margin-top: auto;
+}
+
+.minimap__visible {
+    display: flex;
+}
+
+/* The header folds the map away and back: a line over it like the panel's, the title at the left, the arrow at the
+   right, down while the map is there (it folds down), up while it is folded. */
+.minimap__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    height: 28rem;
+    padding: 0 12rem;
+    border-top: 1rem solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+}
+
+.minimap__header:hover {
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+.minimap__title {
+    font-size: 14rem;
+    color: var(--color-general-secondary);
+}
+
+.minimap__arrow {
+    width: 9rem;
+    height: 6rem;
+    background: url(img://gui/maps/icons/lobby/armor_inspector/arrow.png) no-repeat center/contain;
+    transition: transform 150ms ease-in-out;
+}
+
+.minimap__folded .minimap__arrow {
+    transform: rotate(-180deg);
+}
+
+/* As wide as the panel inside its frame (440rem less 2rem), as high: the client's square image (300 x 300) scaled to
+   fit, in the middle when the height is less. */
+.minimap__map {
+    flex-shrink: 1;
+    min-height: 0;
+    height: 438rem;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+}
+
+.minimap__folded .minimap__map {
+    display: none;
+}

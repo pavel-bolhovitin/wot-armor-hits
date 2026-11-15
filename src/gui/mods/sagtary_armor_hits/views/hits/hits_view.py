@@ -14,7 +14,8 @@ The page passes mouse drags and the wheel over the 3D scene (onMoveSpace, onMous
 (hangar_camera.py), so the camera turns around the vehicle. The panels, the hangar camera and vehicle and the hit
 lines in the scene have presenters of their own, made here with the data they show. The file buttons (save the
 chosen battle to its file, load the battle files) are there when the view is given the battle files, the settings
-menu when it is given the mod's settings. The mod page card at the bottom right opens the mod's page on WGMods.
+menu when it is given the mod's settings. The mod page card at the bottom right opens the mod's page on WGMods. The
+minimap at the bottom left shows the selected battle's map.
 
 The presenters stop when the screen's lobby state is left (SCREEN_LEFT_EVENT), before the state puts the hangar
 back; the view itself closes later. Else the hit lines, which follow the vehicle on every frame, would see the
@@ -43,6 +44,7 @@ from gui.mods.sagtary_armor_hits.views.hits.hangar_camera import HangarCamera
 from gui.mods.sagtary_armor_hits.views.hits.hangar_vehicle import HangarVehiclePresenter
 from gui.mods.sagtary_armor_hits.views.hits.hit_lines import HitLinesPresenter
 from gui.mods.sagtary_armor_hits.views.hits.hits_panel import HitsPanelPresenter
+from gui.mods.sagtary_armor_hits.views.hits.minimap import MinimapPresenter
 from gui.mods.sagtary_armor_hits.views.hits.mod_page import ModPagePresenter
 from gui.mods.sagtary_armor_hits.views.hits.overlay_panel import OverlayPanelPresenter
 from gui.mods.sagtary_armor_hits.views.hits.scene_panel import ScenePanelPresenter
@@ -128,6 +130,7 @@ class HitsView(ViewComponent):
         hitsPanel = HitsPanelPresenter(model.hitsPanel, self._battleStore, battleSelector, {
             'received': text('hits/received'), 'dealt': text('hits/dealt')}, self._settings)
         self._presenters.append(hitsPanel)
+        self._presenters.append(MinimapPresenter(model.minimap, battleSelector))
         # The hangar shows the vehicle the hits panel shows the hits on.
         self._presenters.append(HangarVehiclePresenter(hitsPanel))
         # The hangar camera, free to look from under the vehicle; the hit lines move it for the shooter view.

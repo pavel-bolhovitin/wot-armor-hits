@@ -358,12 +358,14 @@ body {
 }
 
 /* Developer tools: small buttons under the battle selector, in the colors of the selector card. */
-/* Hits panel: tabs, result filters, the chosen hit's position and the list. */
-/* As high as its content; with many hits it shrinks to the free height and the list scrolls. */
+/* Hits panel: tabs, result filters, the chosen hit's position, the list and the minimap at its bottom
+   (components/Minimap/). */
+/* Down to the bottom of the column, so the minimap stays in the corner; with many hits the list shrinks to the free
+   height and scrolls. */
 .hitsPanel {
     display: none;
     flex-direction: column;
-    flex-grow: 0;
+    flex-grow: 1;
     flex-shrink: 1;
     min-height: 0;
     margin-top: 8rem;
@@ -485,11 +487,13 @@ body {
     transform: rotate(-90deg);
 }
 
+/* With little height the list gives way first, down to 4 rows (28rem and a 1rem line each); then the minimap does:
+   their flex-shrink weights. */
 .hitsPanel__list {
     display: flex;
     flex-grow: 0;
-    flex-shrink: 1;
-    min-height: 0;
+    flex-shrink: 1000;
+    min-height: 116rem;
     overflow: hidden;
 }
 

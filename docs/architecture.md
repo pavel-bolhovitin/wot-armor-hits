@@ -77,6 +77,7 @@ UI (`views/`), a package per screen or button. The view models, the data the Gam
 | `views/hits/armor_tooltip.py`             | presenter of the armor tooltip: the client's armor page tooltip (`ArmorTooltipWindow`) for the armor under the mouse, with the chosen hit's shell |
 | `views/hits/scene_panel.py`               | presenter of the scene panel at the bottom: lines of all shown hits on the chosen hit's vehicle (received side only) or of the chosen one, the shooter view (camera along the shell), the camera's reset; the page shows them as icons beside the overlay select, all on one plate with no plate or frame of their own (a toggle: its icon over a short line, both dim white when off, amber when on), icons the mod's, in `gui/maps/sagtary_armor_hits/scene/`, their names in the client's text tooltips (`HitsView.getTooltipData`), the select with none |
 | `views/hits/mod_page.py`                  | presenter of the mod page card, the mod's one link in the game: the red bug right of the settings (the page's bug button) opens a card with a line for bugs and ideas (their links are on the page), a line for the like, and a button that opens `MOD_PAGE_URL` (WGMods) in the system browser, as the client opens its external links (`IExternalLinksController.open`); the button shows the site's domain under its label; the icons are the mod's, in `gui/maps/sagtary_armor_hits/modPage/` |
+| `views/hits/minimap.py`                   | presenter of the minimap: the selected battle's map at the bottom of the hits panel, the client's map seen from above (`gui/maps/icons/map/<map>.png`, as on its maps training page); hidden when the client has no such image of the map |
 | `views/hits/file_buttons.py`              | presenter of the file buttons: save the chosen battle to its file, load all the battle files into the `BattleStore`; the result is a system message with the path |
 | `views/lobby_button/lobby_button.py`      | the hangar button that opens the screen; picks one of the two below |
 | `views/lobby_button/mods_list_entry.py`   | entry in the ModsList API mods list (optional)               |
@@ -90,6 +91,7 @@ UI (`views/`), a package per screen or button. The view models, the data the Gam
 | `views/models/shot_panel_model.py`        | view models of the shot panel: vehicle cards, modules, sections and their lines, the cells of modules and crew, the tank's tracks or wheels |
 | `views/models/scene_panel_model.py`       | view model of the scene panel                                |
 | `views/models/mod_page_model.py`          | view model of the mod page card                              |
+| `views/models/minimap_model.py`           | view model of the minimap                                    |
 
 ## Lobby button
 
@@ -194,7 +196,7 @@ The screen is built like the client's vehicle armor page (Vehicle Hub, `VehicleH
   `NOTIFY_CURSOR_OVER_3DSCENE`; the
   panels' container lets the mouse through (`pointer-events: none`), the panels do not.
 
-The page is in `gui/gameface/mods/sagtary_armor_hits/HitsView/`: `HitsView.html`, `HitsView.css`, `HitsView.js`, and its parts split off into components, the scene panel (`ScenePanel`), the settings button with its menu and the file buttons (`SettingsButton`) and the bug button (`BugButton`) first. A component is a folder `components/<Name>/` with its script and its styles: the script is an ES module that makes the part's nodes with `createElement` (`mount<Name>`, once, before the first drawing, so they are there at once) and draws them from the model (`draw<Name>`, on every change); `HitsView.js` imports it, `HitsView.html` links its styles. The helpers the scripts share are in `common/`: nodes (`dom.js`), the model's arrays (`model.js`), the client's tooltips (`tooltip.js`). Tried: a component's markup in an HTML file of its own, loaded with an `XMLHttpRequest`, comes after the scripts have run, so the page would have to wait for it.
+The page is in `gui/gameface/mods/sagtary_armor_hits/HitsView/`: `HitsView.html`, `HitsView.css`, `HitsView.js`, and its parts split off into components, the scene panel (`ScenePanel`), the settings button with its menu and the file buttons (`SettingsButton`) the bug button (`BugButton`) and the minimap (`Minimap`) first. A component is a folder `components/<Name>/` with its script and its styles: the script is an ES module that makes the part's nodes with `createElement` (`mount<Name>`, once, before the first drawing, so they are there at once) and draws them from the model (`draw<Name>`, on every change); `HitsView.js` imports it, `HitsView.html` links its styles. The helpers the scripts share are in `common/`: nodes (`dom.js`), the model's arrays (`model.js`), the client's tooltips (`tooltip.js`). Tried: a component's markup in an HTML file of its own, loaded with an `XMLHttpRequest`, comes after the scripts have run, so the page would have to wait for it.
 
 The battle selector shows the selected battle (map preview `gui/maps/icons/map/small/<map>.png`, map, result,
 vehicle, time) and opens the list of the session's battles grouped by date. Every text of it is the client's: names by
@@ -212,6 +214,8 @@ atlas, and the mod's own ricochet (a dashed way off a plate, on a pink square) a
 cyan, a dash inside), drawn in their style in the colors of the armor tooltip's results' texts. Its vehicle class icons are the client's damage log icons, taken from the
 client's battle atlas (`gui/flash/atlases/commonBattleLobby.dds`, positions from its `.xml`) as CSS sprites; the
 shell kinds are the client's damage log texts (`#ingame_gui:damageLog/shellType/*`).
+
+The minimap at the bottom of the hits panel shows the selected battle's map: the client's map seen from above, `gui/maps/icons/map/<map>.png` (300 x 300, the image of its maps training page, by the map folder name), which the client has for the maps of the random battles but not for some event and mode maps (the minimap is hidden then). The panel goes down to the bottom of the left column, so the map stays in the corner. Its header folds the map away and back, for this opening of the screen only. Unfolded it is as wide as the panel; with little height the hits list gives way first, down to 4 rows, then the map gets smaller, square and in the middle.
 
 The file buttons are in the settings menu under the settings, in every build: a floppy disk writes the chosen
 battle to `mods/sagtary_armor_hits/hits/hits_<battleId>.json` (`BATTLE_FILES_DIR`; off without a battle), over the
