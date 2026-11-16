@@ -8,7 +8,11 @@ player's vehicle; not those on a vehicle already destroyed (a wreck takes no dam
 without damage).
 
 - Vehicle.showDamageFromShot, showDamageFromExplosion: a hit. Its two vehicles go to the battle's vehicle catalog
-  first, as they are then (vehicle_catalog.py): the hit refers to them by their index there. The client decodes its
+  first, as they are then (vehicle_catalog.py): the hit refers to them by their index there. Then its snapshot
+  (snapshots.py): each vehicle the client knows of, alive, as its minimap finds it (matrix_factory: the vehicle's
+  entity when the client sees it, else the arena's positions), added to the catalog the same way; where it is, its
+  hull's heading (the entity's matrix) and its turret's (the turret's node) when the client sees it, the camera's
+  heading (its inverse view matrix) on the player's vehicle. The client decodes its
   points (DamageFromShotDecoder.parseHitPoint, by the parts of the vehicle's collision model); the hit gets the
   distance between its vehicles when the client sees the shooter, the battle time, the target's pose (its turret,
   gun, hull on its chassis and steered wheels, as the client shows them). A splash keeps where the shell burst, in
@@ -34,6 +38,7 @@ from vehicle_systems.tankStructure import TankPartIndexes, TankPartNames
 
 from gui.mods.sagtary_armor_hits.data import hit_parser, vehicle_catalog
 from gui.mods.sagtary_armor_hits.data.hits import ownShellIsGold
+from gui.mods.sagtary_armor_hits.data.snapshots import PositionSource, Snapshot, SnapshotVehicle
 
 _logger = logging.getLogger('sagtary.armor_hits')
 
@@ -41,6 +46,8 @@ _logger = logging.getLogger('sagtary.armor_hits')
 _SHOT_REASON = ATTACK_REASON_INDICES[ATTACK_REASON.SHOT]
 # The vehicle's dynamic component of the shell params switcher mechanic (its DefaultKeyName).
 _SWITCHER_COMPONENT = 'shellParamsSwitcherController'
+# Decimals of the positions and headings of a snapshot: about all the client's 32-bit floats have.
+_SNAPSHOT_DECIMALS = 6
 
 
 def _chassisPoint(vehicle, point):
@@ -87,6 +94,51 @@ def _partMatrix(vehicle, part):
         return Math.Matrix(vehicle.appearance.compoundModel.node(nodeName))
     except Exception:
         return None
+
+
+def _snapshotNumber(value):
+    # A position's coordinate or a heading of a snapshot, to its decimals.
+    return round(float(value), _SNAPSHOT_DECIMALS)
+
+
+def _cameraYaw():
+    # Radians of the camera's heading in the world; None when not known.
+    try:
+        return _snapshotNumber(Math.Matrix(BigWorld.camera().invViewMatrix).yaw)
+    except Exception:
+        return None
+
+
+def _snapshotVehicle(arena, vehicleID):
+    # The vehicle as the client knows it now, as its minimap finds it (matrix_factory.getVehicleMPAndLocation); None
+    # when it knows nothing of it or the vehicle is destroyed.
+    if not (arena.vehicles.get(vehicleID) or {}).get('isAlive'):
+        return None
+    vehicle = BigWorld.entities.get(vehicleID)
+    if vehicle is not None and getattr(vehicle, 'isStarted', False):
+        position, turret = vehicle.position, _partMatrix(vehicle, TankPartIndexes.TURRET)
+        return SnapshotVehicle(position=tuple(_snapshotNumber(item) for item in (position.x, position.y, position.z)),
+                               positionSource=PositionSource.VISIBLE,
+                               hullYaw=_snapshotNumber(Math.Matrix(vehicle.matrix).yaw),
+                               turretYaw=_snapshotNumber(turret.yaw) if turret is not None else None)
+    position = arena.positions.get(vehicleID)
+    if position is None:
+        return None
+    return SnapshotVehicle(position=tuple(_snapshotNumber(item) for item in position),
+                           positionSource=PositionSource.MINIMAP)
+
+
+def _snapshot(arena, catalog, playerVehicleID):
+    # (the catalog, the Snapshot) of the vehicles the client knows now, each added to the catalog first.
+    vehicles = []
+    for vehicleID in sorted(arena.vehicles):
+        vehicle = _snapshotVehicle(arena, vehicleID)
+        if vehicle is None:
+            continue
+        catalog, index = vehicle_catalog.withVehicle(catalog, vehicle_catalog.playerVehicle(arena, vehicleID))
+        vehicles.append(vehicle.replace(vehicleIndex=index,
+                                        cameraYaw=_cameraYaw() if vehicleID == playerVehicleID else None))
+    return catalog, Snapshot(vehicles=tuple(sorted(vehicles, key=lambda vehicle: vehicle.vehicleIndex)))
 
 
 def _vehiclePose(vehicle):
@@ -178,6 +230,11 @@ class HitCollector(object):
                 catalog, vehicle_catalog.playerVehicle(player.arena, attackerID))
         catalog, targetIndex = vehicle_catalog.withVehicle(
             catalog, vehicle_catalog.playerVehicle(player.arena, vehicle.id))
+        try:
+            catalog, snapshot = _snapshot(player.arena, catalog, getattr(player, 'playerVehicleID', None))
+        except Exception:
+            _logger.exception('hits: no snapshot in battle %s', battle.battleId)
+            snapshot = None
         if call.name == 'showDamageFromShot':
             hit = hit_parser.shotHit(field, call.get('damage'), _decodedPoints(vehicle, call.get('hitPoints')))
             if hit.vehiclePoints:
@@ -192,12 +249,14 @@ class HitCollector(object):
                                       _chassisPoint(vehicle, center) if center is not None else ())
         hit = hit.replace(time=_battleTime(player.arena), shooterVehicleIndex=shooterIndex,
                           targetVehicleIndex=targetIndex, distance=_distance(vehicle.id, attackerID),
-                          targetPose=_vehiclePose(vehicle))
+                          targetPose=_vehiclePose(vehicle),
+                          snapshotIndex=len(battle.snapshots) if snapshot is not None else None)
         key, now = (field, otherID), BigWorld.serverTime()
         hit = self._pairing.withPending(key, hit, now)
         hits = getattr(battle, field) + (hit,)
         self._pairing.noteHit(key, now, battle.battleId, len(hits) - 1)
-        self._store.update(battle.replace(vehicleCatalog=catalog, **{field: hits}))
+        snapshots = battle.snapshots + ((snapshot,) if snapshot is not None else ())
+        self._store.update(battle.replace(vehicleCatalog=catalog, snapshots=snapshots, **{field: hits}))
 
     def _shotDirection(self, vehicle, attackerID, point):
         matrix = _partMatrix(vehicle, point.tankPartIndex)

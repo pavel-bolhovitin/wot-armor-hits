@@ -28,6 +28,7 @@ from gui.mods.sagtary_armor_hits.config import BATTLES_LIMIT
 from gui.mods.sagtary_armor_hits.data import vehicle_catalog
 from gui.mods.sagtary_armor_hits.data.hits import DealtHit, ReceivedHit
 from gui.mods.sagtary_armor_hits.data.record import Record
+from gui.mods.sagtary_armor_hits.data.snapshots import Snapshot
 from gui.mods.sagtary_armor_hits.data.vehicle_catalog import CatalogVehicle
 
 _logger = logging.getLogger('sagtary.armor_hits')
@@ -77,12 +78,16 @@ class Battle(Record):
         ('isReplay', False),    # a replay watched, not a battle played
         ('winnerTeam', None),   # the team that won, 1 or 2, DRAW_TEAM for a draw; None when not known
         ('endReason', None),    # how the battle ended (constants.FINISH_REASON); None when not known
-        ('vehicleCatalog', ()), # each vehicle of each player the battle met (the player's own ones, the hits' ones),
-                                # once, in the order they were met (vehicle_catalog.CatalogVehicle)
+        ('vehicleCatalog', ()), # each vehicle of each player the battle met (the player's own ones, the hits' and
+                                # their snapshots' ones), once, in the order they were met
+                                # (vehicle_catalog.CatalogVehicle)
         ('receivedHits', ()),   # hits on the player's vehicle, in battle order (hits.ReceivedHit)
         ('dealtHits', ()),      # the player's hits on other vehicles, in battle order (hits.DealtHit)
+        ('snapshots', ()),      # where the vehicles the client knew were at each hit, in the order of the hits made,
+                                # for the minimap; each hit refers to its own (snapshots.Snapshot)
     )
-    NESTED = {'vehicleCatalog': CatalogVehicle, 'receivedHits': ReceivedHit, 'dealtHits': DealtHit}
+    NESTED = {'vehicleCatalog': CatalogVehicle, 'receivedHits': ReceivedHit, 'dealtHits': DealtHit,
+              'snapshots': Snapshot}
     __slots__ = tuple(name for name, _ in FIELDS)
 
     @property

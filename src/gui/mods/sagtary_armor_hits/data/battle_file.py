@@ -4,7 +4,8 @@ the battle on another client.
 
 BattleFiles keeps one file per battle in its folder, named by the battle id (FILE_NAME), so a battle saved again
 writes over its own file. Loading reads every file of the folder that has the name pattern (FILE_PATTERN): the files
-other players sent, put into the folder; deleting removes them all. A file is the fields of one Battle:
+other players sent, put into the folder; deleting removes them all. A file is the fields of one Battle, minified (here
+spread out):
     {
       "formatVersion": 3,         # version of this layout; a file of a newer layout is not read
       "appVersion": "0.1.0",      # version of the mod that wrote the file
@@ -59,8 +60,8 @@ def writeBattle(path, battle, appVersion):
         folder = os.path.dirname(path)
         if folder and not os.path.isdir(folder):
             os.makedirs(folder)
-        # separators: Python 2 puts a space at the line ends after the commas by default.
-        content = json.dumps(data, indent=2, separators=(',', ': '), ensure_ascii=False)
+        # Minified, without spaces: the snapshots of the hits make most of a file (battle_file_check.FILE_SIZE_LIMIT).
+        content = json.dumps(data, separators=(',', ':'), ensure_ascii=False)
         if isinstance(content, str):
             # Only ASCII texts: json gives a byte string.
             content = content.decode('ascii')

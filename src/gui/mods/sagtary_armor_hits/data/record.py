@@ -4,7 +4,8 @@
 A record class lists its fields in FIELDS as (name, default) and, in NESTED, the fields that hold other records
 ({name: record class}): a tuple of them, or one (None for none). A new field is a new line in FIELDS with a default,
 so the code that makes or reads a record keeps working, and a record read from a file without the field gets the
-default.
+default. A field that is None until known holds a whole number then (an index, a team); one that holds another kind
+names it in KINDS ({name: a value of that kind}), for the checks of a file (battle_file_check.py).
 """
 from collections import OrderedDict
 
@@ -12,6 +13,7 @@ from collections import OrderedDict
 class Record(object):
     FIELDS = ()
     NESTED = {}
+    KINDS = {}
     __slots__ = ()
 
     def __init__(self, **values):

@@ -11,6 +11,8 @@ hit_collector.py in battle.
 - The shooter and the target of a hit: their vehicles as they were at the hit, by their index in the battle's vehicle
   catalog (vehicle_catalog.py, Battle.vehicle): a player's vehicle can change within a battle (a respawn, another one
   chosen before the battle starts), so each hit keeps both.
+- Where the vehicles the client knew were at the hit: its snapshot, by its index in the battle's snapshots
+  (snapshots.py), for the minimap.
 - ReceivedHit: a hit on the player's vehicle: the modules and crew the shell damaged (DamagedDevice, HitCrit).
 - DealtHit: a hit of the player on another vehicle: the client tells only how many modules and crew it damaged.
 - DamagedDevice: a module or a crew member of the player's vehicle a shell damaged, by the client's own names (its
@@ -143,6 +145,9 @@ class Hit(Record):
                                 # (Battle.vehicleCatalog); None when not known
         ('targetVehicleIndex', None),
                                 # the vehicle that was hit: its index in the battle's vehicle catalog
+        ('snapshotIndex', None),
+                                # where the vehicles the client knew were at the hit: its index in the battle's
+                                # snapshots (Battle.snapshots); None when not known
         ('shellType', ''),      # the shell kind, a constants.SHELL_TYPES name: ARMOR_PIERCING, HIGH_EXPLOSIVE, ...
         ('caliber', 0.0),       # the shell's caliber in millimetres, as the hit points tell it; 0 when not known
         ('damage', 0),          # hit points the hit took

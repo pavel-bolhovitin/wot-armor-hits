@@ -5,12 +5,13 @@ There is one check, of the latest format: a file of an old format is converted f
 needs no checks of its own. The check goes by the fields of the records (Record.FIELDS, NESTED): a value of a file is
 taken only when it is of the kind of the field's default, else it is left out and the field gets its default. The
 kinds: a bool, a number (0.0), a whole number (0), a text (''), a position or a direction (x, y, z) or none of it (()),
-a whole number not known yet (None). So a new field with such a default is checked with no more code; another kind
-needs a line in _fits.
+a whole number not known yet (None); a value of another kind not known yet (None) by its kind in Record.KINDS. So a
+new field with such a default is checked with no more code; another kind needs a line in _fits.
 """
 
-# The largest file read: a battle's file has about 1 KB a hit, and all the files are read when the hangar shows.
-FILE_SIZE_LIMIT = 5 * 1024 * 1024
+# The largest file read: a battle's file has about 4 KB a hit, most of it the hit's snapshot, and all the files are
+# read when the hangar shows.
+FILE_SIZE_LIMIT = 20 * 1024 * 1024
 # The end of a battle's start time, Unix time in seconds: the client's date formats are not to get more than 32 bits.
 _TIME_LIMIT = 2 ** 31
 # The most items a list of a file can have: far above the hits of any battle, and the hits screen has a row for each.
@@ -60,7 +61,8 @@ def validFields(data, record):
         value = data.get(name)
         nested = record.NESTED.get(name)
         if nested is None:
-            if _fits(value, default):
+            kind = record.KINDS.get(name)
+            if _fits(value, default) if kind is None else value is None or _fits(value, kind):
                 fields[name] = value
         elif isinstance(default, tuple):
             if isinstance(value, list) and len(value) <= _LIST_LIMIT:

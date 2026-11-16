@@ -12,6 +12,9 @@ client's id of a player (battlePlayerId, the arena's vehicleID), so each player 
 order met (the client's are above 0): a player is a name and a team, a vehicle without a name is a player of its own.
 Format 3 keeps the player's last vehicle, not the one the player entered the battle with: it is the player's vehicle
 here. A vehicle with nothing known (a shooter the client did not know) gets no index: the default.
+
+Format 4 also keeps where the vehicles were at each hit (snapshots, a hit's snapshotIndex). Format 3 does not know
+it: the battle has no snapshots and its hits none (the defaults).
 """
 
 # The two vehicles of a hit in format 3 and their index fields in format 4.

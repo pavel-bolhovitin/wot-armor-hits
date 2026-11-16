@@ -12,10 +12,11 @@ In the fog of war the client does not know an enemy's vehicle until it is spotte
 a descriptor: it is the player's vehicle met last, or a new one when the player was not met yet. Once the client tells
 the descriptor, the player's vehicle without one gets it, instead of a new one; the hits that refer to it with it.
 
-The battle and its hits refer to the vehicles by their index in the catalog (Battle.playerVehicleIndex,
-Hit.shooterVehicleIndex and targetVehicleIndex; Battle.vehicle gives the vehicle of an index). A vehicle goes to the
-catalog before what refers to it: the player's vehicle when the battle starts and when it changes (battles.py), the
-two vehicles of a hit before the hit is made (hit_collector.py).
+The battle, its hits and their snapshots refer to the vehicles by their index in the catalog
+(Battle.playerVehicleIndex, Hit.shooterVehicleIndex and targetVehicleIndex, SnapshotVehicle.vehicleIndex;
+Battle.vehicle gives the vehicle of an index). A vehicle goes to the catalog before what refers to it: the player's
+vehicle when the battle starts and when it changes (battles.py), the two vehicles of a hit and then those of its
+snapshot before the hit is made (hit_collector.py).
 """
 import BigWorld
 
