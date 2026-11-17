@@ -77,8 +77,36 @@
     background-size: 100% 100%;
 }
 
-/* A vehicle at the chosen hit: a square mark, its middle on the vehicle's place, in the client's colors of its
-   own vehicle, the allies and the enemies (gui_colors.xml: whiteColor, greenColor, redColor). */
+/* The heading of a vehicle's turret: the mod's corner in the vehicle's side colour (the player's white), its place,
+   size, turn and scale set by Minimap.js about the apex, the middle of its bottom. */
+.minimap__turret {
+    position: absolute;
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    transform-origin: 50% 100%;
+}
+
+.minimap__turretPlayer {
+    background-image: url(img://gui/maps/sagtary_armor_hits/minimap/turret_player.png);
+}
+
+.minimap__turretAlly {
+    background-image: url(img://gui/maps/sagtary_armor_hits/minimap/turret_ally.png);
+}
+
+.minimap__turretEnemy {
+    background-image: url(img://gui/maps/sagtary_armor_hits/minimap/turret_enemy.png);
+}
+
+/* A vehicle at the chosen hit: its icon of the battle atlas, the atlas's texture behind it at its own size, the place,
+   the size, the anchor, the scale and the turn set by Minimap.js. */
+.minimap__vehicleIcon {
+    position: absolute;
+    background-repeat: no-repeat;
+}
+
+/* A vehicle without an icon: a square mark, its middle on the vehicle's place, in the client's colors of its own
+   vehicle, the allies and the enemies (gui_colors.xml: whiteColor, greenColor, redColor). */
 .minimap__vehicle {
     position: absolute;
     width: 6rem;

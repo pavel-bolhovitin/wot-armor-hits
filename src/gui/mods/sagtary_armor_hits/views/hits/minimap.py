@@ -12,12 +12,22 @@ The vehicles are those of the hit's snapshot (data/snapshots.py), each placed on
 the part of the world the image shows, as the client's lobby minimap places its points (MinimapLobby): x to the right,
 z up. Each is the player's, an ally's or an enemy's, by its player and team in the battle's vehicle catalog. A battle
 without snapshots (an older file) and a hit without one show none.
+
+They look as on the battle's minimap: the icons of the client's battle atlas (gui/flash/atlases/battleAtlas: the
+texture and the place of each icon in it, read once), which the page cuts out of the texture. The player's vehicle is
+the battle's own arrow (VIEW_POINT's PersonalArrowEntry), turned to its hull's heading; the others are the icons of
+their class and side (VehicleMinimapEntry: <class>_ally_green, <class>_enemy_red). A vehicle of an unknown class (the
+fog of war) has no icon: the client draws none either; the page shows a plain mark then, as it does for all without
+the atlas. They are drawn by their class, each over those before: heavy tanks first, then medium tanks, SPGs, tank
+destroyers, light tanks, the player's vehicle last, on top; those of an unknown class under all. Under all the icons,
+drawn before them, the heading of each turret the client saw: the mod's own corner
+(gui/maps/sagtary_armor_hits/minimap/turret_<kind>.png), its apex on the vehicle, turned to the turret's heading.
 """
 import logging
 
 import ResMgr
 
-from gui.mods.sagtary_armor_hits.data.client_names import clientText, mapArena, mapNames
+from gui.mods.sagtary_armor_hits.data.client_names import clientText, mapArena, mapNames, vehicleClass
 from gui.mods.sagtary_armor_hits.views.models.minimap_model import MinimapVehicleModel
 
 _logger = logging.getLogger('sagtary.armor_hits')
@@ -27,6 +37,20 @@ _MAP_PATH = 'gui/maps/icons/map/%s.png'
 _GAMEPLAY_MAP_PATH = 'gui/maps/icons/map/%s/%s.png'
 # "Minimap": the header of the minimap settings in the game settings.
 _TITLE_KEY = '#settings:game/fieldset/headerMinimap'
+# The client's battle atlas: its texture and the place of each icon in it.
+_ATLAS_TEXTURE = 'gui/flash/atlases/battleAtlas.dds'
+_ATLAS_ITEMS = 'gui/flash/atlases/battleAtlas.xml'
+# The player's arrow in the atlas, and where its point of the map is in it: the middle of the arrow, low in its
+# item (measured in the client 2.4.1.1). The other icons' point is their middle.
+_PLAYER_ICON = 'PersonalArrowEntry'
+_PLAYER_ICON_ANCHOR = (94.5, 201.5)
+# A vehicle's icon by its class tag and its side.
+_VEHICLE_ICON = '%s_%s'
+_ALLY_ICON = 'ally_green'
+_ENEMY_ICON = 'enemy_red'
+# The order the vehicles are drawn in, by their class tag, each over those before: a vehicle of an unknown class
+# first, the player's last, on top of all.
+_DRAW_ORDER = ('heavyTank', 'mediumTank', 'SPG', 'AT-SPG', 'lightTank')
 
 
 class VehicleKind(object):
@@ -34,6 +58,25 @@ class VehicleKind(object):
     PLAYER = 'player'
     ALLY = 'ally'
     ENEMY = 'enemy'
+
+
+# {icon name: (x, y, width, height)} of the atlas, read on the first use; empty without it.
+_atlasItems = None
+
+
+def _atlas():
+    global _atlasItems
+    if _atlasItems is None:
+        _atlasItems = {}
+        try:
+            section = ResMgr.openSection(_ATLAS_ITEMS)
+            for item in (section.values() if section is not None else ()):
+                _atlasItems[item.readString('name').strip()] = (
+                    item.readInt('x'), item.readInt('y'), item.readInt('width'), item.readInt('height'))
+            ResMgr.purge(_ATLAS_ITEMS, True)
+        except Exception:
+            _logger.exception('minimap: cannot read the battle atlas')
+    return _atlasItems
 
 
 def _mapImage(battle, gameplayName):
@@ -56,8 +99,26 @@ def _snapshot(battle, hit):
     return battle.snapshots[index]
 
 
+def _icon(kind, classTag):
+    # The name of the vehicle's icon in the atlas; '' for a vehicle of an unknown class.
+    if kind == VehicleKind.PLAYER:
+        return _PLAYER_ICON
+    if not classTag:
+        return ''
+    return _VEHICLE_ICON % (classTag, _ALLY_ICON if kind == VehicleKind.ALLY else _ENEMY_ICON)
+
+
+def _layer(kind, classTag):
+    # Where the vehicle is in the drawing order (_DRAW_ORDER): drawn after those of a lower layer, over them.
+    if kind == VehicleKind.PLAYER:
+        return len(_DRAW_ORDER) + 1
+    return _DRAW_ORDER.index(classTag) + 1 if classTag in _DRAW_ORDER else 0
+
+
 def _vehicles(battle, hit, bounds):
-    # [(x, y, kind)] of the vehicles of the hit's snapshot on the map's image, x and y 0 to 1 from its top left.
+    # [(x, y, kind, icon, rotation, turret)] of the vehicles of the hit's snapshot, in the order they are drawn
+    # (_DRAW_ORDER): on the map's image, x and y 0 to 1 from its top left; the name of the icon in the atlas; radians it
+    # is turned (the player's arrow, by the hull); the turret's heading in radians, None when not known.
     snapshot = _snapshot(battle, hit) if bounds is not None else None
     if snapshot is None:
         return []
@@ -77,8 +138,12 @@ def _vehicles(battle, hit, bounds):
             kind = VehicleKind.ALLY
         else:
             kind = VehicleKind.ENEMY
-        vehicles.append(((x - minX) / (maxX - minX), (maxZ - z) / (maxZ - minZ), kind))
-    return vehicles
+        rotation = vehicle.hullYaw if kind == VehicleKind.PLAYER and vehicle.hullYaw is not None else 0.0
+        classTag = vehicleClass(known.vehicleId)
+        vehicles.append((_layer(kind, classTag), ((x - minX) / (maxX - minX), (maxZ - z) / (maxZ - minZ), kind,
+                                                  _icon(kind, classTag), rotation, vehicle.turretYaw)))
+    vehicles.sort(key=lambda layered: layered[0])
+    return [vehicle for _, vehicle in vehicles]
 
 
 class MinimapPresenter(object):
@@ -88,7 +153,9 @@ class MinimapPresenter(object):
         self._hitsPanel = hitsPanel
 
     def init(self):
-        self._model.setTitle(clientText(_TITLE_KEY) or '')
+        with self._model.transaction() as model:
+            model.setTitle(clientText(_TITLE_KEY) or '')
+            model.setAtlas('img://' + _ATLAS_TEXTURE if _atlas() else '')
         self._hitsPanel.onChanged += self._update
         self._update()
 
@@ -107,14 +174,27 @@ class MinimapPresenter(object):
         except Exception:
             _logger.exception('minimap: cannot show the snapshot of the hit')
             vehicles = []
+        atlas = _atlas()
         with self._model.transaction() as model:
             model.setImage(_mapImage(battle, gameplayName))
             models = model.getVehicles()
             models.clear()
-            for x, y, kind in vehicles:
+            for x, y, kind, icon, rotation, turret in vehicles:
                 item = MinimapVehicleModel()
                 item.setX(x)
                 item.setY(y)
                 item.setKind(kind)
+                item.setHasTurret(turret is not None)
+                item.setTurret(turret if turret is not None else 0.0)
+                if icon in atlas:
+                    iconX, iconY, width, height = atlas[icon]
+                    anchorX, anchorY = _PLAYER_ICON_ANCHOR if icon == _PLAYER_ICON else (width / 2.0, height / 2.0)
+                    item.setIconX(iconX)
+                    item.setIconY(iconY)
+                    item.setIconWidth(width)
+                    item.setIconHeight(height)
+                    item.setAnchorX(anchorX)
+                    item.setAnchorY(anchorY)
+                    item.setRotation(rotation)
                 models.addViewModel(item)
             models.invalidate()
