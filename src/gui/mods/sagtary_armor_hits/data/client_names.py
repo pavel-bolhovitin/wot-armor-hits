@@ -100,6 +100,20 @@ def mapNames(mapId):
         return None
 
 
+def mapArena(arenaTypeId):
+    # (gameplay name, bounding box) of the map with its gameplay (the client's arenaTypeID), as the client's lobby
+    # minimap takes them (MinimapLobby): the box ((min x, min z), (max x, max z)), in the world's metres, is what the
+    # map's image shows; None when the client does not have it.
+    arenaType = ArenaType.g_cache.get(arenaTypeId)
+    if arenaType is None:
+        return None
+    try:
+        bottomLeft, upperRight = arenaType.boundingBox
+        return arenaType.gameplayName, ((bottomLeft.x, bottomLeft.y), (upperRight.x, upperRight.y))
+    except Exception:
+        return None
+
+
 def vehicleClass(vehicleId):
     # The vehicle class tag ('lightTank', 'mediumTank', 'heavyTank', 'AT-SPG', 'SPG'), or None.
     if not vehicleId:

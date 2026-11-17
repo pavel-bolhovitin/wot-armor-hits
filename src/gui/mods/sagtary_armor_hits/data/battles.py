@@ -103,6 +103,11 @@ class Battle(Record):
         return self.vehicleCatalog[index]
 
     @property
+    def arenaTypeId(self):
+        # The client's arenaTypeID of the battle's map with its gameplay (ArenaType.g_cache).
+        return (self.gameplayId << _GAMEPLAY_ID_SHIFT) | self.mapId
+
+    @property
     def playerVehicle(self):
         # The vehicle the player entered the battle with (CatalogVehicle).
         return self.vehicle(self.playerVehicleIndex)

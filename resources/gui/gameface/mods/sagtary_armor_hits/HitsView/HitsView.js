@@ -648,7 +648,7 @@ function draw() {
 engine.whenReady.then(() => {
     const paths = ["model", "model.battleSelector", "model.hitsPanel", "model.fileButtons", "model.overlayPanel",
         "model.scenePanel", "model.shotPanel", "model.settingsMenu", "model.modPage", "model.minimap",
-        "model.settingsMenu.items", "model.settingsMenu.modes",
+        "model.settingsMenu.items", "model.settingsMenu.modes", "model.minimap.vehicles",
         "model.shotPanel.shooter", "model.shotPanel.target", "model.shotPanel.sections", "model.shotPanel.devices",
         "model.shotPanel.tankParts",
         "model.shotPanel.shooter.modules", "model.shotPanel.target.modules"];

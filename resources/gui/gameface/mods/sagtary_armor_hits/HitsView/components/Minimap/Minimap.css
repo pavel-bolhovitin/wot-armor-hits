@@ -55,16 +55,48 @@
     transform: rotate(-180deg);
 }
 
-/* The rest of the minimap under the header: the client's square image (300 x 300) scaled to fit, in the middle when
-   the height is less than the width. */
+/* The rest of the minimap under the header: the room for the map's square, in its middle when the height is less than
+   the width. */
 .minimap__map {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-grow: 1;
     flex-shrink: 1;
     flex-basis: 0;
     min-height: 0;
+}
+
+/* The map: the client's square image (300 x 300) over the whole square, its side set by Minimap.js to the room's
+   smaller size; the vehicles' marks on it. */
+.minimap__square {
+    position: relative;
+    flex-shrink: 0;
+    overflow: hidden;
     background-repeat: no-repeat;
-    background-position: center;
-    background-size: contain;
+    background-size: 100% 100%;
+}
+
+/* A vehicle at the chosen hit: a square mark, its middle on the vehicle's place, in the client's colors of its
+   own vehicle, the allies and the enemies (gui_colors.xml: whiteColor, greenColor, redColor). */
+.minimap__vehicle {
+    position: absolute;
+    width: 6rem;
+    height: 6rem;
+    margin-left: -3rem;
+    margin-top: -3rem;
+}
+
+.minimap__vehiclePlayer {
+    background-color: rgb(255, 255, 255);
+}
+
+.minimap__vehicleAlly {
+    background-color: rgb(123, 236, 55);
+}
+
+.minimap__vehicleEnemy {
+    background-color: rgb(245, 8, 0);
 }
 
 .minimap__folded .minimap__map {

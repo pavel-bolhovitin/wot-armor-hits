@@ -15,7 +15,7 @@ The page passes mouse drags and the wheel over the 3D scene (onMoveSpace, onMous
 lines in the scene have presenters of their own, made here with the data they show. The file buttons (save the
 chosen battle to its file, load the battle files) are there when the view is given the battle files, the settings
 menu when it is given the mod's settings. The mod page card at the bottom right opens the mod's page on WGMods. The
-minimap at the bottom left shows the selected battle's map.
+minimap at the bottom left shows the selected battle's map and where the vehicles were at the chosen hit.
 
 The presenters stop when the screen's lobby state is left (SCREEN_LEFT_EVENT), before the state puts the hangar
 back; the view itself closes later. Else the hit lines, which follow the vehicle on every frame, would see the
@@ -130,7 +130,7 @@ class HitsView(ViewComponent):
         hitsPanel = HitsPanelPresenter(model.hitsPanel, self._battleStore, battleSelector, {
             'received': text('hits/received'), 'dealt': text('hits/dealt')}, self._settings)
         self._presenters.append(hitsPanel)
-        self._presenters.append(MinimapPresenter(model.minimap, battleSelector))
+        self._presenters.append(MinimapPresenter(model.minimap, hitsPanel))
         # The hangar shows the vehicle the hits panel shows the hits on.
         self._presenters.append(HangarVehiclePresenter(hitsPanel))
         # The hangar camera, free to look from under the vehicle; the hit lines move it for the shooter view.
