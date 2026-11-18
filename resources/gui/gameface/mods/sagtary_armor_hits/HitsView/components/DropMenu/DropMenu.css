@@ -1,0 +1,16 @@
+/* A drop-down menu (DropMenu.js). A line of it: a check box or an icon, its text; lighter on hover. */
+.dropMenu {
+    background-color: rgba(14, 16, 18, 0.96);
+    border: 1rem solid rgba(255, 255, 255, 0.1);
+    cursor: default;
+}
+
+.dropMenu__item {
+    display: flex;
+    padding: 6rem 14rem;
+    cursor: pointer;
+}
+
+.dropMenu__item:hover {
+    background-color: rgba(255, 255, 255, 0.04);
+}

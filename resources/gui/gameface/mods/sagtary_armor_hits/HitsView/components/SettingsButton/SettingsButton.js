@@ -5,11 +5,12 @@
 // battle to its file (a disk; off without a battle), delete all the battles (a bin; off without battles), which asks
 // first: the question and its two choices in its place, until a choice or the menu closes. A click elsewhere or Escape
 // closes the menu.
-// Its styles are in SettingsButton.css, linked in HitsView.html.
+// Its styles are in SettingsButton.css, linked in HitsView.html; the menu and the check box are components of their
+// own (components/DropMenu/, components/CheckBox/).
 import { element, withChildren } from "../../common/dom.js";
 import { arrayItems } from "../../common/model.js";
-
-const ESCAPE = 27;
+import { checkBox } from "../CheckBox/CheckBox.js";
+import { dropMenu, dropMenuItem } from "../DropMenu/DropMenu.js";
 
 // The nodes the drawing fills, made by mountSettingsButton.
 let nodes = null;
@@ -67,24 +68,17 @@ export function mountSettingsButton(parent) {
     const modesTitle = element("div", "settingsMenu__modesTitle");
     const modeRows = element("div", "settingsMenu__modeRows");
     const fileNodes = createFileButtons();
-    const menu = withChildren(element("div", "settingsMenu"), [
+    const menu = dropMenu("settingsMenu", [
         title,
         items,
         withChildren(element("div", "settingsMenu__modes"), [modesTitle, modeRows]),
         fileNodes.files,
-    ]);
+    ], () => setOpen(false));
     const root = withChildren(element("div", "settingsButton"), [element("div", "settingsButton__icon"), menu]);
     nodes = Object.assign({ root, title, items, modesTitle, modeRows }, fileNodes);
     root.addEventListener("click", (event) => {
         event.stopPropagation();
         setOpen(!root.classList.contains("settingsButton__open"));
-    });
-    menu.addEventListener("click", (event) => event.stopPropagation());
-    document.addEventListener("click", () => setOpen(false));
-    document.addEventListener("keydown", (event) => {
-        if (event.keyCode === ESCAPE) {
-            setOpen(false);
-        }
     });
     parent.appendChild(root);
 }
@@ -93,9 +87,8 @@ function drawSettings(model) {
     nodes.title.textContent = model.title;
     nodes.items.textContent = "";
     arrayItems(model.items).forEach((item) => {
-        const row = element("div", "settingsMenu__item");
+        const row = dropMenuItem("settingsMenu__item", [checkBox(item.isOn, "settingsMenu__box")]);
         row.classList.toggle("settingsMenu__itemOn", Boolean(item.isOn));
-        row.appendChild(withChildren(element("div", "settingsMenu__box"), [element("div", "settingsMenu__check")]));
         const text = withChildren(element("div", "settingsMenu__text"), [
             element("div", "settingsMenu__label", item.label),
         ]);

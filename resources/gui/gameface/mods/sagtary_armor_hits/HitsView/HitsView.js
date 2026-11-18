@@ -2,9 +2,12 @@ import { element } from "./common/dom.js";
 import { arrayItems } from "./common/model.js";
 import { clientTooltip } from "./common/tooltip.js";
 import { drawBugButton, mountBugButton } from "./components/BugButton/BugButton.js";
+import { drawHitsPanel, mountHitsPanel } from "./components/HitsPanel/HitsPanel.js";
 import { drawMinimap, mountMinimap } from "./components/Minimap/Minimap.js";
 import { drawScenePanel, mountScenePanel } from "./components/ScenePanel/ScenePanel.js";
+import { isDragEnding, SCROLL_STEP, ScrollView } from "./components/ScrollView/ScrollView.js";
 import { drawSettingsButton, mountSettingsButton } from "./components/SettingsButton/SettingsButton.js";
+import { shellPlate } from "./components/ShellPlate/ShellPlate.js";
 
 // The hits screen. Like the client's armor page, the page tells the lobby it supports the full screen mode: the
 // Flash lobby page then gives the window the whole screen and draws its header and footer over it in the new style
@@ -85,129 +88,6 @@ sceneInput.addEventListener("wheel", (event) => {
     event.preventDefault();
     moveSpace(0, 0, event.deltaY < 0 ? -WHEEL_STEP : WHEEL_STEP);
 });
-// Scroll view: a list (.scrollView__content, its rows in one block) that scrolls in its box (.scrollView) with a bar
-// right of it, like the client's barracks list (its VerticalScroll): arrows at the ends, the thumb on a rail, the
-// client's images. Gameface draws no bar of its own. The page scrolls the list itself: the wheel and the arrows
-// SCROLL_STEP (Gameface's own wheel step is a few pixels), a click on the rail a page, the thumb follows a drag.
-// Gameface gives a negative deltaY for the wheel turned towards the user (down). The bar shows only when the list
-// does not fit.
-// It follows the sizes, as the client's scroll does (useRefResizeObserver): of the visible list (shown, hidden, the
-// window resized) and of its rows (filled again); Gameface lays a list out a few frames after it changes.
-// The wheel's and the arrows' step in rem, the same in all lists and panels that scroll.
-const SCROLL_STEP = 90;
-// A drag of a thumb that ended this long ago in ms is still ending: the click it makes is not a click elsewhere.
-const DRAG_CLICK_MS = 300;
-let dragEndedAt = 0;
-
-function isDragEnding() {
-    return Date.now() - dragEndedAt < DRAG_CLICK_MS;
-}
-
-class ScrollView {
-    constructor(root) {
-        this.root = root;
-        this.content = root.querySelector(".scrollView__content");
-        const bar = element("div", "scrollView__bar");
-        this.up = element("div", "scrollView__button scrollView__up");
-        this.track = element("div", "scrollView__track");
-        this.track.appendChild(element("div", "scrollView__rail"));
-        this.thumb = element("div", "scrollView__thumb");
-        this.track.appendChild(this.thumb);
-        this.down = element("div", "scrollView__button scrollView__down");
-        bar.appendChild(this.up);
-        bar.appendChild(this.track);
-        bar.appendChild(this.down);
-        root.appendChild(bar);
-        // {y, scrollTop} where the thumb's drag started, null without a drag.
-        this.drag = null;
-
-        root.addEventListener("wheel", (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            if (event.deltaY) {
-                this.scrollBy(event.deltaY < 0 ? this.step() : -this.step());
-            }
-        });
-        this.up.addEventListener("click", () => this.scrollBy(-this.step()));
-        this.down.addEventListener("click", () => this.scrollBy(this.step()));
-        this.track.addEventListener("click", (event) => {
-            if (event.target === this.thumb || isDragEnding()) {
-                return;
-            }
-            const page = this.content.clientHeight;
-            this.scrollBy(event.clientY < this.thumb.getBoundingClientRect().top ? -page : page);
-        });
-        this.thumb.addEventListener("mousedown", (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            this.drag = { y: event.clientY, scrollTop: this.content.scrollTop };
-        });
-        window.addEventListener("mousemove", (event) => {
-            if (!this.drag) {
-                return;
-            }
-            const free = this.track.clientHeight - this.thumb.offsetHeight;
-            if (free > 0) {
-                this.content.scrollTop = this.drag.scrollTop + ((event.clientY - this.drag.y) * this.range()) / free;
-                this.update();
-            }
-        });
-        window.addEventListener("mouseup", () => {
-            if (this.drag) {
-                this.drag = null;
-                dragEndedAt = Date.now();
-            }
-        });
-        this.content.addEventListener("scroll", () => this.update());
-        const observer = new ResizeObserver(() => this.update());
-        observer.observe(this.content);
-        observer.observe(this.content.firstElementChild);
-    }
-
-    range() {
-        return this.content.scrollHeight - this.content.clientHeight;
-    }
-
-    step() {
-        return viewEnv.remToPx(SCROLL_STEP);
-    }
-
-    scrollBy(delta) {
-        this.content.scrollTop += delta;
-        this.update();
-    }
-
-    // Scrolls the least so that the part of the list from top, height high (pixels), is in view.
-    reveal(top, height) {
-        const content = this.content;
-        const view = content.clientHeight;
-        if (!view) {
-            return;
-        }
-        if (top < content.scrollTop) {
-            content.scrollTop = top;
-        } else if (top + height > content.scrollTop + view) {
-            content.scrollTop = top + height - view;
-        }
-        this.update();
-    }
-
-    update() {
-        const content = this.content;
-        const range = this.range();
-        const scrolls = range > 1;
-        this.root.classList.toggle("scrollView__scrolls", scrolls);
-        if (!scrolls) {
-            return;
-        }
-        this.thumb.style.height = `${(100 * content.clientHeight) / content.scrollHeight}%`;
-        const free = Math.max(0, this.track.clientHeight - this.thumb.offsetHeight);
-        this.thumb.style.top = `${free * Math.min(1, content.scrollTop / range)}px`;
-        this.up.classList.toggle("scrollView__buttonOff", content.scrollTop <= 0);
-        this.down.classList.toggle("scrollView__buttonOff", content.scrollTop >= range - 1);
-    }
-}
-
 sceneInput.addEventListener("mouseover", () => setOverScene(true));
 sceneInput.addEventListener("mouseout", () => {
     setOverScene(false);
@@ -322,143 +202,9 @@ document.addEventListener("keydown", (event) => {
     }
 });
 
-// Hits panel: tabs (received or dealt hits), result filters, the chosen hit and the list
-// (window.model.hitsPanel). Every click goes to the presenter, which fills the model again.
-const hitsPanel = document.querySelector(".hitsPanel");
-const hitsFilters = hitsPanel.querySelector(".hitsPanel__filters");
-const hitsList = hitsPanel.querySelector(".hitsPanel__items");
-const hitsScroll = new ScrollView(hitsPanel.querySelector(".hitsPanel__list"));
-// Rem a row of the list takes: .hitsPanel__row's height, its top border inside it (Gameface lays boxes out with the
-// borders inside the height: the rows are 28 pixels apart on the screen).
-const HIT_ROW_REM = 28;
-
-function hitIcon(kind, side) {
-    return element("div", `hitIcon hitIcon__${kind}__${side}`);
-}
-
-
-function chip(selected, onClick) {
-    const node = element("div", "hitsPanel__chip");
-    node.classList.toggle("hitsPanel__chipSelected", selected);
-    node.addEventListener("click", onClick);
-    return node;
-}
-
-// The list in columns, each as wide as its widest cell, so a cell wider in one row (a shell kind's text, which differs
-// by language) widens its whole column, not its row: Gameface has no tables or grid, a column of cells in a flex row
-// sizes to its content. The rows under the columns, as many and as high as their cells, draw the rows' backgrounds and
-// take the hover and the clicks: the columns let the mouse through. The vehicle and the player share the rest.
-function drawHitsList(hits, selectedHit, side, hasShellModes) {
-    hitsList.textContent = "";
-    const rows = element("div", "hitsPanel__rows");
-    const columns = element("div", "hitsPanel__columns");
-    hitsList.appendChild(rows);
-    hitsList.appendChild(columns);
-    const column = (kind) => {
-        const node = element("div", `hitsPanel__column hitsPanel__column__${kind}`);
-        columns.appendChild(node);
-        return node;
-    };
-    // The order of the client's damage log after the number and the time: damage, result, critical, shell (its mode
-    // on a side with a known mode in the battle), class, vehicle; the player last.
-    const numbers = column("number");
-    const times = column("time");
-    const damages = column("damage");
-    const results = column("result");
-    const criticals = column("critical");
-    const shells = column("shell");
-    const shellModes = hasShellModes ? column("shellModes") : null;
-    const classes = column("class");
-    const vehicles = column("vehicle");
-    const players = column("player");
-    // A cell of a text, or of an icon or a plate: centered in the row's height, at the column's left.
-    const cell = (parent, text, content) => {
-        const node = element("div", content ? "hitsPanel__cell hitsPanel__cellBox" : "hitsPanel__cell", text);
-        if (content) {
-            node.appendChild(content);
-        }
-        parent.appendChild(node);
-    };
-    hits.forEach((hit, index) => {
-        const row = element("div", "hitsPanel__row");
-        row.classList.toggle("hitsPanel__rowSelected", index === selectedHit);
-        row.addEventListener("click", () => window.model.hitsPanel.onHit({ index }));
-        rows.appendChild(row);
-        cell(numbers, String(hit.number));
-        cell(times, hit.time);
-        // No damage when the hit took none.
-        cell(damages, hit.damage ? String(hit.damage) : "");
-        cell(results, undefined, hitIcon(hit.result, side));
-        // The critical icon of a hit that damaged modules or crew.
-        const critical = hitIcon("critical", side);
-        critical.classList.toggle("hitsPanel__criticalNone", !hit.hasCrits);
-        cell(criticals, undefined, critical);
-        // The shell plate at the column's left.
-        const shell = element("div", "hitsPanel__shell", hit.shellText);
-        shell.classList.toggle("hitsPanel__shellNone", !hit.shellText);
-        shell.classList.toggle("hitsPanel__shellGold", Boolean(hit.isGoldShell));
-        shell.classList.toggle("hitsPanel__shellSpg", Boolean(hit.isSpgShell));
-        shell.title = hit.shellName;
-        cell(shells, undefined, shell);
-        // The icon of the shell's mode; none on a row of an unknown mode.
-        if (shellModes) {
-            cell(shellModes, undefined, element("div", hit.shellMode
-                ? `hitsPanel__shellMode hitsPanel__shellMode__${hit.shellMode}` : "hitsPanel__shellMode"));
-        }
-        cell(classes, undefined,
-            element("div", hit.vehicleClass ? `hitIcon hitIcon__class__${hit.vehicleClass}` : "hitIcon"));
-        cell(vehicles, hit.vehicleName);
-        cell(players, hit.playerName);
-    });
-}
-
-function drawHitsPanel() {
-    const model = window.model && window.model.hitsPanel;
-    hitsPanel.classList.toggle("hitsPanel__visible", Boolean(model && model.isVisible));
-    if (!model || !model.isVisible) {
-        return;
-    }
-    const side = model.side;
-    hitsPanel.querySelectorAll(".hitsPanel__tab").forEach((tab) => {
-        const tabSide = tab.getAttribute("data-side");
-        tab.textContent = tabSide === "received" ? model.receivedLabel : model.dealtLabel;
-        tab.classList.toggle("hitsPanel__tabSelected", tabSide === side);
-    });
-
-    hitsFilters.textContent = "";
-    arrayItems(model.filters).forEach((filter) => {
-        const id = filter.id;
-        const node = chip(id === model.selectedFilter, () => window.model.hitsPanel.onFilter({ id }));
-        if (id) {
-            node.appendChild(hitIcon(id, side));
-        } else {
-            node.appendChild(document.createTextNode(model.allLabel));
-        }
-        node.appendChild(element("span", "hitsPanel__count", String(filter.count)));
-        hitsFilters.appendChild(node);
-    });
-
-    const hits = arrayItems(model.hits);
-    hitsPanel.querySelector(".hitsPanel__position").textContent = hits.length
-        ? `${model.selectedHit + 1} / ${hits.length}`
-        : "0 / 0";
-    drawHitsList(hits, model.selectedHit, side, model.hasShellModes);
-    // The selected hit in view (the steps, a hit chosen elsewhere). Its place comes from its number: the rows are all
-    // as high, and Gameface lays the new rows out a few frames later.
-    if (model.selectedHit >= 0 && model.selectedHit < hits.length) {
-        const rowHeight = viewEnv.remToPx(HIT_ROW_REM);
-        hitsScroll.reveal(model.selectedHit * rowHeight, rowHeight);
-    }
-}
-
-hitsPanel.querySelectorAll(".hitsPanel__tab").forEach((tab) => {
-    tab.addEventListener("click", () => window.model.hitsPanel.onSide({ side: tab.getAttribute("data-side") }));
-});
-hitsPanel.querySelector(".hitsPanel__prev").addEventListener("click", () => window.model.hitsPanel.onStep({ delta: -1 }));
-hitsPanel.querySelector(".hitsPanel__next").addEventListener("click", () => window.model.hitsPanel.onStep({ delta: 1 }));
-
-// Minimap at the bottom of the hits panel: a component of its own (components/Minimap/), at the end of the panel.
-mountMinimap(hitsPanel);
+// Hits panel under the battle selector: a component of its own (components/HitsPanel/), at the end of the left
+// column; the minimap (components/Minimap/) at the end of the panel.
+mountMinimap(mountHitsPanel(document.querySelector(".hitsView__left")));
 
 // Scene panel at the bottom: a component of its own (components/ScenePanel/), at the end of the content.
 mountScenePanel(document.querySelector(".hitsView__content"));
@@ -558,10 +304,7 @@ function drawShotPanel() {
         head.appendChild(title);
         // The shell kind on a plate beside the penetration, like in the hits list: gold for a premium shell.
         if (section.kind === "penetration" && model.shellText) {
-            const plate = element("div", "hitsPanel__shell shotPanel__shell", model.shellText);
-            plate.classList.toggle("hitsPanel__shellGold", Boolean(model.isGoldShell));
-            plate.classList.toggle("hitsPanel__shellSpg", Boolean(model.isSpgShell));
-            head.appendChild(plate);
+            head.appendChild(shellPlate(model.shellText, model.isGoldShell, model.isSpgShell, "shotPanel__shell"));
         }
         shotSections.appendChild(head);
         arrayItems(section.rows).forEach((item) => {
@@ -646,7 +389,8 @@ function draw() {
 // The page draws again on a change of the model or of any of its parts: a change inside a part (its arrays, its
 // selection) is told to the observers of that part's path.
 engine.whenReady.then(() => {
-    const paths = ["model", "model.battleSelector", "model.hitsPanel", "model.fileButtons", "model.overlayPanel",
+    const paths = ["model", "model.battleSelector", "model.hitsPanel", "model.hitsPanel.sides",
+        "model.hitsPanel.results", "model.hitsPanel.hits", "model.fileButtons", "model.overlayPanel",
         "model.scenePanel", "model.shotPanel", "model.settingsMenu", "model.modPage", "model.minimap",
         "model.settingsMenu.items", "model.settingsMenu.modes", "model.minimap.vehicles",
         "model.shotPanel.shooter", "model.shotPanel.target", "model.shotPanel.sections", "model.shotPanel.devices",

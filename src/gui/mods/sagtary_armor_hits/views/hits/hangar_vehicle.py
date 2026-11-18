@@ -2,16 +2,16 @@
 """Hangar vehicle of the hits screen: the vehicle the hits panel shows the hits on.
 
 HangarVehiclePresenter puts the vehicle into the hangar like the client's Vehicle Hub does, as the preview vehicle
-(g_currentPreviewVehicle): the target of the chosen hit, without one on the received side the player's last vehicle of
-the battle. The vehicle has the modules it had in the battle (its compact descriptor), as the hit points are on them;
-a battle recorded without it shows the default modules. No vehicle has cosmetics, the player's own neither: no
-camouflage, paint, decals or style, only the national emblems (the client's empty outfit; without an outfit the
-client puts a style locked on the vehicle), and no marks of excellence on the gun: the client draws there the
+(g_currentPreviewVehicle): the target of the chosen hit, without one (the received side: the filter has its hits) the
+player's vehicle of the battle. The vehicle has the modules it had in the battle (its compact descriptor), as the hit
+points are on them; a battle recorded without it shows the default modules. No vehicle has cosmetics, the player's own
+neither: no camouflage, paint, decals or style, only the national emblems (the client's empty outfit; without an outfit
+the client puts a style locked on the vehicle), and no marks of excellence on the gun: the client draws there the
 player's own marks of the vehicle type, so while the screen is open the hangar vehicle's method that gives them
-(HangarVehicleAppearance._getThisVehicleDossierInsigniaRank) gives none. Without a vehicle to show (no battles, no
-hits on the dealt side, a vehicle the client does not have) the hangar is empty (HangarSpace.removeVehicle, as the
-client's vehicle preview does before it loads its own). When the screen closes, the hangar shows the current vehicle
-again.
+(HangarVehicleAppearance._getThisVehicleDossierInsigniaRank) gives none. Without a vehicle to show (no battles, no hit
+with a filter of dealt hits only, a vehicle the client does not have) the hangar is empty (HangarSpace.removeVehicle, as
+the client's vehicle preview does before it loads its own). When the screen closes, the hangar shows the current
+vehicle again.
 """
 import logging
 
@@ -47,7 +47,7 @@ def _shownVehicle(vehicleId, descr):
 
 
 def hitsVehicle(battle, side, hit):
-    # The vehicle the hits are on: (intCD, compact descriptor or None); _NO_VEHICLE without one: no battle, no hits on
+    # The vehicle the hits are on: (intCD, compact descriptor or None); _NO_VEHICLE without one: no battle, no hit on
     # the dealt side, a vehicle the client does not have. Without a chosen hit on the received side, the vehicle the
     # player entered the battle with.
     if battle is None or (hit is None and side == DEALT):

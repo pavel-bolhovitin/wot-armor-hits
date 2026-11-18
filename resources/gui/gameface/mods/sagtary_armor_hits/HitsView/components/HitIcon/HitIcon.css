@@ -1,0 +1,75 @@
+/* A hit icon (HitIcon.js), the client's damage log icons (16 x 16), from its battle atlas: the vehicle classes; the results below are the
+   mod's own copies. */
+.hitIcon {
+    width: 16rem;
+    height: 16rem;
+    flex-shrink: 0;
+    background-image: url(img://gui/flash/atlases/commonBattleLobby.dds);
+    background-size: 1024rem 524rem;
+    background-repeat: no-repeat;
+}
+
+/* The hit results' icons, copied into the mod: the damage log's red and green damage, its yellow critical (the shot
+   panel's modules section, a hit with crits in the list) and its shield of a blocked hit, cut out of the atlas; the mod's ricochet and no damage,
+   drawn in their style, in the colors of the armor tooltip's results' texts. */
+.hitIcon__damage__received,
+.hitIcon__damage__dealt,
+.hitIcon__critical__received,
+.hitIcon__critical__dealt,
+.hitIcon__blocked__received,
+.hitIcon__blocked__dealt,
+.hitIcon__ricochet__received,
+.hitIcon__ricochet__dealt,
+.hitIcon__noDamage__received,
+.hitIcon__noDamage__dealt {
+    background-size: 16rem 16rem;
+    background-position: 0 0;
+}
+
+.hitIcon__damage__received {
+    background-image: url(img://gui/maps/sagtary_armor_hits/hits/damage_received.png);
+}
+
+.hitIcon__damage__dealt {
+    background-image: url(img://gui/maps/sagtary_armor_hits/hits/damage_dealt.png);
+}
+
+.hitIcon__critical__received,
+.hitIcon__critical__dealt {
+    background-image: url(img://gui/maps/sagtary_armor_hits/hits/critical.png);
+}
+
+.hitIcon__blocked__received,
+.hitIcon__blocked__dealt {
+    background-image: url(img://gui/maps/sagtary_armor_hits/hits/blocked.png);
+}
+
+.hitIcon__ricochet__received,
+.hitIcon__ricochet__dealt {
+    background-image: url(img://gui/maps/sagtary_armor_hits/hits/ricochet.png);
+}
+
+.hitIcon__noDamage__received,
+.hitIcon__noDamage__dealt {
+    background-image: url(img://gui/maps/sagtary_armor_hits/hits/no_damage.png);
+}
+
+.hitIcon__class__light {
+    background-position: -796rem -410rem;
+}
+
+.hitIcon__class__middle {
+    background-position: -837rem -395rem;
+}
+
+.hitIcon__class__heavy {
+    background-position: -854rem -378rem;
+}
+
+.hitIcon__class__destroyer {
+    background-position: -1001rem -153rem;
+}
+
+.hitIcon__class__art {
+    background-position: -982rem -292rem;
+}

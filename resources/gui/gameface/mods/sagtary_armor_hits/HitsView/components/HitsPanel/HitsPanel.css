@@ -1,0 +1,408 @@
+/* Hits panel under the battle selector (HitsPanel.js): the header (the filter, the chosen hit's position), the
+   filter's menu over the list, the list, and the minimap at its bottom (components/Minimap/). Down to the bottom of
+   the column: the list and the minimap share the height under the header (their flex). */
+.hitsPanel {
+    display: none;
+    position: relative;
+    flex-direction: column;
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 0;
+    margin-top: 8rem;
+    background-color: rgba(14, 16, 18, 0.88);
+    border: 1rem solid rgba(255, 255, 255, 0.1);
+    pointer-events: auto;
+}
+
+.hitsPanel__visible {
+    display: flex;
+}
+
+/* The header: the filter at the left, the position and its arrows at the right after a line. The buttons are text
+   and icons only, no frames: the hover brightens them. */
+.hitsPanel__header {
+    display: flex;
+    align-items: stretch;
+    flex-shrink: 0;
+    height: 34rem;
+    border-bottom: 1rem solid rgba(255, 255, 255, 0.1);
+}
+
+/* The rest of the header's width, the filter at its left. */
+.hitsPanel__filterBox {
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+    min-width: 0;
+}
+
+/* The filter: the client's carousel filter icon, what the list shows, the arrow of its menu; the accent while the menu
+   is open. */
+.hitsPanel__filter {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    height: 26rem;
+    margin-left: 4rem;
+    padding: 0 6rem;
+    font-size: 13rem;
+    font-weight: bold;
+    color: var(--color-general-primary);
+    cursor: pointer;
+}
+
+.hitsPanel__filter:hover {
+    color: #ffffff;
+}
+
+.hitsPanel__menuOpen .hitsPanel__filter {
+    color: #f2c47e;
+}
+
+.hitsPanel__filterIcon {
+    width: 16rem;
+    height: 16rem;
+    flex-shrink: 0;
+    margin-right: 6rem;
+    background: url(img://gui/maps/icons/hangar/filter/filter_button.png) no-repeat center;
+    background-size: 16rem 16rem;
+    opacity: 0.8;
+}
+
+.hitsPanel__filter:hover .hitsPanel__filterIcon,
+.hitsPanel__menuOpen .hitsPanel__filterIcon {
+    opacity: 1;
+}
+
+/* What the list shows: all hits, or the chosen side's mark and name, the chosen results' icons (a result's name when
+   it is the only one). */
+.hitsPanel__summary {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+
+.hitsPanel__summary .hitsPanel__sideMark,
+.hitsPanel__summary .hitIcon {
+    margin-right: 5rem;
+}
+
+.hitsPanel__summaryText {
+    margin-right: 8rem;
+    white-space: nowrap;
+}
+
+/* The arrow down of the menu: the client's arrow of the armor page, as the position's arrows. */
+.hitsPanel__caret {
+    width: 10rem;
+    height: 10rem;
+    flex-shrink: 0;
+    background: url(img://gui/maps/icons/lobby/armor_inspector/arrow.png) no-repeat center;
+    background-size: 9rem 6rem;
+    opacity: 0.7;
+}
+
+.hitsPanel__menuOpen .hitsPanel__caret {
+    transform: rotate(-180deg);
+}
+
+/* The side of a hit: a bar of its color, red on the player, green by the player (the minimap's colors). */
+.hitsPanel__sideMark {
+    width: 4rem;
+    height: 12rem;
+    flex-shrink: 0;
+}
+
+.hitsPanel__sideMark__received {
+    background-color: #f5281a;
+}
+
+.hitsPanel__sideMark__dealt {
+    background-color: #7bec37;
+}
+
+/* The chosen hit's place among the shown ones and the arrows that step through them, set apart by a line. */
+.hitsPanel__nav {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    padding: 0 4rem 0 10rem;
+    border-left: 1rem solid rgba(255, 255, 255, 0.1);
+}
+
+.hitsPanel__position {
+    margin-right: 4rem;
+    font-size: 13rem;
+    font-weight: bold;
+    white-space: nowrap;
+    color: var(--color-general-primary);
+}
+
+.hitsPanel__step {
+    width: 24rem;
+    height: 24rem;
+    background: url(img://gui/maps/icons/lobby/armor_inspector/arrow.png) no-repeat center;
+    background-size: 9rem 6rem;
+    opacity: 0.7;
+    cursor: pointer;
+}
+
+.hitsPanel__step:hover {
+    opacity: 1;
+}
+
+/* The client's arrow points down: the previous hit is the one above. */
+.hitsPanel__prev {
+    transform: rotate(-180deg);
+}
+
+/* The filter's menu under the header, over the list, a drop-down menu like the settings' (components/DropMenu/):
+   the sides, a line, the results; each line a check box, the side's mark or the result's icon, the name and how many
+   hits it has. */
+.hitsPanel__menu {
+    display: none;
+    position: absolute;
+    top: 34rem;
+    left: 8rem;
+    z-index: 10;
+    width: 280rem;
+    padding: 6rem 0;
+}
+
+.hitsPanel__menuOpen .hitsPanel__menu {
+    display: block;
+}
+
+.hitsPanel__menuGroup + .hitsPanel__menuGroup {
+    margin-top: 6rem;
+    padding-top: 6rem;
+    border-top: 1rem solid rgba(255, 255, 255, 0.08);
+}
+
+.hitsPanel__menuItem {
+    align-items: center;
+}
+
+.hitsPanel__menuItem .checkBox {
+    margin-right: 10rem;
+}
+
+/* The mark or the icon in a column of the icons' width, so the names start at the same place. */
+.hitsPanel__menuMark {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16rem;
+    height: 16rem;
+    flex-shrink: 0;
+    margin-right: 8rem;
+}
+
+.hitsPanel__menuLabel {
+    flex-grow: 1;
+    min-width: 0;
+    font-size: 14rem;
+    line-height: 17rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--color-general-secondary);
+}
+
+.hitsPanel__menuItem:hover .hitsPanel__menuLabel,
+.hitsPanel__menuItemOn .hitsPanel__menuLabel {
+    color: var(--color-general-primary);
+}
+
+.hitsPanel__menuCount {
+    flex-shrink: 0;
+    margin-left: 10rem;
+    font-size: 13rem;
+    color: var(--color-general-tertiary);
+}
+
+/* The list and the minimap (Minimap.css) share the height under the header equally, the same flex; the minimap stops
+   at its square map, the list takes the rest. The list never gets lower than 4 rows (28rem each, the line in them), the
+   minimap has no such limit. Gameface counts an item's min-height as used but grows the item from its flex-basis: a
+   flex-basis under the min-height leaves that much empty at the bottom of the panel. So both start from the list's
+   minimum. */
+.hitsPanel__list {
+    display: flex;
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 112rem;
+    min-height: 112rem;
+    overflow: hidden;
+}
+
+/* The list (drawList of HitsPanel.js): the columns over the rows' backgrounds. */
+.hitsPanel__items {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.hitsPanel__rows {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* A row: the hit's side as a bar at its left and a faint gradient from it, in the side's color; a frame inside its
+   height, light on hover, the accent's on the chosen hit. Its height is HIT_ROW_REM of HitsPanel.js and the cells'
+   height: change them together. */
+.hitsPanel__row {
+    position: relative;
+    flex-shrink: 0;
+    height: 28rem;
+    border: 1rem solid transparent;
+    border-top-color: rgba(255, 255, 255, 0.05);
+    cursor: pointer;
+}
+
+.hitsPanel__row__received {
+    background: linear-gradient(to right, rgba(245, 40, 26, 0.08) 0, rgba(245, 40, 26, 0) 80rem);
+}
+
+.hitsPanel__row__dealt {
+    background: linear-gradient(to right, rgba(123, 236, 55, 0.08) 0, rgba(123, 236, 55, 0) 80rem);
+}
+
+.hitsPanel__rowBar {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 4rem;
+}
+
+.hitsPanel__row__received .hitsPanel__rowBar {
+    background-color: #f5281a;
+}
+
+.hitsPanel__row__dealt .hitsPanel__rowBar {
+    background-color: #7bec37;
+}
+
+.hitsPanel__row:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.hitsPanel__rowSelected,
+.hitsPanel__rowSelected:hover {
+    border-color: rgba(224, 162, 72, 0.7);
+}
+
+/* Left: a row's frame, its bar and a gap. The mouse goes through to the rows. The panel's width is fixed
+   (.hitsView__left): what does not fit is cut, never drawn past its edge. */
+.hitsPanel__columns {
+    position: relative;
+    display: flex;
+    overflow: hidden;
+    padding: 0 10rem 0 13rem;
+    font-size: 13rem;
+    color: var(--color-general-secondary);
+    pointer-events: none;
+}
+
+/* As wide as its widest cell; the gap after it is its right margin. */
+.hitsPanel__column {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    margin-right: 6rem;
+}
+
+.hitsPanel__cell {
+    height: 28rem;
+    line-height: 28rem;
+    white-space: nowrap;
+}
+
+.hitsPanel__cellBox {
+    display: flex;
+    align-items: center;
+}
+
+.hitsPanel__column__time {
+    min-width: 32rem;
+    color: var(--color-general-tertiary);
+}
+
+/* The chosen hit's time in the accent of its frame. */
+.hitsPanel__column__time .hitsPanel__cellSelected {
+    color: #f2c47e;
+}
+
+.hitsPanel__column__damage {
+    min-width: 28rem;
+    font-weight: bold;
+    text-align: right;
+    color: var(--color-general-primary);
+}
+
+.hitsPanel__criticalNone {
+    visibility: hidden;
+}
+
+/* The plate and the mode icon keep their own right margin. */
+.hitsPanel__column__shell,
+.hitsPanel__column__shellModes {
+    margin-right: 0;
+}
+
+/* A shell kind's text of a language too long for a plate is cut: the vehicle and the player keep their room. */
+.hitsPanel__column__shell .shellPlate {
+    max-width: 64rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* The vehicle and the player share the rest, a long name cut. */
+.hitsPanel__column__vehicle,
+.hitsPanel__column__player {
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 0;
+    min-width: 0;
+}
+
+.hitsPanel__column__vehicle .hitsPanel__cell,
+.hitsPanel__column__player .hitsPanel__cell {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.hitsPanel__column__vehicle {
+    color: var(--color-general-primary);
+}
+
+.hitsPanel__column__player {
+    margin-right: 0;
+    font-size: 12rem;
+    color: var(--color-general-tertiary);
+}
+
+/* The shell mode's column after the shell plate (the shell params switcher's mod icons, cut out of the client's
+   damage log atlas); empty on a row of an unknown mode. */
+.hitsPanel__shellMode {
+    width: 16rem;
+    height: 16rem;
+    flex-shrink: 0;
+    margin-right: 6rem;
+    background-repeat: no-repeat;
+    background-size: 16rem 16rem;
+}
+
+.hitsPanel__shellMode__standard {
+    background-image: url(img://gui/maps/sagtary_armor_hits/hits/shell_standard.png);
+}
+
+.hitsPanel__shellMode__calibrated {
+    background-image: url(img://gui/maps/sagtary_armor_hits/hits/shell_calibrated.png);
+}

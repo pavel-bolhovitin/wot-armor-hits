@@ -11,7 +11,7 @@ See every hit of your battles on your tank in the hangar: where you were hit, wh
 
 ## Features
 
-- **On me / By me**: hits you received and dealt, filtered by damage, blocked, ricochet, no damage.
+- **On me / By me**: hits you received and dealt in one list in battle order, filtered by side and by damage, blocked, ricochet, no damage.
 - **3D way of the shell** on the tank, turret and gun turned as at the moment of the hit.
 - **Shooter view**: the camera looks along the shell.
 - **Details**: damage, penetration, armor, impact angle, distance, damaged modules and crew.

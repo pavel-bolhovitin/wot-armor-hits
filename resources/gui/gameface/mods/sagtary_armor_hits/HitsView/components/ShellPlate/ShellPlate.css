@@ -1,0 +1,39 @@
+/* A shell plate (ShellPlate.js), the hits list's and the shot panel's: the shell kind on a plate, like in the client's damage log (its atlas:
+   whiteCenter, goldCenter): white at half opacity, gold for a premium shell, the text dark. */
+.shellPlate {
+    flex-shrink: 0;
+    min-width: 24rem;
+    height: 14rem;
+    margin-right: 6rem;
+    padding: 0 4rem;
+    font-size: 11rem;
+    font-weight: bold;
+    line-height: 14rem;
+    text-align: center;
+    color: #121212;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 3rem;
+}
+
+.shellPlate__gold {
+    background-color: #ffc262;
+}
+
+/* An SPG's shell, inverted like in the client's damage log: the plate's text color as its background, its background
+   color as the frame and the text; gold for a premium shell. The frame is inside the plate's height. */
+.shellPlate__spg {
+    box-sizing: border-box;
+    line-height: 12rem;
+    color: rgba(255, 255, 255, 0.5);
+    background-color: #121212;
+    border: 1rem solid rgba(255, 255, 255, 0.5);
+}
+
+.shellPlate__spg.shellPlate__gold {
+    color: #ffc262;
+    border-color: #ffc262;
+}
+
+.shellPlate__none {
+    visibility: hidden;
+}

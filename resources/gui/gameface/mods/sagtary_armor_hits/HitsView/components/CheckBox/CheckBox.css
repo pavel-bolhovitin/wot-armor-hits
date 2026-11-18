@@ -1,0 +1,30 @@
+/* A check box (CheckBox.js): a frame; on, the accent's frame and fill and its check. */
+.checkBox {
+    position: relative;
+    width: 14rem;
+    height: 14rem;
+    flex-shrink: 0;
+    border: 1rem solid rgba(255, 255, 255, 0.35);
+}
+
+.checkBox__on {
+    border-color: #e0a248;
+    background-color: rgba(224, 162, 72, 0.25);
+}
+
+/* The check: two sides of a rotated box. */
+.checkBox__check {
+    display: none;
+    position: absolute;
+    left: 4rem;
+    top: 1rem;
+    width: 4rem;
+    height: 8rem;
+    border-right: 2rem solid #f2c47e;
+    border-bottom: 2rem solid #f2c47e;
+    transform: rotate(45deg);
+}
+
+.checkBox__on .checkBox__check {
+    display: block;
+}

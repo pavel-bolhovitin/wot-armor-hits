@@ -7,6 +7,12 @@
              The panels follow the design of the "Armor Hits Core" artifact. -->
         <title>Armor Hits</title>
         <link rel="stylesheet" href="HitsView.css" />
+        <link rel="stylesheet" href="components/ScrollView/ScrollView.css" />
+        <link rel="stylesheet" href="components/HitIcon/HitIcon.css" />
+        <link rel="stylesheet" href="components/ShellPlate/ShellPlate.css" />
+        <link rel="stylesheet" href="components/DropMenu/DropMenu.css" />
+        <link rel="stylesheet" href="components/CheckBox/CheckBox.css" />
+        <link rel="stylesheet" href="components/HitsPanel/HitsPanel.css" />
         <link rel="stylesheet" href="components/ScenePanel/ScenePanel.css" />
         <link rel="stylesheet" href="components/SettingsButton/SettingsButton.css" />
         <link rel="stylesheet" href="components/BugButton/BugButton.css" />
@@ -41,25 +47,8 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Hits panel: the hits of the selected battle on the player's vehicle or by the player (HitsView.js). -->
-                    <div class="hitsPanel">
-                        <div class="hitsPanel__tabs">
-                            <div class="hitsPanel__tab" data-side="received"></div>
-                            <div class="hitsPanel__tab" data-side="dealt"></div>
-                        </div>
-                        <div class="hitsPanel__chips hitsPanel__filters"></div>
-                        <div class="hitsPanel__nav">
-                            <div class="hitsPanel__position"></div>
-                            <div class="hitsPanel__step hitsPanel__prev"></div>
-                            <div class="hitsPanel__step hitsPanel__next"></div>
-                        </div>
-                        <div class="hitsPanel__list scrollView">
-                            <div class="scrollView__content">
-                                <div class="hitsPanel__items"></div>
-                            </div>
-                        </div>
-                        <!-- Made here by its script: the minimap at the bottom of the panel (components/Minimap/). -->
-                    </div>
+                    <!-- Made here by its script: the hits panel under the selector (components/HitsPanel/), the minimap
+                         at its bottom (components/Minimap/). -->
                 </div>
                 <div class="hitsView__right">
                     <!-- Shot panel: the chosen hit's shooter and target and its numbers (HitsView.js). -->

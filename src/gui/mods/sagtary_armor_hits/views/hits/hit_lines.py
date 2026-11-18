@@ -270,9 +270,9 @@ class HitLinesPresenter(object):
         vehicle = hitsVehicle(battle, side, hit)
         others = ()
         if self._scenePanel.showsAllLines:
-            selected = self._hitsPanel.selectedNumber
-            others = tuple(other for number, other in self._hitsPanel.shownHits
-                           if number != selected and _drawn(other) and hitsVehicle(battle, side, other) == vehicle)
+            selected = self._hitsPanel.selectedIndex
+            others = tuple(other for index, (otherSide, other) in enumerate(self._hitsPanel.shownHits)
+                           if index != selected and _drawn(other) and hitsVehicle(battle, otherSide, other) == vehicle)
         chosen = hit if hit is not None and _drawn(hit) else None
         target = (vehicle, chosen, others) if isinstance(vehicle, tuple) and (chosen or others) else None
         if target == self._target:

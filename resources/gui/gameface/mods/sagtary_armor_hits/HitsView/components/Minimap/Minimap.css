@@ -1,5 +1,5 @@
 /* Minimap: the last part of the hits panel, at its bottom, on the panel's background. It shares the height under the
-   nav equally with the hits list, the same flex (HitsView.css, also why it starts from 112rem), up to its square map:
+   header equally with the hits list, the same flex (HitsPanel.css, also why it starts from 112rem), up to its square map:
    the header (28rem, the line in it) and the map as high as the panel is wide inside its frame (440rem less 2rem).
    Below that it gets lower with the list, down to its header. */
 .minimap {

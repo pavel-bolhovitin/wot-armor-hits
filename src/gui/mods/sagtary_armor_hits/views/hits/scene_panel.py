@@ -4,8 +4,9 @@
 ScenePanelPresenter fills the view model (views/models/scene_panel_model.py) and keeps the choices: the lines of all
 the hits the hits panel shows or of the chosen hit only (allLines), and the shooter view, the camera looking along
 the chosen hit's shell (shooterView). All the lines are only for the hits on the player's vehicle: the dealt hits are
-on other vehicles each, and the hangar shows one, so on the dealt side the panel offers the chosen hit's line only
-(showsAllLines is False there, the page hides the choice of lines) and keeps the choice for the received side. It
+on other vehicles each, and the hangar shows one, so with a dealt hit chosen (or, without a hit, a filter of dealt hits
+only) the panel offers the chosen hit's line only (showsAllLines is False then, the page hides the choice of lines) and
+keeps the choice for a received hit. It
 tells its listeners when the choices change (onChanged); the hit lines presenter draws by them. The reset button
 asks for the camera's start (onResetCamera): the hit lines presenter puts it back, or behind the shell when the shooter
 view is on. The page shows them as icons, two toggles and a button, beside the overlay select; their tooltips tell
@@ -39,7 +40,7 @@ class ScenePanelPresenter(object):
 
     @property
     def showsAllLines(self):
-        # The lines of all the shown hits are drawn: chosen, and on the received side.
+        # The lines of all the shown hits on the player's vehicle are drawn: chosen, and a received hit chosen.
         return self.allLines and self.canShowAllLines
 
     def tooltipText(self, controlId):

@@ -128,7 +128,8 @@ class HitsView(ViewComponent):
         self._presenters.append(battleSelector)
         # The hits panel shows the battle the selector shows, so it is made and set up after the selector.
         hitsPanel = HitsPanelPresenter(model.hitsPanel, self._battleStore, battleSelector, {
-            'received': text('hits/received'), 'dealt': text('hits/dealt')}, self._settings)
+            'received': text('hits/received'), 'dealt': text('hits/dealt'), 'allHits': text('lines/all')},
+            self._settings)
         self._presenters.append(hitsPanel)
         self._presenters.append(MinimapPresenter(model.minimap, hitsPanel))
         # The hangar shows the vehicle the hits panel shows the hits on.
